@@ -352,9 +352,13 @@ const UserManagement = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    minLength={8}
+                    minLength={12}
+                    placeholder="Mín. 12 caracteres"
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Deve conter: 12+ caracteres, maiúsculas, minúsculas, números e símbolos
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Perfil *</Label>

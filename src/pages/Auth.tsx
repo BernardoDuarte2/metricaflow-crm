@@ -271,8 +271,12 @@ const Auth = () => {
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={12}
+                    placeholder="Mín. 12 caracteres"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Deve conter: 12+ caracteres, maiúsculas, minúsculas, números e símbolos
+                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Cadastrando..." : "Cadastrar"}
