@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -9,7 +8,6 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const navigate = useNavigate();
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +16,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       setSession(session);
       setLoading(false);
       if (!session) {
-        navigate("/auth", { replace: true });
+        // Avoid Router context by using native redirect
+        window.location.replace("/auth");
       }
     });
 
@@ -27,12 +26,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (!session) {
-        navigate("/auth", { replace: true });
+        window.location.replace("/auth");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return (
