@@ -356,12 +356,16 @@ const Dashboard = () => {
 
   return (
     <div className="relative min-h-screen">
-      {/* Animated gradient background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-primary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-        <div className="absolute top-40 -right-40 w-80 h-80 bg-accent/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute -bottom-40 left-1/2 w-80 h-80 bg-success/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '4s' }} />
+      {/* Animated gradient background - mais vibrante e dinâmico */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-background via-background to-background">
+        {/* Orbs de cor animados e maiores */}
+        <div className="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/30 rounded-full mix-blend-screen filter blur-[120px] opacity-40 animate-pulse" />
+        <div className="absolute top-40 -right-40 w-[500px] h-[500px] bg-accent/30 rounded-full mix-blend-screen filter blur-[100px] opacity-40 animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-0 left-1/3 w-[550px] h-[550px] bg-[hsl(210,100%,60%)]/25 rounded-full mix-blend-screen filter blur-[110px] opacity-35 animate-pulse" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-1/2 right-1/4 w-[450px] h-[450px] bg-[hsl(158,100%,65%)]/20 rounded-full mix-blend-screen filter blur-[90px] opacity-30 animate-pulse" style={{ animationDelay: '6s' }} />
+        
+        {/* Grid sutil para profundidade */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,31,78,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,31,78,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
       </div>
 
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
