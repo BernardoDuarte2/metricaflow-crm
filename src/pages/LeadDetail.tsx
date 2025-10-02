@@ -77,13 +77,13 @@ const LeadDetail = () => {
   const addNoteMutation = useMutation({
     mutationFn: async (data: { content: string; note_type: string }) => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Sessão expirada. Por favor, faça login novamente.");
 
       const { error } = await supabase.from("lead_observations").insert({
         lead_id: id,
-        user_id: user.id,
+        user_id: session.user.id,
         content: data.content,
         note_type: data.note_type,
       });

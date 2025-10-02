@@ -8,14 +8,14 @@ const Dashboard = () => {
     queryKey: ["profile"],
     queryFn: async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Sessão expirada. Por favor, faça login novamente.");
 
       const { data, error } = await supabase
         .from("profiles")
         .select("*, companies(name)")
-        .eq("id", user.id)
+        .eq("id", session.user.id)
         .single();
 
       if (error) throw error;
@@ -27,14 +27,14 @@ const Dashboard = () => {
     queryKey: ["dashboard-stats", profile?.role],
     queryFn: async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Sessão expirada. Por favor, faça login novamente.");
 
       let leadsQuery = supabase.from("leads").select("*", { count: "exact" });
 
       if (profile?.role === "vendedor") {
-        leadsQuery = leadsQuery.eq("assigned_to", user.id);
+        leadsQuery = leadsQuery.eq("assigned_to", session.user.id);
       }
 
       const { count: totalLeads } = await leadsQuery;
@@ -45,7 +45,7 @@ const Dashboard = () => {
         .eq("status", "ganho");
 
       if (profile?.role === "vendedor") {
-        wonQuery = wonQuery.eq("assigned_to", user.id);
+        wonQuery = wonQuery.eq("assigned_to", session.user.id);
       }
 
       const { count: wonLeads } = await wonQuery;
@@ -56,7 +56,7 @@ const Dashboard = () => {
         .in("status", ["novo", "contato_feito", "proposta", "negociacao"]);
 
       if (profile?.role === "vendedor") {
-        pendingQuery = pendingQuery.eq("assigned_to", user.id);
+        pendingQuery = pendingQuery.eq("assigned_to", session.user.id);
       }
 
       const { count: pendingLeads } = await pendingQuery;

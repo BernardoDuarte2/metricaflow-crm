@@ -59,14 +59,14 @@ const Leads = () => {
     queryKey: ["profile"],
     queryFn: async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Sessão expirada. Por favor, faça login novamente.");
 
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", session.user.id)
         .single();
 
       if (error) throw error;
@@ -143,10 +143,18 @@ const Leads = () => {
 
   const createLeadMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      // Use getSession() instead of getUser() - more reliable
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+        data: { session },
+      } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        throw new Error("Sessão expirada. Por favor, faça login novamente.");
+      }
+
+      if (!profile?.company_id) {
+        throw new Error("Perfil da empresa não encontrado. Recarregue a página.");
+      }
 
       const normalizedPhone = normalizePhone(data.phone);
       
@@ -157,8 +165,8 @@ const Leads = () => {
         company: data.company || null,
         source: data.source || null,
         estimated_value: data.estimated_value ? parseFloat(data.estimated_value) : null,
-        company_id: profile?.company_id,
-        assigned_to: data.assigned_to || user.id,
+        company_id: profile.company_id,
+        assigned_to: data.assigned_to || session.user.id,
       });
 
       if (error) throw error;
