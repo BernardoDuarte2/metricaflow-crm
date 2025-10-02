@@ -7,10 +7,21 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Leads from "./pages/Leads";
 import Kanban from "./pages/Kanban";
-import ProtectedRoute from "./pages/ProtectedRoute";
 import NotFound from "./pages/NotFound";
+import Sidebar from "./components/layout/Sidebar";
+import Header from "./components/layout/Header";
 
 const queryClient = new QueryClient();
+
+const DemoLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex h-screen bg-background">
+    <Sidebar />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <Header />
+      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    </div>
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,25 +34,25 @@ const App = () => (
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <DemoLayout>
                 <Dashboard />
-              </ProtectedRoute>
+              </DemoLayout>
             }
           />
           <Route
             path="/leads"
             element={
-              <ProtectedRoute>
+              <DemoLayout>
                 <Leads />
-              </ProtectedRoute>
+              </DemoLayout>
             }
           />
           <Route
             path="/kanban"
             element={
-              <ProtectedRoute>
+              <DemoLayout>
                 <Kanban />
-              </ProtectedRoute>
+              </DemoLayout>
             }
           />
           <Route path="*" element={<NotFound />} />
