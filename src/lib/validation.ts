@@ -23,6 +23,16 @@ export const inviteSchema = z.object({
   }),
 });
 
+export const createUserSchema = z.object({
+  name: z.string().trim().min(1, "Nome é obrigatório").max(100, "Nome deve ter no máximo 100 caracteres"),
+  email: z.string().trim().email("Email inválido").max(255, "Email deve ter no máximo 255 caracteres"),
+  password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres").max(100, "Senha deve ter no máximo 100 caracteres"),
+  role: z.enum(["gestor", "vendedor"], {
+    errorMap: () => ({ message: "Função deve ser 'gestor' ou 'vendedor'" })
+  }),
+});
+
 export type LeadFormData = z.infer<typeof leadSchema>;
 export type AuthFormData = z.infer<typeof authSchema>;
 export type InviteFormData = z.infer<typeof inviteSchema>;
+export type CreateUserFormData = z.infer<typeof createUserSchema>;

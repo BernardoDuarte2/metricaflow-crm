@@ -218,6 +218,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active: boolean
           company_id: string
           created_at: string
           id: string
@@ -225,6 +226,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
+          active?: boolean
           company_id: string
           created_at?: string
           id: string
@@ -232,6 +234,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
         }
         Update: {
+          active?: boolean
           company_id?: string
           created_at?: string
           id?: string
@@ -387,6 +390,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_additional_users: {
+        Args: { _company_id: string }
+        Returns: number
+      }
       get_user_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -404,6 +411,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_email_unique_in_company: {
+        Args: { _company_id: string; _email: string }
         Returns: boolean
       }
       is_owner: {
