@@ -26,67 +26,69 @@ const DemoLayout = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/"
-            element={
-              <DemoLayout>
-                <Dashboard />
-              </DemoLayout>
-            }
-          />
-          <Route
-            path="/leads"
-            element={
-              <DemoLayout>
-                <Leads />
-              </DemoLayout>
-            }
-          />
-          <Route
-            path="/lead/:id"
-            element={
-              <DemoLayout>
-                <LeadDetail />
-              </DemoLayout>
-            }
-          />
-          <Route
-            path="/kanban"
-            element={
-              <DemoLayout>
-                <Kanban />
-              </DemoLayout>
-            }
-          />
-          <Route
-            path="/users"
-            element={
-              <DemoLayout>
-                <Users />
-              </DemoLayout>
-            }
-          />
-          <Route
-            path="/user-management"
-            element={
-              <DemoLayout>
-                <UserManagement />
-              </DemoLayout>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/"
+              element={
+                <DemoLayout>
+                  <Dashboard />
+                </DemoLayout>
+              }
+            />
+            <Route
+              path="/leads"
+              element={
+                <DemoLayout>
+                  <Leads />
+                </DemoLayout>
+              }
+            />
+            <Route
+              path="/lead/:id"
+              element={
+                <DemoLayout>
+                  <LeadDetail />
+                </DemoLayout>
+              }
+            />
+            <Route
+              path="/kanban"
+              element={
+                <DemoLayout>
+                  <Kanban />
+                </DemoLayout>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <DemoLayout>
+                  <Users />
+                </DemoLayout>
+              }
+            />
+            <Route
+              path="/user-management"
+              element={
+                <DemoLayout>
+                  <UserManagement />
+                </DemoLayout>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
