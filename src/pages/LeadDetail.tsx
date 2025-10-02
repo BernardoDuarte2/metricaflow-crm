@@ -60,16 +60,25 @@ const LeadDetail = () => {
     },
   });
 
-  const { data: notes } = useQuery({
+  const { data: notes, isLoading: isLoadingNotes } = useQuery({
     queryKey: ["lead-notes", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lead_observations")
-        .select("*, profiles(name)")
+        .select(`
+          *,
+          profiles:user_id (
+            name
+          )
+        `)
         .eq("lead_id", id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao carregar notas:", error);
+        throw error;
+      }
+      console.log("Notas carregadas:", data);
       return data;
     },
   });
@@ -259,31 +268,50 @@ const LeadDetail = () => {
             </CardContent>
           </Card>
 
-          <div className="space-y-3">
-            {notes?.map((note: any) => (
-              <Card key={note.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{note.note_type}</Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {note.profiles?.name}
-                      </span>
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Notas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingNotes ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Carregando notas...
+                </p>
+              ) : notes && notes.length > 0 ? (
+                <div className="space-y-4">
+                  {notes.map((note: any) => (
+                    <div key={note.id} className="border-l-4 border-primary pl-4 py-3 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary" className="font-semibold">
+                            {note.note_type}
+                          </Badge>
+                          <span className="text-sm font-medium">
+                            {note.profiles?.name || "Usuário"}
+                          </span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {format(new Date(note.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 p-3 rounded-md">
+                        {note.content}
+                      </p>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(note.created_at), "dd/MM/yyyy HH:mm")}
-                    </span>
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{note.content}</p>
-                </CardContent>
-              </Card>
-            ))}
-            {notes?.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhuma nota adicionada ainda
-              </p>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-2">
+                    Nenhuma nota adicionada ainda
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Adicione a primeira nota para começar o histórico
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
