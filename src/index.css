@@ -65,6 +65,22 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Neon gradients */
+    --gradient-neon-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(280 100% 70%));
+    --gradient-neon-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(158 100% 60%));
+    --gradient-neon-accent: linear-gradient(135deg, hsl(330 100% 60%), hsl(38 100% 60%));
+    --gradient-neon-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(45 100% 60%));
+    
+    /* Chart colors - vibrant neon palette */
+    --chart-1: 221 83% 53%; /* Electric Blue */
+    --chart-2: 142 76% 36%; /* Neon Green */
+    --chart-3: 280 100% 70%; /* Purple */
+    --chart-4: 38 92% 50%; /* Orange */
+    --chart-5: 158 100% 60%; /* Cyan */
+    --chart-6: 0 84% 60%; /* Red */
+    --chart-7: 330 100% 60%; /* Magenta */
+    --chart-8: 45 100% 60%; /* Yellow */
   }
 
   .dark {
@@ -109,6 +125,22 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Neon gradients */
+    --gradient-neon-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(280 100% 70%));
+    --gradient-neon-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(158 100% 60%));
+    --gradient-neon-accent: linear-gradient(135deg, hsl(330 100% 60%), hsl(38 100% 60%));
+    --gradient-neon-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(45 100% 60%));
+    
+    /* Chart colors - vibrant neon palette */
+    --chart-1: 221 83% 53%; /* Electric Blue */
+    --chart-2: 142 76% 36%; /* Neon Green */
+    --chart-3: 280 100% 70%; /* Purple */
+    --chart-4: 38 92% 50%; /* Orange */
+    --chart-5: 158 100% 60%; /* Cyan */
+    --chart-6: 0 84% 60%; /* Red */
+    --chart-7: 330 100% 60%; /* Magenta */
+    --chart-8: 45 100% 60%; /* Yellow */
   }
 }
 
@@ -119,5 +151,115 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Keyframes for modern animations */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(59, 130, 246, 0.3);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes counter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .glassmorphism {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .glassmorphism-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .glow-border {
+    position: relative;
+  }
+  
+  .glow-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: var(--gradient-neon-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    filter: blur(8px);
+  }
+  
+  .glow-border:hover::before {
+    opacity: 0.7;
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+  
+  .gradient-bg-animated {
+    background: linear-gradient(135deg, hsl(221 83% 53%), hsl(280 100% 70%), hsl(221 83% 53%));
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+  
+  .text-gradient {
+    background: var(--gradient-neon-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .shimmer-effect {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 3s infinite;
   }
 }

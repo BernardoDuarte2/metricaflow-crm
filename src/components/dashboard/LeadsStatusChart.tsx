@@ -21,9 +21,12 @@ const LeadsStatusChart = ({ data }: LeadsStatusChartProps) => {
   }, {} as Record<string, { label: string; color: string }>);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Leads por Status</CardTitle>
+    <Card className="glassmorphism-dark border-primary/20 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500 group overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <CardHeader className="flex flex-row items-center justify-between relative z-10">
+        <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Leads por Status
+        </CardTitle>
         <div className="flex gap-2">
           <Button
             variant={chartType === "pie" ? "default" : "outline"}

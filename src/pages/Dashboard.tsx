@@ -355,16 +355,28 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard Analítico</h1>
-        <p className="text-muted-foreground mt-1">
-          Análise completa do seu CRM
-          {profile?.companies && ` - ${profile.companies.name}`}
-        </p>
+    <div className="relative min-h-screen">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+        <div className="absolute top-0 -left-40 w-80 h-80 bg-primary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+        <div className="absolute top-40 -right-40 w-80 h-80 bg-accent/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute -bottom-40 left-1/2 w-80 h-80 bg-success/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '4s' }} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="relative">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-in slide-in-from-left duration-500" style={{ animation: 'gradient-shift 6s ease infinite' }}>
+            Dashboard Analítico
+          </h1>
+          <p className="text-muted-foreground mt-2 text-lg animate-in slide-in-from-left duration-700 delay-100">
+            Análise completa do seu CRM
+            {profile?.companies && ` - ${profile.companies.name}`}
+          </p>
+          <div className="absolute -bottom-2 left-0 h-1 w-32 bg-gradient-to-r from-primary to-accent rounded-full animate-in slide-in-from-left duration-700 delay-200" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
         <MetricCard
           title="Total de Leads"
           value={stats?.totalLeads || 0}
@@ -403,25 +415,26 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
         {statusData && <LeadsStatusChart data={statusData} />}
         {sourceData && <LeadsSourceChart data={sourceData} />}
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
         {timelineData && <LeadsTimelineChart data={timelineData} />}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-700">
         {financialData && <FinancialMetricsChart data={financialData} />}
         {funnelData && <ConversionFunnelChart data={funnelData} />}
       </div>
 
       {profile?.role !== "vendedor" && performanceData && performanceData.length > 0 && (
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-800">
           <SalesPerformanceChart data={performanceData} />
         </div>
       )}
+      </div>
     </div>
   );
 };
