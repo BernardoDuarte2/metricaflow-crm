@@ -169,15 +169,7 @@ const Leads = () => {
     createLeadMutation.mutate(formData);
   };
 
-  if (profile?.role !== "gestor") {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">
-          Apenas gestores podem gerenciar leads
-        </p>
-      </div>
-    );
-  }
+  const isGestor = profile?.role === "gestor";
 
   return (
     <div className="space-y-6">
@@ -269,26 +261,28 @@ const Leads = () => {
                   placeholder="0.00"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="assigned_to">Atribuir para</Label>
-                <Select
-                  value={formData.assigned_to}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, assigned_to: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um vendedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users?.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {isGestor && (
+                <div className="space-y-2">
+                  <Label htmlFor="assigned_to">Atribuir para</Label>
+                  <Select
+                    value={formData.assigned_to}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, assigned_to: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um vendedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users?.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button type="submit" className="w-full">
                 Cadastrar
               </Button>

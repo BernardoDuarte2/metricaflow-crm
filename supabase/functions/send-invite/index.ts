@@ -1,7 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,41 +22,60 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending invite email:', { inviteId, email, role, companyName });
 
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY is required");
+    }
+
     const inviteUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'http://localhost:5173'}/accept-invite?token=${inviteId}`;
     
     const roleLabel = role === "gestor" ? "Gestor" : "Vendedor";
 
-    const emailResponse = await resend.emails.send({
-      from: "CRM System <onboarding@resend.dev>",
-      to: [email],
-      subject: `Convite para ${companyName}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Você foi convidado!</h1>
-          <p>Você foi convidado para fazer parte de <strong>${companyName}</strong> como <strong>${roleLabel}</strong>.</p>
-          <p>Clique no botão abaixo para aceitar o convite e definir sua senha:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${inviteUrl}" 
-               style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Aceitar Convite
-            </a>
+    // Send email using Resend API directly
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendApiKey}`,
+      },
+      body: JSON.stringify({
+        from: "CRM System <onboarding@resend.dev>",
+        to: [email],
+        subject: `Convite para ${companyName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333;">Você foi convidado!</h1>
+            <p>Você foi convidado para fazer parte de <strong>${companyName}</strong> como <strong>${roleLabel}</strong>.</p>
+            <p>Clique no botão abaixo para aceitar o convite e definir sua senha:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${inviteUrl}" 
+                 style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Aceitar Convite
+              </a>
+            </div>
+            <p style="color: #666; font-size: 14px;">
+              Este convite expira em 7 dias.<br/>
+              Se você não solicitou este convite, pode ignorar este e-mail.
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+            <p style="color: #999; font-size: 12px;">
+              Ou copie e cole este link no seu navegador:<br/>
+              <a href="${inviteUrl}" style="color: #0070f3;">${inviteUrl}</a>
+            </p>
           </div>
-          <p style="color: #666; font-size: 14px;">
-            Este convite expira em 7 dias.<br/>
-            Se você não solicitou este convite, pode ignorar este e-mail.
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-          <p style="color: #999; font-size: 12px;">
-            Ou copie e cole este link no seu navegador:<br/>
-            <a href="${inviteUrl}" style="color: #0070f3;">${inviteUrl}</a>
-          </p>
-        </div>
-      `,
+        `,
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (!emailResponse.ok) {
+      const errorData = await emailResponse.json();
+      throw new Error(`Resend API error: ${JSON.stringify(errorData)}`);
+    }
 
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
+    const emailData = await emailResponse.json();
+    console.log("Email sent successfully:", emailData);
+
+    return new Response(JSON.stringify({ success: true, emailData }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
