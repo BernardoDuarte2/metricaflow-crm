@@ -1,0 +1,18 @@
+-- Enable pgcrypto for secure random bytes
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Ensure the token generator uses pgcrypto
+CREATE OR REPLACE FUNCTION public.generate_api_token()
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  token_prefix TEXT := 'tok_';
+  random_part TEXT;
+BEGIN
+  random_part := encode(gen_random_bytes(32), 'hex');
+  RETURN token_prefix || random_part;
+END;
+$$;
