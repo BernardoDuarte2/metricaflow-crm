@@ -358,209 +358,222 @@ const Dashboard = () => {
   });
 
   const handleExportPDF = () => {
+    console.log("Botão de exportar PDF clicado");
+    console.log("Stats:", stats);
+    console.log("Profile:", profile);
+
     if (!stats || !profile) {
+      console.error("Dados não disponíveis - Stats:", stats, "Profile:", profile);
       toast.error("Aguarde o carregamento dos dados");
       return;
     }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    let yPosition = 20;
+    try {
+      console.log("Iniciando geração do PDF...");
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      let yPosition = 20;
 
-    // Header com gradiente simulado
-    doc.setFillColor(255, 31, 78); // Rosa da marca
-    doc.rect(0, 0, pageWidth, 40, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.text("Relatório do Dashboard CRM", pageWidth / 2, 20, { align: "center" });
-    
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 30, { align: "center" });
-
-    yPosition = 50;
-
-    // Informações da empresa
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    if (profile.companies) {
-      doc.text(`Empresa: ${profile.companies.name}`, 20, yPosition);
-      yPosition += 10;
-    }
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.text(`Usuário: ${profile.name}`, 20, yPosition);
-    yPosition += 15;
-
-    // Linha separadora
-    doc.setDrawColor(255, 31, 78);
-    doc.setLineWidth(0.5);
-    doc.line(20, yPosition, pageWidth - 20, yPosition);
-    yPosition += 15;
-
-    // Título das métricas principais
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 31, 78);
-    doc.text("📊 Métricas Principais", 20, yPosition);
-    yPosition += 10;
-
-    // Box com métricas
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.setFillColor(250, 250, 250);
-    doc.roundedRect(20, yPosition, pageWidth - 40, 70, 3, 3, 'FD');
-
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    
-    yPosition += 10;
-    const col1X = 30;
-    const col2X = pageWidth / 2 + 10;
-
-    // Coluna 1
-    doc.text("Total de Leads:", col1X, yPosition);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(stats.totalLeads || 0), col1X + 50, yPosition);
-    
-    yPosition += 10;
-    doc.setFont("helvetica", "bold");
-    doc.text("Vendas Fechadas:", col1X, yPosition);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(stats.wonLeads || 0), col1X + 50, yPosition);
-    
-    yPosition += 10;
-    doc.setFont("helvetica", "bold");
-    doc.text("Em Andamento:", col1X, yPosition);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(stats.pendingLeads || 0), col1X + 50, yPosition);
-
-    // Coluna 2
-    yPosition -= 20;
-    doc.setFont("helvetica", "bold");
-    doc.text("Taxa de Conversão:", col2X, yPosition);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${stats.conversionRate || 0}%`, col2X + 60, yPosition);
-    
-    yPosition += 10;
-    doc.setFont("helvetica", "bold");
-    doc.text("Valor Estimado:", col2X, yPosition);
-    doc.setFont("helvetica", "normal");
-    doc.text(`R$ ${(stats.totalEstimatedValue || 0).toLocaleString('pt-BR')}`, col2X + 60, yPosition);
-    
-    yPosition += 10;
-    doc.setFont("helvetica", "bold");
-    doc.text("Ticket Médio:", col2X, yPosition);
-    doc.setFont("helvetica", "normal");
-    doc.text(`R$ ${(stats.averageTicket || 0).toLocaleString('pt-BR')}`, col2X + 60, yPosition);
-
-    yPosition += 20;
-
-    // Leads por Status
-    if (statusData && statusData.length > 0) {
-      yPosition += 10;
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 31, 78);
-      doc.text("📈 Leads por Status", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "normal");
-
-      statusData.forEach((item) => {
-        if (yPosition > 270) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        doc.text(`• ${item.status}: ${item.count}`, 30, yPosition);
-        yPosition += 8;
-      });
-    }
-
-    // Leads por Origem
-    if (sourceData && sourceData.length > 0) {
-      yPosition += 10;
+      // Header com gradiente simulado
+      doc.setFillColor(255, 31, 78); // Rosa da marca
+      doc.rect(0, 0, pageWidth, 40, 'F');
       
-      if (yPosition > 250) {
-        doc.addPage();
-        yPosition = 20;
-      }
-
-      doc.setFontSize(16);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 31, 78);
-      doc.text("🎯 Leads por Origem", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "normal");
-
-      sourceData.forEach((item) => {
-        if (yPosition > 270) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        doc.text(`• ${item.source}: ${item.count}`, 30, yPosition);
-        yPosition += 8;
-      });
-    }
-
-    // Desempenho por Vendedor (apenas se não for vendedor)
-    if (performanceData && performanceData.length > 0 && profile.role !== "vendedor") {
-      yPosition += 10;
+      doc.text("Relatório do Dashboard CRM", pageWidth / 2, 20, { align: "center" });
       
-      if (yPosition > 200) {
-        doc.addPage();
-        yPosition = 20;
-      }
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 30, { align: "center" });
 
+      yPosition = 50;
+
+      // Informações da empresa
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      if (profile.companies) {
+        doc.text(`Empresa: ${profile.companies.name}`, 20, yPosition);
+        yPosition += 10;
+      }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text(`Usuário: ${profile.name}`, 20, yPosition);
+      yPosition += 15;
+
+      // Linha separadora
+      doc.setDrawColor(255, 31, 78);
+      doc.setLineWidth(0.5);
+      doc.line(20, yPosition, pageWidth - 20, yPosition);
+      yPosition += 15;
+
+      // Título das métricas principais
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(255, 31, 78);
-      doc.text("👥 Desempenho por Vendedor", 20, yPosition);
+      doc.text("📊 Métricas Principais", 20, yPosition);
       yPosition += 10;
 
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
+      // Box com métricas
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.setFillColor(250, 250, 250);
+      doc.roundedRect(20, yPosition, pageWidth - 40, 70, 3, 3, 'FD');
 
-      performanceData.forEach((item) => {
-        if (yPosition > 270) {
-          doc.addPage();
-          yPosition = 20;
-        }
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      
+      yPosition += 10;
+      const col1X = 30;
+      const col2X = pageWidth / 2 + 10;
+
+      // Coluna 1
+      doc.text("Total de Leads:", col1X, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(stats.totalLeads || 0), col1X + 50, yPosition);
+      
+      yPosition += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text("Vendas Fechadas:", col1X, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(stats.wonLeads || 0), col1X + 50, yPosition);
+      
+      yPosition += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text("Em Andamento:", col1X, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(stats.pendingLeads || 0), col1X + 50, yPosition);
+
+      // Coluna 2
+      yPosition -= 20;
+      doc.setFont("helvetica", "bold");
+      doc.text("Taxa de Conversão:", col2X, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(`${stats.conversionRate || 0}%`, col2X + 60, yPosition);
+      
+      yPosition += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text("Valor Estimado:", col2X, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(`R$ ${(stats.totalEstimatedValue || 0).toLocaleString('pt-BR')}`, col2X + 60, yPosition);
+      
+      yPosition += 10;
+      doc.setFont("helvetica", "bold");
+      doc.text("Ticket Médio:", col2X, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(`R$ ${(stats.averageTicket || 0).toLocaleString('pt-BR')}`, col2X + 60, yPosition);
+
+      yPosition += 20;
+
+      // Leads por Status
+      if (statusData && statusData.length > 0) {
+        yPosition += 10;
+        doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
-        doc.text(`${item.vendedor}:`, 30, yPosition);
+        doc.setTextColor(255, 31, 78);
+        doc.text("📈 Leads por Status", 20, yPosition);
+        yPosition += 10;
+
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
         doc.setFont("helvetica", "normal");
-        doc.text(`${item.leads} leads | ${item.convertidos} convertidos | ${item.taxa}% taxa`, 80, yPosition);
-        yPosition += 8;
-      });
-    }
 
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(9);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `Página ${i} de ${pageCount} | Gerado pelo CRM - ${new Date().toLocaleDateString('pt-BR')}`,
-        pageWidth / 2,
-        doc.internal.pageSize.height - 10,
-        { align: "center" }
-      );
-    }
+        statusData.forEach((item) => {
+          if (yPosition > 270) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(`• ${item.status}: ${item.count}`, 30, yPosition);
+          yPosition += 8;
+        });
+      }
 
-    // Salvar o PDF
-    const fileName = `relatorio-dashboard-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(fileName);
-    toast.success("Relatório exportado com sucesso!");
+      // Leads por Origem
+      if (sourceData && sourceData.length > 0) {
+        yPosition += 10;
+        
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 31, 78);
+        doc.text("🎯 Leads por Origem", 20, yPosition);
+        yPosition += 10;
+
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "normal");
+
+        sourceData.forEach((item) => {
+          if (yPosition > 270) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(`• ${item.source}: ${item.count}`, 30, yPosition);
+          yPosition += 8;
+        });
+      }
+
+      // Desempenho por Vendedor (apenas se não for vendedor)
+      if (performanceData && performanceData.length > 0 && profile.role !== "vendedor") {
+        yPosition += 10;
+        
+        if (yPosition > 200) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 31, 78);
+        doc.text("👥 Desempenho por Vendedor", 20, yPosition);
+        yPosition += 10;
+
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+
+        performanceData.forEach((item) => {
+          if (yPosition > 270) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.setFont("helvetica", "bold");
+          doc.text(`${item.vendedor}:`, 30, yPosition);
+          doc.setFont("helvetica", "normal");
+          doc.text(`${item.leads} leads | ${item.convertidos} convertidos | ${item.taxa}% taxa`, 80, yPosition);
+          yPosition += 8;
+        });
+      }
+
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Página ${i} de ${pageCount} | Gerado pelo CRM - ${new Date().toLocaleDateString('pt-BR')}`,
+          pageWidth / 2,
+          doc.internal.pageSize.height - 10,
+          { align: "center" }
+        );
+      }
+
+      // Salvar o PDF
+      const fileName = `relatorio-dashboard-${new Date().toISOString().split('T')[0]}.pdf`;
+      console.log("Salvando PDF com nome:", fileName);
+      doc.save(fileName);
+      console.log("PDF gerado com sucesso!");
+      toast.success("Relatório exportado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      toast.error(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
   };
 
   return (
