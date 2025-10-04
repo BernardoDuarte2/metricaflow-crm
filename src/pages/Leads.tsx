@@ -24,7 +24,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Plus, Eye } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Plus, Eye, ChevronDown, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -69,6 +74,7 @@ const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [responsibleFilter, setResponsibleFilter] = useState("all");
+  const [isPeriodOpen, setIsPeriodOpen] = useState(true);
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -516,36 +522,60 @@ const Leads = () => {
       />
 
       {/* Tabs por período */}
-      <Tabs defaultValue="all" value={period} onValueChange={setPeriod}>
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="this-month">Este Mês</TabsTrigger>
-          <TabsTrigger value="last-month">Mês Passado</TabsTrigger>
-          <TabsTrigger value="last-3-months">Últimos 3 Meses</TabsTrigger>
-        </TabsList>
+      <Collapsible open={isPeriodOpen} onOpenChange={setIsPeriodOpen}>
+        <div className="bg-card rounded-lg border">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold">Períodos</h3>
+            </div>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isPeriodOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
 
-        {/* Estatísticas */}
-        <div className="mt-6">
-          <LeadStats leads={leads || []} period={period} />
+          <CollapsibleContent>
+            <div className="border-t p-4">
+              <Tabs defaultValue="all" value={period} onValueChange={setPeriod}>
+                <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  <TabsTrigger value="this-month">Este Mês</TabsTrigger>
+                  <TabsTrigger value="last-month">Mês Passado</TabsTrigger>
+                  <TabsTrigger value="last-3-months">Últimos 3 Meses</TabsTrigger>
+                </TabsList>
+
+                {/* Estatísticas */}
+                <div className="mt-6">
+                  <LeadStats leads={leads || []} period={period} />
+                </div>
+
+                {/* Conteúdo das tabs */}
+                <TabsContent value="all" className="mt-6">
+                  {renderLeadsTable()}
+                </TabsContent>
+
+                <TabsContent value="this-month" className="mt-6">
+                  {renderLeadsTable()}
+                </TabsContent>
+
+                <TabsContent value="last-month" className="mt-6">
+                  {renderLeadsTable()}
+                </TabsContent>
+
+                <TabsContent value="last-3-months" className="mt-6">
+                  {renderLeadsTable()}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </CollapsibleContent>
         </div>
-
-        {/* Conteúdo das tabs */}
-        <TabsContent value="all" className="mt-6">
-          {renderLeadsTable()}
-        </TabsContent>
-
-        <TabsContent value="this-month" className="mt-6">
-          {renderLeadsTable()}
-        </TabsContent>
-
-        <TabsContent value="last-month" className="mt-6">
-          {renderLeadsTable()}
-        </TabsContent>
-
-        <TabsContent value="last-3-months" className="mt-6">
-          {renderLeadsTable()}
-        </TabsContent>
-      </Tabs>
+      </Collapsible>
     </div>
   );
 };
