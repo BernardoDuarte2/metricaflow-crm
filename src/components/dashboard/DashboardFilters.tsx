@@ -65,7 +65,7 @@ const DashboardFilters = ({
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="bg-card rounded-lg border shadow-md">
+      <div className="bg-card rounded-lg border shadow-md relative z-20 pointer-events-auto">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -83,7 +83,7 @@ const DashboardFilters = ({
         </div>
 
         <CollapsibleContent>
-          <div className="border-t p-4 space-y-4">
+          <div className="border-t p-4 space-y-4 relative z-20 pointer-events-auto">
             {/* Filtros principais */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
