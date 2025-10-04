@@ -171,14 +171,20 @@ const Dashboard = () => {
   });
 
   const { data: statusData } = useQuery({
-    queryKey: ["leads-status", profile?.role],
+    queryKey: ["leads-status", profile?.role, selectedMonth, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("Sessão expirada.");
 
-      let query = supabase.from("leads").select("status");
+      const dateRange = getDateRange();
+
+      let query = supabase
+        .from("leads")
+        .select("status")
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
       
       if (profile?.role === "vendedor") {
         query = query.eq("assigned_to", session.user.id);
@@ -210,20 +216,20 @@ const Dashboard = () => {
   });
 
   const { data: timelineData } = useQuery({
-    queryKey: ["leads-timeline", profile?.role],
+    queryKey: ["leads-timeline", profile?.role, selectedMonth, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("Sessão expirada.");
 
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateRange = getDateRange();
 
       let query = supabase
         .from("leads")
         .select("created_at, status")
-        .gte("created_at", thirtyDaysAgo.toISOString());
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
       
       if (profile?.role === "vendedor") {
         query = query.eq("assigned_to", session.user.id);
@@ -243,28 +249,26 @@ const Dashboard = () => {
         if (lead.status === "perdido") dailyStats[date].perdidos += 1;
       });
 
-      return Object.entries(dailyStats)
-        .map(([date, stats]) => ({ date, ...stats }))
-        .slice(-30);
+      return Object.entries(dailyStats).map(([date, stats]) => ({ date, ...stats }));
     },
     enabled: !!profile,
   });
 
   const { data: financialData } = useQuery({
-    queryKey: ["financial-metrics", profile?.role],
+    queryKey: ["financial-metrics", profile?.role, selectedMonth, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("Sessão expirada.");
 
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const dateRange = getDateRange();
 
       let query = supabase
         .from("leads")
         .select("created_at, status, estimated_value")
-        .gte("created_at", sixMonthsAgo.toISOString());
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
       
       if (profile?.role === "vendedor") {
         query = query.eq("assigned_to", session.user.id);
@@ -345,14 +349,19 @@ const Dashboard = () => {
   );
 
   const { data: sourceData } = useQuery({
-    queryKey: ["leads-source", profile?.role],
+    queryKey: ["leads-source", profile?.role, selectedMonth, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("Sessão expirada.");
 
-      let query = supabase.from("leads").select("source");
+      const dateRange = getDateRange();
+
+      let query = supabase.from("leads")
+        .select("source")
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
       
       if (profile?.role === "vendedor") {
         query = query.eq("assigned_to", session.user.id);
@@ -384,14 +393,19 @@ const Dashboard = () => {
   });
 
   const { data: funnelData } = useQuery({
-    queryKey: ["conversion-funnel", profile?.role],
+    queryKey: ["conversion-funnel", profile?.role, selectedMonth, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("Sessão expirada.");
 
-      let query = supabase.from("leads").select("status");
+      const dateRange = getDateRange();
+
+      let query = supabase.from("leads")
+        .select("status")
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
       
       if (profile?.role === "vendedor") {
         query = query.eq("assigned_to", session.user.id);
