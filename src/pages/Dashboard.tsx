@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/dashboard/MetricCard";
 import LeadsStatusChart from "@/components/dashboard/LeadsStatusChart";
-import LeadsTimelineChart from "@/components/dashboard/LeadsTimelineChart";
 import FinancialMetricsChart from "@/components/dashboard/FinancialMetricsChart";
+import MonthlyClosedLeadsChart from "@/components/dashboard/MonthlyClosedLeadsChart";
 import SalesPerformanceDetailedChart from "@/components/dashboard/SalesPerformanceDetailedChart";
 import LeadsSourceChart from "@/components/dashboard/LeadsSourceChart";
 import ConversionFunnelChart from "@/components/dashboard/ConversionFunnelChart";
@@ -215,8 +215,8 @@ const Dashboard = () => {
     enabled: !!profile,
   });
 
-  const { data: timelineData } = useQuery({
-    queryKey: ["leads-timeline", profile?.role, selectedMonth, selectedYear],
+  const { data: monthlyClosedData } = useQuery({
+    queryKey: ["monthly-closed-leads", profile?.role, selectedMonth, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
@@ -227,7 +227,8 @@ const Dashboard = () => {
 
       let query = supabase
         .from("leads")
-        .select("created_at, status")
+        .select("created_at, status, estimated_value")
+        .eq("status", "ganho")
         .gte("created_at", dateRange.start)
         .lte("created_at", dateRange.end);
       
@@ -237,19 +238,29 @@ const Dashboard = () => {
 
       const { data } = await query;
 
-      const dailyStats: Record<string, { novos: number; convertidos: number; perdidos: number }> = {};
+      const monthlyStats: Record<string, { count: number; value: number }> = {};
 
       data?.forEach((lead) => {
-        const date = new Date(lead.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-        if (!dailyStats[date]) {
-          dailyStats[date] = { novos: 0, convertidos: 0, perdidos: 0 };
+        const month = new Date(lead.created_at).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+        if (!monthlyStats[month]) {
+          monthlyStats[month] = { count: 0, value: 0 };
         }
-        dailyStats[date].novos += 1;
-        if (lead.status === "ganho") dailyStats[date].convertidos += 1;
-        if (lead.status === "perdido") dailyStats[date].perdidos += 1;
+        monthlyStats[month].count += 1;
+        monthlyStats[month].value += Number(lead.estimated_value) || 0;
       });
 
-      return Object.entries(dailyStats).map(([date, stats]) => ({ date, ...stats }));
+      // Sort by date
+      const sortedEntries = Object.entries(monthlyStats).sort((a, b) => {
+        const [monthA] = a[0].split('/');
+        const [monthB] = b[0].split('/');
+        const monthOrder: Record<string, number> = {
+          'jan': 1, 'fev': 2, 'mar': 3, 'abr': 4, 'mai': 5, 'jun': 6,
+          'jul': 7, 'ago': 8, 'set': 9, 'out': 10, 'nov': 11, 'dez': 12
+        };
+        return (monthOrder[monthA] || 0) - (monthOrder[monthB] || 0);
+      });
+
+      return sortedEntries.map(([month, stats]) => ({ month, ...stats }));
     },
     enabled: !!profile,
   });
@@ -456,7 +467,7 @@ const Dashboard = () => {
       const chartIds = [
         'metrics-cards',
         'status-source-charts',
-        'timeline-chart',
+        'monthly-closed-chart',
         'financial-funnel-charts',
         'detailed-performance-chart'
       ];
@@ -620,8 +631,8 @@ const Dashboard = () => {
         {sourceData && <LeadsSourceChart data={sourceData} />}
       </div>
 
-      <div id="timeline-chart" className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
-        {timelineData && <LeadsTimelineChart data={timelineData} />}
+      <div id="monthly-closed-chart" className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
+        {monthlyClosedData && <MonthlyClosedLeadsChart data={monthlyClosedData} />}
       </div>
 
       <div id="financial-funnel-charts" className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-700">
