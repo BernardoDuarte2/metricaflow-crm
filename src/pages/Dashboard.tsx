@@ -675,7 +675,7 @@ const Dashboard = () => {
   return (
     <div className="relative min-h-screen">
       {/* Animated gradient background - mais vibrante e dinâmico */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-background via-background to-background">
+      <div className="fixed inset-0 -z-10 pointer-events-none bg-gradient-to-br from-background via-background to-background">
         {/* Orbs de cor animados e maiores */}
         <div className="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/30 rounded-full mix-blend-screen filter blur-[120px] opacity-40 animate-pulse" />
         <div className="absolute top-40 -right-40 w-[500px] h-[500px] bg-accent/30 rounded-full mix-blend-screen filter blur-[100px] opacity-40 animate-pulse" style={{ animationDelay: '2s' }} />
@@ -686,7 +686,7 @@ const Dashboard = () => {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,31,78,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,31,78,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
       </div>
 
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10 pointer-events-auto">
         {/* Filtros de Período */}
         <DashboardFilters
           selectedMonth={selectedMonth}
