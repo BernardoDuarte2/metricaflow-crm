@@ -3,11 +3,33 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 const Sidebar = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
+  const { data: session } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    },
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("*, companies(*)")
+        .eq("id", session.user.id)
+        .single();
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast({
@@ -15,31 +37,42 @@ const Sidebar = () => {
     });
     navigate("/auth");
   };
-  const navItems = [{
+
+  const isOwnerOrGestor = profile?.role === 'gestor_owner' || profile?.role === 'gestor';
+
+  const allNavItems = [{
     to: "/",
     icon: LayoutDashboard,
-    label: "Dashboard"
+    label: "Dashboard",
+    requiresOwnerOrGestor: false
   }, {
     to: "/leads",
     icon: Users,
-    label: "Leads"
+    label: "Leads",
+    requiresOwnerOrGestor: false
   }, {
     to: "/kanban",
     icon: KanbanSquare,
-    label: "Kanban"
+    label: "Kanban",
+    requiresOwnerOrGestor: false
   }, {
     to: "/users",
     icon: UserCog,
-    label: "Usuários"
+    label: "Usuários",
+    requiresOwnerOrGestor: true
   }, {
     to: "/user-management",
     icon: Settings,
-    label: "Gestão de Usuários"
+    label: "Gestão de Usuários",
+    requiresOwnerOrGestor: true
   }, {
     to: "/integrations",
     icon: Plug,
-    label: "Integrações"
+    label: "Integrações",
+    requiresOwnerOrGestor: true
   }];
+
+  const navItems = allNavItems.filter(item => !item.requiresOwnerOrGestor || isOwnerOrGestor);
   return <aside className="w-64 bg-card border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Pro</h1>
