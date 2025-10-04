@@ -18,6 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Plus, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +36,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
+import { LeadFilters } from "@/components/leads/LeadFilters";
+import { LeadStats } from "@/components/leads/LeadStats";
 
 const statusColors: Record<string, string> = {
   novo: "bg-blue-500",
@@ -54,6 +63,12 @@ const Leads = () => {
     estimated_value: "",
     assigned_to: "",
   });
+
+  // Estados para filtros e organização temporal
+  const [period, setPeriod] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [responsibleFilter, setResponsibleFilter] = useState("all");
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -105,16 +120,70 @@ const Leads = () => {
     enabled: !!profile?.company_id,
   });
 
-  const { data: leads } = useQuery({
-    queryKey: ["leads"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*, profiles(name)")
-        .order("created_at", { ascending: false });
+  // Função para calcular intervalo de datas com base no período
+  const getDateRange = (periodValue: string) => {
+    const now = new Date();
+    
+    switch (periodValue) {
+      case "this-month":
+        return {
+          start: startOfMonth(now),
+          end: endOfMonth(now),
+        };
+      case "last-month":
+        return {
+          start: startOfMonth(subMonths(now, 1)),
+          end: endOfMonth(subMonths(now, 1)),
+        };
+      case "last-3-months":
+        return {
+          start: startOfMonth(subMonths(now, 3)),
+          end: endOfDay(now),
+        };
+      default:
+        return { start: null, end: null };
+    }
+  };
 
+  const { data: leads } = useQuery({
+    queryKey: ["leads", period, searchTerm, statusFilter, responsibleFilter],
+    queryFn: async () => {
+      const { start, end } = getDateRange(period);
+      
+      let query = supabase
+        .from("leads")
+        .select("*, profiles(name)");
+
+      // Filtro temporal
+      if (start) query = query.gte("created_at", start.toISOString());
+      if (end) query = query.lte("created_at", end.toISOString());
+
+      // Filtro de busca (nome, email, telefone, empresa)
+      if (searchTerm) {
+        query = query.or(
+          `name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,company.ilike.%${searchTerm}%`
+        );
+      }
+
+      // Filtro de status
+      if (statusFilter && statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      // Filtro de responsável
+      if (responsibleFilter && responsibleFilter !== "all") {
+        if (responsibleFilter === "unassigned") {
+          query = query.is("assigned_to", null);
+        } else {
+          query = query.eq("assigned_to", responsibleFilter);
+        }
+      }
+
+      query = query.order("created_at", { ascending: false });
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
@@ -234,13 +303,93 @@ const Leads = () => {
   const isGestor = profile?.role === "gestor" || profile?.role === "gestor_owner";
   const canEditAssignment = isGestor;
 
+  // Renderizar a tabela de leads
+  const renderLeadsTable = () => (
+    <div className="bg-card rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Empresa</TableHead>
+            <TableHead>Responsável</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {leads && leads.length > 0 ? (
+            leads.map((lead: any) => (
+              <TableRow key={lead.id}>
+                <TableCell className="font-medium">{lead.name}</TableCell>
+                <TableCell>{lead.email || "—"}</TableCell>
+                <TableCell>{lead.phone || "—"}</TableCell>
+                <TableCell>{lead.company || "—"}</TableCell>
+                <TableCell>
+                  {canEditAssignment ? (
+                    <Select
+                      value={lead.assigned_to || "unassigned"}
+                      onValueChange={(value) => {
+                        const newAssignedTo = value === "unassigned" ? null : value;
+                        updateLeadAssignment.mutate({
+                          leadId: lead.id,
+                          assignedTo: newAssignedTo,
+                        });
+                      }}
+                      disabled={updateLeadAssignment.isPending}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Não atribuído" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Não atribuído</SelectItem>
+                        {users?.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span>{lead.profiles?.name || "Não atribuído"}</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge className={statusColors[lead.status]}>
+                    {lead.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(`/lead/${lead.id}`)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                Nenhum lead encontrado
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Leads</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie todos os seus leads
+            Gerencie e organize seus leads por período
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -354,74 +503,49 @@ const Leads = () => {
         </Dialog>
       </div>
 
-      <div className="bg-card rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {leads?.map((lead: any) => (
-              <TableRow key={lead.id}>
-                <TableCell className="font-medium">{lead.name}</TableCell>
-                <TableCell>{lead.email || "—"}</TableCell>
-                <TableCell>{lead.phone || "—"}</TableCell>
-                <TableCell>{lead.company || "—"}</TableCell>
-                <TableCell>
-                  {canEditAssignment ? (
-                    <Select
-                      value={lead.assigned_to || "unassigned"}
-                      onValueChange={(value) => {
-                        const newAssignedTo = value === "unassigned" ? null : value;
-                        updateLeadAssignment.mutate({ 
-                          leadId: lead.id, 
-                          assignedTo: newAssignedTo 
-                        });
-                      }}
-                      disabled={updateLeadAssignment.isPending}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Não atribuído" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Não atribuído</SelectItem>
-                        {users?.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span>{lead.profiles?.name || "Não atribuído"}</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge className={statusColors[lead.status]}>
-                    {lead.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate(`/lead/${lead.id}`)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Filtros */}
+      <LeadFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        responsibleFilter={responsibleFilter}
+        onResponsibleChange={setResponsibleFilter}
+        users={users}
+        canFilterByResponsible={isGestor}
+      />
+
+      {/* Tabs por período */}
+      <Tabs defaultValue="all" value={period} onValueChange={setPeriod}>
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="this-month">Este Mês</TabsTrigger>
+          <TabsTrigger value="last-month">Mês Passado</TabsTrigger>
+          <TabsTrigger value="last-3-months">Últimos 3 Meses</TabsTrigger>
+        </TabsList>
+
+        {/* Estatísticas */}
+        <div className="mt-6">
+          <LeadStats leads={leads || []} period={period} />
+        </div>
+
+        {/* Conteúdo das tabs */}
+        <TabsContent value="all" className="mt-6">
+          {renderLeadsTable()}
+        </TabsContent>
+
+        <TabsContent value="this-month" className="mt-6">
+          {renderLeadsTable()}
+        </TabsContent>
+
+        <TabsContent value="last-month" className="mt-6">
+          {renderLeadsTable()}
+        </TabsContent>
+
+        <TabsContent value="last-3-months" className="mt-6">
+          {renderLeadsTable()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
