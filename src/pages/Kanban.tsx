@@ -21,10 +21,16 @@ const columns = [
 
 const formatPhoneForWhatsApp = (phone: string): string => {
   const cleanPhone = phone.replace(/\D/g, "");
+  if (cleanPhone.length < 10) return "";
   if (cleanPhone.startsWith("55")) {
     return cleanPhone;
   }
   return `55${cleanPhone}`;
+};
+
+const isValidPhone = (phone: string): boolean => {
+  const cleanPhone = phone.replace(/\D/g, "");
+  return cleanPhone.length >= 10;
 };
 
 const Kanban = () => {
@@ -168,7 +174,7 @@ const Kanban = () => {
                                 className="h-8 w-8"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/leads/${lead.id}`);
+                                  navigate(`/lead/${lead.id}`);
                                 }}
                               >
                                 <Eye className="h-4 w-4" />
@@ -185,16 +191,24 @@ const Kanban = () => {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                disabled={!lead.phone}
+                                disabled={!lead.phone || !isValidPhone(lead.phone)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (lead.phone) {
+                                  if (lead.phone && isValidPhone(lead.phone)) {
                                     const formattedPhone = formatPhoneForWhatsApp(lead.phone);
-                                    window.open(`https://wa.me/${formattedPhone}`, "_blank");
+                                    try {
+                                      window.open(`https://api.whatsapp.com/send?phone=${formattedPhone}`, "_blank");
+                                    } catch (error) {
+                                      toast({
+                                        title: "Erro ao abrir WhatsApp",
+                                        description: "Verifique se o pop-up não foi bloqueado pelo navegador.",
+                                        variant: "destructive",
+                                      });
+                                    }
                                   } else {
                                     toast({
-                                      title: "Telefone não cadastrado",
-                                      description: "Este lead não possui telefone cadastrado.",
+                                      title: "Telefone inválido",
+                                      description: "Este lead não possui um telefone válido.",
                                       variant: "destructive",
                                     });
                                   }
@@ -204,7 +218,7 @@ const Kanban = () => {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Abrir WhatsApp</p>
+                              <p>{lead.phone && isValidPhone(lead.phone) ? "Abrir WhatsApp" : "Telefone inválido"}</p>
                             </TooltipContent>
                           </Tooltip>
                         </div>
