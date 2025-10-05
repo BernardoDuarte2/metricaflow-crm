@@ -675,7 +675,7 @@ const Dashboard = () => {
         {funnelData && <ConversionFunnelChart data={funnelData} />}
       </div>
 
-      {profile?.role !== "vendedor" && detailedPerformanceData && detailedPerformanceData.length > 0 && (
+      {userRole !== "vendedor" && detailedPerformanceData && detailedPerformanceData.length > 0 && (
         <div id="detailed-performance-chart" className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-900">
           <SalesPerformanceDetailedChart data={detailedPerformanceData} />
         </div>

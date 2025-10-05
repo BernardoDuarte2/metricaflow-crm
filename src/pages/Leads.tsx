@@ -95,6 +95,26 @@ const Leads = () => {
     },
   });
 
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role"],
+    queryFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) return null;
+
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .order("role")
+        .limit(1)
+        .single();
+
+      return data?.role;
+    },
+  });
+
   // Buscar todos vendedores e gestores da empresa para o Select de atribuição
   const { data: users } = useQuery({
     queryKey: ["company-users"],
@@ -115,7 +135,7 @@ const Leads = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name, role")
+        .select("id, name")
         .in("id", userIds)
         .eq("company_id", profile.company_id)
         .eq("active", true);
@@ -306,7 +326,7 @@ const Leads = () => {
     },
   });
 
-  const isGestor = profile?.role === "gestor" || profile?.role === "gestor_owner";
+  const isGestor = userRole === "gestor" || userRole === "gestor_owner";
   const canEditAssignment = isGestor;
 
   // Renderizar a tabela de leads
