@@ -161,10 +161,17 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
   }, [task, setValue, reset]);
 
   const onSubmit = (data: any) => {
+    // Clean up data before submitting
+    const cleanData = {
+      ...data,
+      lead_id: data.lead_id || null,
+      due_date: data.due_date || null,
+    };
+
     if (task) {
-      updateTaskMutation.mutate(data);
+      updateTaskMutation.mutate(cleanData);
     } else {
-      createTaskMutation.mutate(data);
+      createTaskMutation.mutate(cleanData);
     }
   };
 
