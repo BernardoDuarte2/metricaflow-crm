@@ -79,22 +79,37 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
   const createTaskMutation = useMutation({
     mutationFn: async (data: any) => {
       const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session?.user.id) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("company_id")
-        .eq("id", session.session?.user.id)
+        .eq("id", session.session.user.id)
         .single();
 
+      if (!profile?.company_id) {
+        throw new Error("Perfil do usuário não encontrado");
+      }
+
       const taskData = {
-        ...data,
-        company_id: profile?.company_id,
-        created_by: session.session?.user.id,
+        title: data.title,
+        description: data.description,
+        assigned_to: data.assigned_to,
+        company_id: profile.company_id,
+        created_by: session.session.user.id,
         lead_id: data.lead_id || null,
         due_date: data.due_date || null,
+        status: 'aberta',
       };
 
       const { error } = await supabase.from("tasks").insert(taskData);
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao criar tarefa:", error);
+        throw error;
+      }
 
       // Add note to lead if linked
       if (data.lead_id) {
