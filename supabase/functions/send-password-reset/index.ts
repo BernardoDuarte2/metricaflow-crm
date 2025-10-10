@@ -40,8 +40,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error("Erro ao gerar link de recuperação:", error);
-      if (error.message.includes('not found')) {
-        throw new Error("Email não encontrado. Verifique se você já criou uma conta.");
+      const status = (error as any)?.status || (error as any)?.code;
+      if (status === 404 || String(error.message).toLowerCase().includes('not found')) {
+        // Não revelar se o email existe: responder 200 de forma genérica
+        return new Response(
+          JSON.stringify({ success: true, message: "Se o email existir, enviaremos um link de recuperação." }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
       }
       throw new Error(`Erro ao gerar link: ${error.message}`);
     }
