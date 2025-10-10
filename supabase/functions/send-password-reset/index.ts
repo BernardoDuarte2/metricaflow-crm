@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,14 +24,34 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Email é obrigatório");
     }
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Generate password reset using Supabase Auth
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: `${redirectUrl}?reset=true`,
+      },
+    });
+
+    if (error) {
+      console.error("Erro ao gerar link de recuperação:", error);
+      throw new Error(`Erro ao gerar link: ${error.message}`);
+    }
+
+    const resetLink = data.properties?.action_link;
+    if (!resetLink) {
+      throw new Error("Link de recuperação não foi gerado");
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY não configurada");
     }
-
-    // Generate a password reset token
-    const resetToken = crypto.randomUUID();
-    const resetLink = `${redirectUrl}?token=${resetToken}&type=recovery&email=${encodeURIComponent(email)}`;
 
     // Send email via Resend API
     const resendResponse = await fetch("https://api.resend.com/emails", {

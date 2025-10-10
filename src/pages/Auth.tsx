@@ -32,11 +32,24 @@ const Auth = () => {
   // Forgot password state
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  
+  // Password reset state
+  const [resetPasswordMode, setResetPasswordMode] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
+    // Check for password reset in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReset = urlParams.get('reset') === 'true';
+    
+    if (isReset) {
+      setResetPasswordMode(true);
+    }
+
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      if (session && !isReset) {
         navigate("/");
       }
     });
@@ -44,8 +57,11 @@ const Auth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
+      if (event === "SIGNED_IN" && session && !isReset) {
         navigate("/");
+      }
+      if (event === "PASSWORD_RECOVERY") {
+        setResetPasswordMode(true);
       }
     });
 
@@ -144,6 +160,108 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 12 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Senha atualizada!",
+        description: "Sua senha foi redefinida com sucesso.",
+      });
+      
+      setResetPasswordMode(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao redefinir senha",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show password reset form if in reset mode
+  if (resetPasswordMode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md shadow-2xl">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Redefinir Senha
+            </CardTitle>
+            <CardDescription className="text-center">
+              Digite sua nova senha
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={12}
+                  placeholder="Mín. 12 caracteres"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Deve conter: 12+ caracteres, maiúsculas, minúsculas, números e símbolos
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={12}
+                  placeholder="Digite a senha novamente"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Atualizando..." : "Atualizar Senha"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
