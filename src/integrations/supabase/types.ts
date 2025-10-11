@@ -639,6 +639,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_meeting: {
+        Args: { _meeting_id: string; _user_id: string }
+        Returns: boolean
+      }
       cleanup_old_integration_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -676,6 +680,10 @@ export type Database = {
       }
       is_owner: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      user_participates_in_meeting: {
+        Args: { _meeting_id: string; _user_id: string }
         Returns: boolean
       }
     }
