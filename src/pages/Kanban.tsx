@@ -71,13 +71,66 @@ const Kanban = () => {
   const { data: leads } = useQuery({
     queryKey: ["kanban-leads"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const endOfMonth = new Date(startOfMonth);
+      endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+      endOfMonth.setDate(0);
+      endOfMonth.setHours(23, 59, 59, 999);
+
+      const { data: leadsData, error } = await supabase
         .from("leads")
         .select("*, profiles(name)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Para cada lead, buscar atividades futuras no mês atual
+      const now = new Date().toISOString();
+      const endOfMonthISO = endOfMonth.toISOString();
+
+      const leadsWithActivity = await Promise.all(
+        leadsData.map(async (lead) => {
+          // Contar meetings futuros
+          const { count: meetingsCount } = await supabase
+            .from("meetings")
+            .select("*", { count: 'exact', head: true })
+            .eq("lead_id", lead.id)
+            .gt("start_time", now)
+            .lt("start_time", endOfMonthISO)
+            .neq("status", "cancelada");
+
+          // Contar reminders futuros
+          const { count: remindersCount } = await supabase
+            .from("reminders")
+            .select("*", { count: 'exact', head: true })
+            .eq("lead_id", lead.id)
+            .gt("reminder_date", now)
+            .lt("reminder_date", endOfMonthISO)
+            .eq("completed", false);
+
+          // Contar tasks futuras
+          const { count: tasksCount } = await supabase
+            .from("tasks")
+            .select("*", { count: 'exact', head: true })
+            .eq("lead_id", lead.id)
+            .gt("due_date", now)
+            .lt("due_date", endOfMonthISO)
+            .neq("status", "concluida");
+
+          const totalActivities = (meetingsCount || 0) + (remindersCount || 0) + (tasksCount || 0);
+
+          return {
+            ...lead,
+            hasFutureActivity: totalActivities > 0,
+            futureActivitiesCount: totalActivities
+          };
+        })
+      );
+
+      return leadsWithActivity;
     },
   });
 
@@ -137,6 +190,11 @@ const Kanban = () => {
     if (!leads) return [];
 
     return leads.filter((lead: any) => {
+      // Se activeOnly está ligado, filtrar apenas leads com atividades futuras
+      if (activeOnly && !lead.hasFutureActivity) {
+        return false;
+      }
+
       // Period filter
       if (periodFilter !== "all") {
         const days = getDaysInCurrentStage(lead.updated_at);
@@ -162,7 +220,7 @@ const Kanban = () => {
 
       return true;
     });
-  }, [leads, periodFilter, statusFilter, searchTerm]);
+  }, [leads, activeOnly, periodFilter, statusFilter, searchTerm]);
 
   // Visible columns based on activeOnly
   const visibleColumns = useMemo(() => {
@@ -241,21 +299,29 @@ const Kanban = () => {
                       className="cursor-move hover:shadow-lg transition-all"
                     >
                       <CardHeader className="p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-sm flex-1">{lead.name}</CardTitle>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant={badgeVariant} className="text-xs shrink-0">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {daysText}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Neste estágio desde {updatedDate}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="text-sm flex-1">{lead.name}</CardTitle>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant={badgeVariant} className="text-xs shrink-0">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {daysText}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Neste estágio desde {updatedDate}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          {lead.hasFutureActivity && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {lead.futureActivitiesCount} agendada{lead.futureActivitiesCount > 1 ? 's' : ''}
+                            </Badge>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent className="p-4 pt-0 space-y-2">
