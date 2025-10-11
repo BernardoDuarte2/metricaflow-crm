@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Search, Download, Upload, Trash2, CheckSquare, Square } from "lucide-react";
+import { Search, Download, Upload, Trash2, CheckSquare, Square, Sparkles } from "lucide-react";
 
 // ======= Types =======
 interface Lead {
@@ -155,6 +155,9 @@ export default function LocalProspector() {
   const [q, setQ] = useState("");
   const [onlyWhats, setOnlyWhats] = useState(false);
   const [minRating, setMinRating] = useState(0);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -366,6 +369,77 @@ export default function LocalProspector() {
     toast.success("Todos os leads foram apagados");
   }
 
+  async function searchLeadsOnline() {
+    if (!searchQuery.trim()) {
+      return toast.error("Digite o que você quer buscar");
+    }
+
+    setIsSearching(true);
+    toast.info("Buscando leads no Google, LinkedIn e Instagram...");
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-leads`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ query: searchQuery }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Erro ao buscar leads");
+      }
+
+      console.log("Leads encontrados:", data.leads);
+
+      // Adiciona os leads encontrados (sem duplicar por telefone)
+      let addedCount = 0;
+      for (const foundLead of data.leads) {
+        const phone = cleanPhoneBR(foundLead.telefone);
+        
+        // Se não tem telefone ou já existe com esse telefone, pula
+        if (!phone || leads.some((l) => cleanPhoneBR(l.telefone) === phone)) {
+          continue;
+        }
+
+        const newLead: Lead = {
+          id: uid(),
+          nome: foundLead.nome || "Lead sem nome",
+          telefone: phone,
+          cidade: foundLead.cidade || "",
+          estado: foundLead.estado || "",
+          rating: 0,
+          notas: `Fonte: ${foundLead.source}\nLink: ${foundLead.link || "N/A"}\n${foundLead.snippet || ""}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          status: "novo",
+        };
+
+        setLeads((prev) => [newLead, ...prev]);
+        addedCount++;
+      }
+
+      if (addedCount === 0) {
+        toast.warning("Nenhum lead novo foi encontrado");
+      } else {
+        toast.success(`${addedCount} leads adicionados!`);
+      }
+
+      setSearchQuery("");
+    } catch (error) {
+      console.error("Erro ao buscar leads:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao buscar leads");
+    } finally {
+      setIsSearching(false);
+    }
+  }
+
   if (!user) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-background p-4">
@@ -427,10 +501,49 @@ export default function LocalProspector() {
         </div>
       </div>
 
-      {/* Novo Lead */}
+      {/* Busca Automática de Leads */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Buscar Leads Automaticamente
+          </CardTitle>
+          <CardDescription>
+            Digite o tipo de negócio e localização (ex: "salão de beleza blumenau") e encontraremos leads no Google, LinkedIn e Instagram
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Input
+                placeholder="Ex: salão de beleza blumenau"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchLeadsOnline()}
+                disabled={isSearching}
+              />
+            </div>
+            <Button onClick={searchLeadsOnline} disabled={isSearching || !searchQuery.trim()}>
+              {isSearching ? (
+                <>
+                  <Search className="h-4 w-4 mr-2 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Buscar Leads
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Novo Lead Manual */}
       <Card>
         <CardHeader>
-          <CardTitle>Novo Lead</CardTitle>
+          <CardTitle>Adicionar Lead Manualmente</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
