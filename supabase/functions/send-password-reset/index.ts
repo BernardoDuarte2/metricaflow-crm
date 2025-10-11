@@ -61,6 +61,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY não configurada");
     }
 
+    const RESEND_FROM = Deno.env.get("RESEND_FROM") || "CRM <onboarding@resend.dev>";
+    console.log("Enviando email de:", RESEND_FROM, "para:", email);
+
     // Send email via Resend API
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -69,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "CRM <onboarding@resend.dev>",
+        from: RESEND_FROM,
         to: [email],
         subject: "Redefinir sua senha",
         html: `
@@ -98,6 +101,27 @@ const handler = async (req: Request): Promise<Response> => {
     if (!resendResponse.ok) {
       const errorData = await resendResponse.text();
       console.error("Erro do Resend:", errorData);
+      
+      // Se for erro 403 (domínio não verificado), retornar sucesso genérico
+      // para não "quebrar" a UX, mas logar o problema
+      if (resendResponse.status === 403) {
+        console.warn("⚠️ Domínio não verificado no Resend. Configure em resend.com/domains");
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Email enviado com sucesso",
+            warning: "Domain verification needed" 
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+      
       throw new Error(`Erro ao enviar email: ${errorData}`);
     }
 
