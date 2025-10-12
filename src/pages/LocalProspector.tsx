@@ -680,12 +680,12 @@ export default function LocalProspector() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="vendedor">Vendedor</Label>
-              <Select value={vendedor} onValueChange={setVendedor}>
+              <Select value={vendedor || "none"} onValueChange={(val) => setVendedor(val === "none" ? "" : val)}>
                 <SelectTrigger id="vendedor">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem vendedor</SelectItem>
+                  <SelectItem value="none">Sem vendedor</SelectItem>
                   <SelectItem value="João Silva">João Silva</SelectItem>
                   <SelectItem value="Maria Santos">Maria Santos</SelectItem>
                   <SelectItem value="Pedro Costa">Pedro Costa</SelectItem>
@@ -876,12 +876,15 @@ export default function LocalProspector() {
                       )}
                     </td>
                     <td className="p-3">
-                      <Select value={l.vendedor || ""} onValueChange={(value) => updateLead(l.id, { vendedor: value })}>
+                      <Select 
+                        value={l.vendedor || "none"} 
+                        onValueChange={(val) => updateLead(l.id, { vendedor: val === "none" ? "" : val })}
+                      >
                         <SelectTrigger className="w-32">
                           <SelectValue placeholder="Sem vendedor" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sem vendedor</SelectItem>
+                          <SelectItem value="none">Sem vendedor</SelectItem>
                           <SelectItem value="João Silva">João Silva</SelectItem>
                           <SelectItem value="Maria Santos">Maria Santos</SelectItem>
                           <SelectItem value="Pedro Costa">Pedro Costa</SelectItem>
