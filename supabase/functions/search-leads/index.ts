@@ -37,7 +37,52 @@ serve(async (req) => {
       throw new Error("SERPER_API_KEY não configurada");
     }
 
+    // Log masked key prefix for debugging
+    const keyPrefix = SERPER_API_KEY.substring(0, 4);
+    const keySuffix = SERPER_API_KEY.substring(SERPER_API_KEY.length - 4);
+    console.log(`SERPER_API_KEY: ${keyPrefix}...${keySuffix}`);
+
+    // Test Serper API key with a simple ping
+    console.log("Testando chave do Serper...");
+    try {
+      const pingResponse = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: {
+          "X-API-KEY": SERPER_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ q: "test", num: 1 }),
+      });
+
+      if (pingResponse.status === 403) {
+        const errorText = await pingResponse.text();
+        console.error("Chave do Serper inválida ou sem permissão:", errorText);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Chave do Serper inválida, expirada ou sem créditos. Status: 403 Unauthorized",
+            details: errorText,
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (!pingResponse.ok) {
+        const errorText = await pingResponse.text();
+        console.warn("Ping do Serper retornou erro:", pingResponse.status, errorText);
+      } else {
+        console.log("Chave do Serper OK");
+      }
+    } catch (pingError) {
+      console.error("Erro ao testar chave do Serper:", pingError);
+    }
+
     console.log("Buscando leads para:", query);
+
+    const errors: Record<string, string> = {};
 
     const results: SearchResult[] = [];
     const cityMatch = query.match(/([\w\s]+)(?:\s*-?\s*[A-Z]{2})?$/i);
@@ -79,6 +124,7 @@ serve(async (req) => {
       } else {
         const errorText = await placesResponse.text();
         console.error("Erro Google Places (status:", placesResponse.status, "):", errorText);
+        errors["Google Places"] = `Status ${placesResponse.status}: ${errorText}`;
       }
     } catch (error) {
       console.error("Erro ao buscar no Google Places:", error);
@@ -129,6 +175,7 @@ serve(async (req) => {
         } else {
           const errorText = await googleResponse.text();
           console.error("Erro Google Search (status:", googleResponse.status, "):", errorText);
+          errors[`Google Search (${searchQuery})`] = `Status ${googleResponse.status}: ${errorText}`;
         }
       } catch (error) {
         console.error("Erro ao buscar no Google:", error);
@@ -171,6 +218,7 @@ serve(async (req) => {
       } else {
         const errorText = await linkedinResponse.text();
         console.error("Erro LinkedIn (status:", linkedinResponse.status, "):", errorText);
+        errors["LinkedIn"] = `Status ${linkedinResponse.status}: ${errorText}`;
       }
     } catch (error) {
       console.error("Erro ao buscar no LinkedIn:", error);
@@ -212,6 +260,7 @@ serve(async (req) => {
       } else {
         const errorText = await instagramResponse.text();
         console.error("Erro Instagram (status:", instagramResponse.status, "):", errorText);
+        errors["Instagram"] = `Status ${instagramResponse.status}: ${errorText}`;
       }
     } catch (error) {
       console.error("Erro ao buscar no Instagram:", error);
@@ -219,11 +268,34 @@ serve(async (req) => {
 
     console.log(`Total de leads encontrados: ${results.length}`);
 
+    // Se todos os provedores falharam e não temos resultados
+    if (results.length === 0 && Object.keys(errors).length > 0) {
+      const errorSummary = Object.entries(errors)
+        .map(([provider, error]) => `${provider}: ${error}`)
+        .join("\n");
+      
+      console.error("Todos os provedores falharam:", errorSummary);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Todas as fontes de busca falharam",
+          details: errorSummary,
+          errors,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         leads: results,
         total: results.length,
+        errors: Object.keys(errors).length > 0 ? errors : undefined,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

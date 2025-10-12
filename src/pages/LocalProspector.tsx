@@ -418,10 +418,40 @@ export default function LocalProspector() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || `Erro ${response.status}: ${response.statusText}`);
+        const errorMsg = data.error || `Erro ${response.status}: ${response.statusText}`;
+        const details = data.details || "";
+        
+        console.error("Erro da API:", errorMsg, details);
+        
+        // Mensagem específica para erro de autorização
+        if (response.status === 403 || errorMsg.includes("403") || errorMsg.includes("Unauthorized")) {
+          toast.error(
+            "❌ Erro de Autorização do Serper\n\n" +
+            "A chave da API está inválida, expirada ou sem créditos.\n" +
+            "Entre em contato com o suporte para renovar a chave.",
+            { duration: 8000 }
+          );
+        } else if (data.errors) {
+          // Mostrar erros detalhados de cada provedor
+          const errorList = Object.entries(data.errors)
+            .map(([provider, error]) => `• ${provider}: ${error}`)
+            .join("\n");
+          toast.error(
+            `Erro ao buscar leads:\n${errorMsg}\n\nDetalhes:\n${errorList}`,
+            { duration: 8000 }
+          );
+        } else {
+          toast.error(`Erro ao buscar leads:\n${errorMsg}${details ? `\n${details}` : ""}`, { duration: 6000 });
+        }
+        return;
       }
 
       console.log("Leads encontrados:", data.leads);
+      
+      // Se houve erros parciais mas ainda temos resultados
+      if (data.errors) {
+        console.warn("Alguns provedores falharam:", data.errors);
+      }
 
       // Estatísticas
       let withPhone = 0;
