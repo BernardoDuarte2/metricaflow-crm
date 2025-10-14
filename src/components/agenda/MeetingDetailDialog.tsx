@@ -181,6 +181,13 @@ const MeetingDetailDialog = ({ meeting, open, onOpenChange, onRefetch }: Meeting
               </span>
             </div>
 
+            {meeting.created_by_profile && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <UserCircle className="h-4 w-4" />
+                <span>Criado por: <strong>{meeting.created_by_profile.name}</strong></span>
+              </div>
+            )}
+
             {meeting.lead && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <UserCircle className="h-4 w-4" />
