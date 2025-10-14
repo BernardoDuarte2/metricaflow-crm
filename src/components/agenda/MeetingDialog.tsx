@@ -122,7 +122,7 @@ const MeetingDialog = ({ open, onOpenChange, leads, users, onSuccess, meeting }:
             description: values.description,
             start_time: startTime.toISOString(),
             end_time: endTime.toISOString(),
-            lead_id: values.leadId || null,
+            lead_id: values.leadId && values.leadId !== "none" ? values.leadId : null,
           })
           .eq("id", meeting.id);
 
@@ -160,7 +160,7 @@ const MeetingDialog = ({ open, onOpenChange, leads, users, onSuccess, meeting }:
             description: values.description,
             start_time: startTime.toISOString(),
             end_time: endTime.toISOString(),
-            lead_id: values.leadId || null,
+            lead_id: values.leadId && values.leadId !== "none" ? values.leadId : null,
             created_by: user.id,
           })
           .select()
