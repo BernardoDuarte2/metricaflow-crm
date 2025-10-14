@@ -13,27 +13,27 @@ interface MeetingCardProps {
 const MeetingCard = ({ meeting, onRefetch }: MeetingCardProps) => {
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBorderColor = (status: string) => {
     switch (status) {
       case "agendada":
-        return "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20";
+        return "border-l-[#1a73e8]";
       case "realizada":
-        return "bg-green-500/10 border-green-500/20 hover:bg-green-500/20";
+        return "border-l-[#0f9d58]";
       case "cancelada":
-        return "bg-red-500/10 border-red-500/20 hover:bg-red-500/20";
+        return "border-l-[#ea4335]";
       default:
-        return "bg-muted hover:bg-muted/80";
+        return "border-l-muted";
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "agendada":
-        return "bg-blue-500/20 text-blue-700 dark:text-blue-300";
+        return "bg-[#1a73e8]/10 text-[#1a73e8]";
       case "realizada":
-        return "bg-green-500/20 text-green-700 dark:text-green-300";
+        return "bg-[#0f9d58]/10 text-[#0f9d58]";
       case "cancelada":
-        return "bg-red-500/20 text-red-700 dark:text-red-300";
+        return "bg-[#ea4335]/10 text-[#ea4335]";
       default:
         return "";
     }
@@ -44,13 +44,14 @@ const MeetingCard = ({ meeting, onRefetch }: MeetingCardProps) => {
       <div
         onClick={() => setDetailOpen(true)}
         className={cn(
-          "p-2 rounded-md border cursor-pointer transition-colors text-xs",
-          getStatusColor(meeting.status)
+          "p-2.5 rounded-md border border-l-4 cursor-pointer transition-all duration-200 text-xs",
+          "bg-background hover:shadow-md hover:scale-[1.02]",
+          getStatusBorderColor(meeting.status)
         )}
       >
-        <div className="flex items-start justify-between gap-1 mb-1">
-          <p className="font-medium line-clamp-1">{meeting.title}</p>
-          <Badge variant="secondary" className={cn("text-[10px] px-1 py-0", getStatusBadgeColor(meeting.status))}>
+        <div className="flex items-start justify-between gap-1 mb-1.5">
+          <p className="font-semibold line-clamp-1">{meeting.title}</p>
+          <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0.5 shrink-0", getStatusBadgeColor(meeting.status))}>
             {meeting.status}
           </Badge>
         </div>
