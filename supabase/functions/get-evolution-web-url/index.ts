@@ -60,8 +60,16 @@ serve(async (req) => {
     const evolutionInstance = Deno.env.get('EVOLUTION_INSTANCE');
     const evolutionApiKey = Deno.env.get('BERNARDO');
 
+    console.log('Evolution API URL:', evolutionApiUrl);
+    console.log('Evolution Instance:', evolutionInstance);
+    console.log('Evolution API Key present:', !!evolutionApiKey);
+
     if (!evolutionApiUrl || !evolutionInstance || !evolutionApiKey) {
-      console.error('Missing Evolution API configuration');
+      console.error('Missing Evolution API configuration', {
+        hasUrl: !!evolutionApiUrl,
+        hasInstance: !!evolutionInstance,
+        hasApiKey: !!evolutionApiKey
+      });
       return new Response(
         JSON.stringify({ error: 'Configuração da Evolution API não encontrada' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -71,7 +79,8 @@ serve(async (req) => {
     // Build the Evolution API web interface URL
     const webUrl = `${evolutionApiUrl}/manager/#/instances/${evolutionInstance}/chats`;
 
-    console.log('Generated Evolution Web URL for user:', user.id);
+    console.log('Generated Evolution Web URL:', webUrl);
+    console.log('For user:', user.id);
 
     return new Response(
       JSON.stringify({ 
