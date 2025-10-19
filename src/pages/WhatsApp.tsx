@@ -3,12 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MessageCircle, Clock } from "lucide-react";
+import { Search, MessageCircle, Clock, RefreshCw, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { WhatsAppChat } from "@/components/whatsapp/WhatsAppChat";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const WhatsApp = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,6 +20,18 @@ const WhatsApp = () => {
     name: string;
     phone: string;
   } | null>(null);
+  const [iframeKey, setIframeKey] = useState(0);
+  const { toast } = useToast();
+
+  // Get Evolution Web URL
+  const { data: evolutionWebData, isLoading: isLoadingWebUrl } = useQuery({
+    queryKey: ["evolution-web-url"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("get-evolution-web-url");
+      if (error) throw error;
+      return data as { url: string; instance: string; apiKey: string };
+    },
+  });
 
   // Buscar todas as conversas do WhatsApp
   const { data: conversations, isLoading } = useQuery({
@@ -106,6 +121,20 @@ const WhatsApp = () => {
     );
   }
 
+  const handleReloadIframe = () => {
+    setIframeKey(prev => prev + 1);
+    toast({
+      title: "WhatsApp Web recarregado",
+      description: "A interface foi atualizada",
+    });
+  };
+
+  const handleOpenInNewTab = () => {
+    if (evolutionWebData?.url) {
+      window.open(evolutionWebData.url, '_blank');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -121,76 +150,145 @@ const WhatsApp = () => {
         </Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar por nome ou telefone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[600px]">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
-            ) : filteredConversations && filteredConversations.length > 0 ? (
-              <div className="space-y-2">
-                {filteredConversations.map((conv) => (
-                  <button
-                    key={conv.lead_id}
-                    onClick={() =>
-                      setSelectedLead({
-                        id: conv.lead_id,
-                        name: conv.lead_name,
-                        phone: conv.lead_phone,
-                      })
-                    }
-                    className="w-full text-left p-4 rounded-lg border hover:bg-accent transition-colors"
+      <Tabs defaultValue="web" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="web">WhatsApp Web Live</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="web" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  WhatsApp Web
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReloadIframe}
+                    disabled={isLoadingWebUrl}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold truncate">
-                            {conv.lead_name}
-                          </h3>
-                          <Badge variant="outline" className="text-xs">
-                            {messageCounts?.get(conv.lead_id) || 0} msgs
-                          </Badge>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Recarregar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenInNewTab}
+                    disabled={isLoadingWebUrl || !evolutionWebData}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Nova Aba
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingWebUrl ? (
+                <div className="flex items-center justify-center py-32">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+                </div>
+              ) : evolutionWebData?.url ? (
+                <div className="relative">
+                  <iframe
+                    key={iframeKey}
+                    src={evolutionWebData.url}
+                    className="w-full h-[calc(100vh-300px)] border-0 rounded-lg"
+                    allow="microphone; camera; geolocation"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                    title="WhatsApp Web - Evolution API"
+                  />
+                  <div className="absolute top-2 right-2 bg-green-500 h-2 w-2 rounded-full animate-pulse" 
+                       title="Conectado" />
+                </div>
+              ) : (
+                <div className="text-center py-32 text-muted-foreground">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Erro ao carregar WhatsApp Web</p>
+                  <p className="text-sm mt-2">Verifique se você tem permissão de gestor</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historico" className="mt-6">
+
+          <Card>
+            <CardHeader>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar por nome ou telefone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px]">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
+                ) : filteredConversations && filteredConversations.length > 0 ? (
+                  <div className="space-y-2">
+                    {filteredConversations.map((conv) => (
+                      <button
+                        key={conv.lead_id}
+                        onClick={() =>
+                          setSelectedLead({
+                            id: conv.lead_id,
+                            name: conv.lead_name,
+                            phone: conv.lead_phone,
+                          })
+                        }
+                        className="w-full text-left p-4 rounded-lg border hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold truncate">
+                                {conv.lead_name}
+                              </h3>
+                              <Badge variant="outline" className="text-xs">
+                                {messageCounts?.get(conv.lead_id) || 0} msgs
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              {conv.lead_phone}
+                            </p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {conv.direction === "sent" ? "Você: " : ""}
+                              {conv.last_message}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {formatDistanceToNow(new Date(conv.last_message_time), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })}
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {conv.lead_phone}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {conv.direction === "sent" ? "Você: " : ""}
-                          {conv.last_message}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(conv.last_message_time), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhuma conversa encontrada</p>
-              </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhuma conversa encontrada</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
