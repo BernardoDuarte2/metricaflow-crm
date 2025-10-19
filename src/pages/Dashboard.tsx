@@ -12,6 +12,8 @@ import DashboardFilters from "@/components/dashboard/DashboardFilters";
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { Users, CheckCircle, Clock, TrendingUp, DollarSign, Target, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -429,6 +431,8 @@ const Dashboard = () => {
     enabled: !!profile,
   });
 
+  const [isExporting, setIsExporting] = useState(false);
+
   const handleExportPDF = async () => {
     console.log("Botão de exportar PDF clicado");
 
@@ -437,6 +441,7 @@ const Dashboard = () => {
       return;
     }
 
+    setIsExporting(true);
     const loadingToast = toast.loading("Gerando PDF com gráficos...");
 
     try {
@@ -567,6 +572,8 @@ const Dashboard = () => {
       toast.dismiss(loadingToast);
       console.error("Erro ao gerar PDF:", error);
       toast.error(`Erro ao gerar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -614,15 +621,39 @@ const Dashboard = () => {
           {/* Botão de Exportar PDF */}
           <Button
             onClick={handleExportPDF}
-            className="relative z-30 pointer-events-auto bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 group"
+            disabled={isExporting || !stats}
+            className="relative z-30 pointer-events-auto bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
             size="lg"
           >
-            <FileDown className="mr-2 h-5 w-5 group-hover:animate-bounce" />
-            Exportar Relatório PDF
+            {isExporting ? (
+              <>
+                <LoadingSpinner className="mr-2 h-5 w-5" />
+                Gerando PDF...
+              </>
+            ) : (
+              <>
+                <FileDown className="mr-2 h-5 w-5 group-hover:animate-bounce" />
+                Exportar Relatório PDF
+              </>
+            )}
           </Button>
         </div>
 
-        <div id="metrics-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+        {!stats ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-32 rounded-lg" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Skeleton className="h-[400px] rounded-lg" />
+              <Skeleton className="h-[400px] rounded-lg" />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div id="metrics-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
         <MetricCard
           title="Total de Leads"
           value={stats?.totalLeads || 0}
@@ -680,6 +711,8 @@ const Dashboard = () => {
           <SalesPerformanceDetailedChart data={detailedPerformanceData} />
         </div>
       )}
+          </>
+        )}
       </div>
     </div>
   );

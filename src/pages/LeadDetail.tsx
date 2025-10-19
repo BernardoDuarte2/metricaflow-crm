@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Select,
   SelectContent,
@@ -21,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import { LinkedTasks } from "@/components/tasks/LinkedTasks";
+import { noteFormSchema, NoteFormData } from "@/lib/schemas";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +64,7 @@ const LeadDetail = () => {
   const [noteType, setNoteType] = useState("Contato feito");
   const [customNoteType, setCustomNoteType] = useState("");
   const [returnDate, setReturnDate] = useState<Date>();
+  const [noteErrors, setNoteErrors] = useState<Partial<Record<keyof NoteFormData, string>>>({});
 
   const { data: lead, isLoading } = useQuery({
     queryKey: ["lead", id],
@@ -116,7 +120,22 @@ const LeadDetail = () => {
   });
 
   const addNoteMutation = useMutation({
-    mutationFn: async (data: { content: string; note_type: string; return_date?: Date }) => {
+    mutationFn: async (data: NoteFormData) => {
+      // Validar dados
+      const validation = noteFormSchema.safeParse(data);
+      if (!validation.success) {
+        const errors: Partial<Record<keyof NoteFormData, string>> = {};
+        validation.error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0] as keyof NoteFormData] = err.message;
+          }
+        });
+        setNoteErrors(errors);
+        throw new Error("Dados inválidos. Verifique os campos.");
+      }
+
+      setNoteErrors({});
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -289,7 +308,22 @@ const LeadDetail = () => {
 
 
   if (isLoading) {
-    return <div className="p-6">Carregando...</div>;
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-[300px] rounded-lg" />
+          <Skeleton className="h-[300px] rounded-lg" />
+        </div>
+        <Skeleton className="h-[400px] rounded-lg" />
+      </div>
+    );
   }
 
   if (!lead) {
@@ -391,9 +425,9 @@ const LeadDetail = () => {
             <CardContent>
               <form onSubmit={handleAddNote} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="note-type">Tipo de Nota</Label>
+                  <Label htmlFor="note-type">Tipo de Nota *</Label>
                   <Select value={noteType} onValueChange={setNoteType}>
-                    <SelectTrigger>
+                    <SelectTrigger className={noteErrors.note_type ? "border-destructive" : ""}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -404,23 +438,27 @@ const LeadDetail = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {noteErrors.note_type && (
+                    <p className="text-sm text-destructive">{noteErrors.note_type}</p>
+                  )}
                 </div>
 
                 {noteType === "Personalizado" && (
                   <div className="space-y-2">
-                    <Label htmlFor="custom-type">Tipo Personalizado</Label>
+                    <Label htmlFor="custom-type">Tipo Personalizado *</Label>
                     <Input
                       id="custom-type"
                       value={customNoteType}
                       onChange={(e) => setCustomNoteType(e.target.value)}
                       placeholder="Digite o tipo da nota"
                       required
+                      className={noteErrors.note_type ? "border-destructive" : ""}
                     />
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="note-content">Nota</Label>
+                  <Label htmlFor="note-content">Nota *</Label>
                   <Textarea
                     id="note-content"
                     value={noteContent}
@@ -428,7 +466,11 @@ const LeadDetail = () => {
                     placeholder="Digite sua nota aqui..."
                     rows={4}
                     required
+                    className={noteErrors.content ? "border-destructive" : ""}
                   />
+                  {noteErrors.content && (
+                    <p className="text-sm text-destructive">{noteErrors.content}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -461,9 +503,22 @@ const LeadDetail = () => {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Nota
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={addNoteMutation.isPending}
+                >
+                  {addNoteMutation.isPending ? (
+                    <>
+                      <LoadingSpinner className="mr-2 h-4 w-4" />
+                      Adicionando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Nota
+                    </>
+                  )}
                 </Button>
               </form>
             </CardContent>

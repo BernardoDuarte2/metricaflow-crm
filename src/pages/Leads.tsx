@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +34,7 @@ import {
 import { Plus, Eye, ChevronDown, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -44,6 +47,7 @@ import { Badge } from "@/components/ui/badge";
 import { startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
 import { LeadFilters } from "@/components/leads/LeadFilters";
 import { LeadStats } from "@/components/leads/LeadStats";
+import { leadFormSchema, LeadFormData } from "@/lib/schemas";
 
 const statusColors: Record<string, string> = {
   novo: "bg-blue-500",
@@ -59,7 +63,8 @@ const Leads = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof LeadFormData, string>>>({});
+  const [formData, setFormData] = useState<LeadFormData>({
     name: "",
     email: "",
     phone: "",
@@ -171,7 +176,7 @@ const Leads = () => {
     }
   };
 
-  const { data: leads } = useQuery({
+  const { data: leads, isLoading: isLoadingLeads } = useQuery({
     queryKey: ["leads", period, searchTerm, statusFilter, responsibleFilter],
     queryFn: async () => {
       const { start, end } = getDateRange(period);
@@ -241,7 +246,22 @@ const Leads = () => {
   };
 
   const createLeadMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: LeadFormData) => {
+      // Validar dados do formulário
+      const validation = leadFormSchema.safeParse(data);
+      if (!validation.success) {
+        const errors: Partial<Record<keyof LeadFormData, string>> = {};
+        validation.error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0] as keyof LeadFormData] = err.message;
+          }
+        });
+        setFormErrors(errors);
+        throw new Error("Dados inválidos. Verifique os campos.");
+      }
+
+      setFormErrors({});
+
       // Use getSession() instead of getUser() - more reliable
       const {
         data: { session },
@@ -275,6 +295,7 @@ const Leads = () => {
       queryClient.invalidateQueries({ queryKey: ["kanban-leads"] });
       toast({ title: "Lead cadastrado com sucesso!" });
       setOpen(false);
+      setFormErrors({});
       setFormData({
         name: "",
         email: "",
@@ -330,7 +351,22 @@ const Leads = () => {
   const canEditAssignment = isGestor;
 
   // Renderizar a tabela de leads
-  const renderLeadsTable = () => (
+  const renderLeadsTable = () => {
+    if (isLoadingLeads) {
+      return (
+        <div className="bg-card rounded-lg border p-6 space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex gap-4">
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 w-32" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
     <div className="bg-card rounded-lg border">
       <Table>
         <TableHeader>
@@ -407,7 +443,8 @@ const Leads = () => {
         </TableBody>
       </Table>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -431,7 +468,7 @@ const Leads = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name">Nome *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -439,7 +476,11 @@ const Leads = () => {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   required
+                  className={formErrors.name ? "border-destructive" : ""}
                 />
+                {formErrors.name && (
+                  <p className="text-sm text-destructive">{formErrors.name}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -450,10 +491,14 @@ const Leads = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
+                  className={formErrors.email ? "border-destructive" : ""}
                 />
+                {formErrors.email && (
+                  <p className="text-sm text-destructive">{formErrors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone*</Label>
+                <Label htmlFor="phone">Telefone *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -462,7 +507,11 @@ const Leads = () => {
                   }
                   placeholder="(00) 00000-0000"
                   required
+                  className={formErrors.phone ? "border-destructive" : ""}
                 />
+                {formErrors.phone && (
+                  <p className="text-sm text-destructive">{formErrors.phone}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Empresa</Label>
@@ -521,8 +570,19 @@ const Leads = () => {
                   </Select>
                 </div>
               )}
-              <Button type="submit" className="w-full">
-                Cadastrar
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={createLeadMutation.isPending}
+              >
+                {createLeadMutation.isPending ? (
+                  <>
+                    <LoadingSpinner className="mr-2 h-4 w-4" />
+                    Cadastrando...
+                  </>
+                ) : (
+                  "Cadastrar Lead"
+                )}
               </Button>
             </form>
           </DialogContent>

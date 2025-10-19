@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
 import { TaskStats } from "@/components/tasks/TaskStats";
@@ -110,8 +111,21 @@ const Tasks = () => {
       <TaskFilters filters={filters} onFiltersChange={setFilters} />
 
       {isLoading ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Carregando tarefas...</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="w-3 h-3 rounded-full" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-8 ml-auto" />
+              </div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((j) => (
+                  <Skeleton key={j} className="h-32 rounded-lg" />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <TaskKanban
