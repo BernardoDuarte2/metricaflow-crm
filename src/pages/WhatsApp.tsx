@@ -24,13 +24,23 @@ const WhatsApp = () => {
   const { toast } = useToast();
 
   // Get Evolution Web URL
-  const { data: evolutionWebData, isLoading: isLoadingWebUrl } = useQuery({
+  const { data: evolutionWebData, isLoading: isLoadingWebUrl, error: webUrlError } = useQuery({
     queryKey: ["evolution-web-url"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("get-evolution-web-url");
-      if (error) throw error;
-      return data as { url: string; instance: string; apiKey: string };
+      try {
+        const { data, error } = await supabase.functions.invoke("get-evolution-web-url");
+        if (error) {
+          console.error('Error fetching Evolution URL:', error);
+          throw error;
+        }
+        console.log('Evolution Web URL data:', data);
+        return data as { url: string; instance: string; apiKey: string };
+      } catch (error) {
+        console.error('Exception in evolution-web-url query:', error);
+        throw error;
+      }
     },
+    retry: false,
   });
 
   // Buscar todas as conversas do WhatsApp
@@ -190,6 +200,24 @@ const WhatsApp = () => {
               {isLoadingWebUrl ? (
                 <div className="flex items-center justify-center py-32">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+                  <p className="mt-4 text-muted-foreground">Carregando WhatsApp Web...</p>
+                </div>
+              ) : webUrlError ? (
+                <div className="text-center py-32 text-muted-foreground">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-destructive font-semibold mb-2">Erro ao carregar WhatsApp Web</p>
+                  <p className="text-sm">
+                    {String(webUrlError).includes('403') || String(webUrlError).includes('Não autorizado')
+                      ? 'Acesso restrito: Apenas gestores podem acessar o WhatsApp Web'
+                      : 'Erro ao conectar com a Evolution API'}
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => window.location.reload()}
+                  >
+                    Tentar novamente
+                  </Button>
                 </div>
               ) : evolutionWebData?.url ? (
                 <div className="relative">
@@ -207,8 +235,8 @@ const WhatsApp = () => {
               ) : (
                 <div className="text-center py-32 text-muted-foreground">
                   <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Erro ao carregar WhatsApp Web</p>
-                  <p className="text-sm mt-2">Verifique se você tem permissão de gestor</p>
+                  <p>URL não disponível</p>
+                  <p className="text-sm mt-2">Verifique sua conexão e tente novamente</p>
                 </div>
               )}
             </CardContent>
