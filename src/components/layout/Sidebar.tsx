@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, KanbanSquare, UserCog, Settings, LogOut, Plug, Calendar, ListTodo, Database } from "lucide-react";
+import { LayoutDashboard, Users, KanbanSquare, UserCog, Settings, LogOut, Plug, Calendar, ListTodo, Database, Upload } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
