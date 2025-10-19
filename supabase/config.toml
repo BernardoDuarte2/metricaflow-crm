@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.get-evolution-web-url]
 verify_jwt = true
+
+[functions.cleanup-completed-tasks]
+verify_jwt = false
