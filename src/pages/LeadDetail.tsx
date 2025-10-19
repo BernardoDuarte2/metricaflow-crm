@@ -103,6 +103,22 @@ const LeadDetail = () => {
     },
   });
 
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return null;
+      
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .single();
+      
+      return data?.role;
+    },
+  });
+
   const addNoteMutation = useMutation({
     mutationFn: async (data: { content: string; note_type: string; return_date?: Date }) => {
       const {
@@ -565,6 +581,7 @@ const LeadDetail = () => {
               leadId={lead.id} 
               leadPhone={lead.phone} 
               leadName={lead.name}
+              readOnly={userRole === 'vendedor'}
             />
           ) : (
             <Card className="p-6 text-center">

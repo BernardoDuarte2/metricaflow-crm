@@ -14,9 +14,10 @@ interface WhatsAppChatProps {
   leadId: string;
   leadPhone: string;
   leadName: string;
+  readOnly?: boolean;
 }
 
-export function WhatsAppChat({ leadId, leadPhone, leadName }: WhatsAppChatProps) {
+export function WhatsAppChat({ leadId, leadPhone, leadName, readOnly = false }: WhatsAppChatProps) {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -163,26 +164,36 @@ export function WhatsAppChat({ leadId, leadPhone, leadName }: WhatsAppChatProps)
         </div>
       </ScrollArea>
 
-      <div className="mt-4 pt-4 border-t flex gap-2">
-        <Input
-          placeholder="Digite sua mensagem..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          disabled={sendMessageMutation.isPending}
-        />
-        <Button
-          onClick={handleSend}
-          disabled={!message.trim() || sendMessageMutation.isPending}
-          size="icon"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+      <div className="mt-4 pt-4 border-t">
+        {readOnly ? (
+          <div className="bg-muted p-3 rounded-lg text-center">
+            <p className="text-sm text-muted-foreground">
+              Modo visualização - Apenas gestores podem enviar mensagens
+            </p>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Digite sua mensagem..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              disabled={sendMessageMutation.isPending}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!message.trim() || sendMessageMutation.isPending}
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   );
