@@ -17,12 +17,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const columns = [
-  { id: "novo", title: "Novo", color: "bg-blue-500" },
-  { id: "contato_feito", title: "Contato Feito", color: "bg-yellow-500" },
-  { id: "proposta", title: "Proposta", color: "bg-purple-500" },
-  { id: "negociacao", title: "Negociação", color: "bg-orange-500" },
-  { id: "ganho", title: "Ganho", color: "bg-green-500" },
-  { id: "perdido", title: "Perdido", color: "bg-red-500" },
+  { id: "novo", title: "Novo", color: "bg-blue-500", borderColor: "border-blue-500" },
+  { id: "contato_feito", title: "Contato Feito", color: "bg-yellow-500", borderColor: "border-yellow-500" },
+  { id: "proposta", title: "Proposta", color: "bg-purple-500", borderColor: "border-purple-500" },
+  { id: "negociacao", title: "Negociação", color: "bg-orange-500", borderColor: "border-orange-500" },
+  { id: "ganho", title: "Ganho", color: "bg-green-500", borderColor: "border-green-500" },
+  { id: "perdido", title: "Perdido", color: "bg-red-500", borderColor: "border-red-500" },
 ];
 
 const formatPhoneForWhatsApp = (phone: string): string => {
@@ -308,41 +308,49 @@ const Kanban = () => {
                       <Card
                         draggable
                         onDragStart={(e) => handleDragStart(e, lead.id)}
-                        className="cursor-move hover:shadow-md transition-all"
+                        className={`cursor-move hover:shadow-md transition-all border-l-4 ${column.borderColor}`}
                       >
                         <CollapsibleTrigger asChild>
                           <CardHeader className="p-3 cursor-pointer hover:bg-accent/50 transition-colors">
                             <div className="flex items-center justify-between gap-2">
-                              <CardTitle className="text-sm font-medium flex-1 line-clamp-1">
-                                {lead.name}
-                              </CardTitle>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge variant={badgeVariant} className="text-xs">
-                                        {daysText}
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Neste estágio desde {updatedDate}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                              <div className="flex-1 min-w-0">
+                                <CardTitle className="text-sm font-medium line-clamp-1">
+                                  {lead.name}
+                                </CardTitle>
+                                {lead.company && (
+                                  <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                    {lead.company}
+                                  </p>
+                                )}
                               </div>
+                              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
-                            {lead.hasFutureActivity && (
-                              <Badge variant="outline" className="text-xs w-fit mt-1">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {lead.futureActivitiesCount} agendada{lead.futureActivitiesCount > 1 ? 's' : ''}
-                              </Badge>
-                            )}
                           </CardHeader>
                         </CollapsibleTrigger>
                         
                         <CollapsibleContent>
                           <CardContent className="p-3 pt-0 space-y-2 border-t">
+                            <div className="flex items-center gap-2 mb-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant={badgeVariant} className="text-xs">
+                                      {daysText}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Neste estágio desde {updatedDate}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              {lead.hasFutureActivity && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {lead.futureActivitiesCount} agendada{lead.futureActivitiesCount > 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                            </div>
+                            
                             <div className="space-y-1 text-xs text-muted-foreground">
                               {lead.email && <p>📧 {lead.email}</p>}
                               {lead.phone && <p>📱 {lead.phone}</p>}
