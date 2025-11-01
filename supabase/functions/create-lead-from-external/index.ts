@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
       });
 
       return new Response(
-        JSON.stringify({ success: false, error: leadError.message }),
+        JSON.stringify({ success: false, error: 'Erro ao criar lead. Verifique os dados e tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
+        error: 'Erro interno do servidor. Contate o suporte se o problema persistir.' 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

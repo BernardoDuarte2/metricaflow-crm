@@ -134,7 +134,7 @@ serve(async (req) => {
           results.errors++;
           results.error_details.push({
             lead: leadData,
-            error: insertError.message,
+            error: 'Erro ao criar lead',
           });
           continue;
         }
@@ -146,7 +146,7 @@ serve(async (req) => {
         results.errors++;
         results.error_details.push({
           lead: leadData,
-          error: error.message,
+          error: 'Erro ao processar lead',
         });
       }
     }
@@ -223,7 +223,7 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('Erro na importação:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Erro ao processar importação. Verifique os dados e tente novamente.' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
