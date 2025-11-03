@@ -56,7 +56,7 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
       const { error } = await supabase.from("reminders").insert({
         description: values.description,
         reminder_date: values.reminder_date,
-        lead_id: values.lead_id && values.lead_id !== "" ? values.lead_id : null,
+        lead_id: values.lead_id && values.lead_id !== "" && values.lead_id !== "none" ? values.lead_id : null,
         user_id: session?.user?.id,
         completed: false,
       });
@@ -88,7 +88,7 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
         .update({
           description: values.description,
           reminder_date: values.reminder_date,
-          lead_id: values.lead_id && values.lead_id !== "" ? values.lead_id : null,
+          lead_id: values.lead_id && values.lead_id !== "" && values.lead_id !== "none" ? values.lead_id : null,
         })
         .eq("id", reminder?.id);
       if (error) throw error;
@@ -119,13 +119,13 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
         reminder_date: reminder.reminder_date
           ? format(new Date(reminder.reminder_date), "yyyy-MM-dd'T'HH:mm")
           : "",
-        lead_id: reminder.lead_id || "",
+        lead_id: reminder.lead_id || "none",
       });
     } else {
       form.reset({
         description: "",
         reminder_date: "",
-        lead_id: "",
+        lead_id: "none",
       });
     }
   }, [reminder, form]);
@@ -176,7 +176,7 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
                 <SelectValue placeholder="Selecione um lead (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum lead</SelectItem>
+                <SelectItem value="none">Nenhum lead</SelectItem>
                 {leads?.map((lead) => (
                   <SelectItem key={lead.id} value={lead.id}>
                     {lead.name}
