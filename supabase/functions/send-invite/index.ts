@@ -17,8 +17,11 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("=== send-invite invoked ===");
+
   try {
     const { inviteId, email, role, companyName }: SendInviteRequest = await req.json();
+    console.log("Invite request:", { inviteId, email, role, companyName });
     
     // Input validation
     if (!inviteId || !email || !role || !companyName) {
@@ -45,12 +48,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Sending invite email:', { inviteId, email, role, companyName });
-
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const resendFrom = Deno.env.get("RESEND_FROM") || "CRM System <onboarding@resend.dev>";
+    
+    console.log("Resend config:", { 
+      hasApiKey: !!resendApiKey, 
+      from: resendFrom 
+    });
+    
     if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
       throw new Error("RESEND_API_KEY is required");
     }
+    
+    console.log('Sending invite email:', { inviteId, email, role, companyName });
 
     const inviteUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'http://localhost:5173'}/accept-invite?token=${inviteId}`;
     
@@ -64,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "CRM System <onboarding@resend.dev>",
+        from: resendFrom,
         to: [email],
         subject: `Convite para ${companyName}`,
         html: `
@@ -94,6 +105,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!emailResponse.ok) {
       const errorData = await emailResponse.json();
+      console.error("Resend API error:", {
+        status: emailResponse.status,
+        error: errorData
+      });
+      
+      // Erro 403: Domínio não verificado
+      if (emailResponse.status === 403) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Configuração de email incompleta",
+            details: `O domínio usado para envio de emails não foi verificado no Resend. Configure o domínio em https://resend.com/domains e adicione os registros DNS necessários.`,
+            hint: "Durante testes, você pode usar 'onboarding@resend.dev' no secret RESEND_FROM."
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+      
       throw new Error(`Resend API error: ${JSON.stringify(errorData)}`);
     }
 

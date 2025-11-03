@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { usePasswordValidation } from "@/hooks/usePasswordValidation";
 
 const AcceptInvite = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +23,8 @@ const AcceptInvite = () => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const passwordValidation = usePasswordValidation(password);
 
   useEffect(() => {
     if (!token) {
@@ -77,20 +81,20 @@ const AcceptInvite = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
+    
+    if (!passwordValidation.isValid) {
       toast({
-        title: "Erro",
-        description: "As senhas não coincidem.",
+        title: "Senha inválida",
+        description: "A senha não atende aos requisitos de segurança",
         variant: "destructive",
       });
       return;
     }
-
-    if (password.length < 8) {
+    
+    if (password !== confirmPassword) {
       toast({
         title: "Erro",
-        description: "A senha deve ter no mínimo 8 caracteres.",
+        description: "As senhas não coincidem",
         variant: "destructive",
       });
       return;
@@ -103,14 +107,18 @@ const AcceptInvite = () => {
         body: { token, name, password },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Accept invite error:", error);
+        throw error;
+      }
 
       if (data.error) {
+        console.error("Accept invite data error:", data);
         throw new Error(data.error);
       }
 
       toast({
-        title: "Conta criada!",
+        title: "✅ Conta criada!",
         description: "Você já pode fazer login com suas credenciais.",
       });
 
@@ -130,7 +138,7 @@ const AcceptInvite = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -149,11 +157,11 @@ const AcceptInvite = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <Card className="w-full max-w-md shadow-2xl">
         <CardHeader>
           <div className="flex items-center justify-center mb-4">
-            <CheckCircle className="h-12 w-12 text-green-500" />
+            <CheckCircle className="h-12 w-12 text-success" />
           </div>
           <CardTitle className="text-2xl text-center">Você foi convidado!</CardTitle>
           <CardDescription className="text-center">
@@ -190,35 +198,44 @@ const AcceptInvite = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Mínimo 8 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
               />
+              {password && (
+                <PasswordStrength 
+                  password={password}
+                  requirements={passwordValidation.requirements}
+                />
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <Label htmlFor="confirm-password">Confirmar Senha</Label>
               <Input
-                id="confirmPassword"
+                id="confirm-password"
                 type="password"
-                placeholder="Digite a senha novamente"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={8}
               />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-xs text-destructive">As senhas não coincidem</p>
+              )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={submitting || !passwordValidation.isValid || password !== confirmPassword}
+            >
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Criando conta...
                 </>
               ) : (
-                "Aceitar convite"
+                "Criar Conta"
               )}
             </Button>
           </form>

@@ -17,8 +17,11 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("=== send-password-reset invoked ===");
+  
   try {
     const { email, redirectUrl }: PasswordResetRequest = await req.json();
+    console.log("Password reset requested for:", email);
 
     if (!email) {
       throw new Error("Email é obrigatório");

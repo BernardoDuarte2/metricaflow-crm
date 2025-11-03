@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { usePasswordValidation } from "@/hooks/usePasswordValidation";
+import { authSchema } from "@/lib/validation";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -24,10 +22,14 @@ const Auth = () => {
   const [loginPassword, setLoginPassword] = useState("");
 
   // Signup state
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupName, setSignupName] = useState("");
-  const [signupCompanyName, setSignupCompanyName] = useState("");
+  const [signupData, setSignupData] = useState({
+    name: "",
+    company_name: "",
+    email: "",
+    password: "",
+  });
+  
+  const signupPasswordValidation = usePasswordValidation(signupData.password);
 
   // Forgot password state
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
@@ -112,7 +114,7 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Login realizado com sucesso!",
+        title: "✅ Login realizado com sucesso!",
         description: "Bem-vindo de volta.",
       });
     } catch (error: any) {
@@ -128,32 +130,63 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação com Zod
+    try {
+      authSchema.parse(signupData);
+    } catch (error: any) {
+      toast({
+        title: "Dados inválidos",
+        description: error.errors?.[0]?.message || "Verifique os dados informados",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!signupPasswordValidation.isValid) {
+      toast({
+        title: "Senha inválida",
+        description: "A senha não atende aos requisitos de segurança",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
+      console.log("Starting signup process...");
       // Create user with metadata - company will be created by trigger
       const { error: signupError } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: signupPassword,
+        email: signupData.email,
+        password: signupData.password,
         options: {
           data: {
-            name: signupName,
-            company_name: signupCompanyName,
+            name: signupData.name,
+            company_name: signupData.company_name,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
-      if (signupError) throw signupError;
+      if (signupError) {
+        console.error("Signup error:", signupError);
+        throw signupError;
+      }
+
+      console.log("Signup successful!");
 
       toast({
-        title: "Conta criada com sucesso!",
-        description: "Sua empresa foi criada e você é o proprietário.",
+        title: "✅ Conta criada com sucesso!",
+        description: "Você já pode fazer login.",
       });
+
+      navigate("/");
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         title: "Erro no cadastro",
-        description: error.message,
+        description: error.message || "Ocorreu um erro ao criar sua conta. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -165,26 +198,51 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log("Forgot password requested for:", resetEmail);
+
     try {
-      const { data, error } = await supabase.functions.invoke('send-password-reset', {
-        body: {
+      const { data, error } = await supabase.functions.invoke("send-password-reset", {
+        body: { 
           email: resetEmail,
-          redirectUrl: `${window.location.origin}/auth`,
+          redirectUrl: `${window.location.origin}/auth?mode=reset`
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Password reset error:", error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error("Password reset data error:", data);
+        
+        // Erro de configuração do Resend
+        if (data.details) {
+          toast({
+            title: "❌ Erro de configuração",
+            description: data.details,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        throw new Error(data.error);
+      }
+
+      console.log("Password reset email sent successfully");
 
       toast({
-        title: "Email enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+        title: "✅ Email enviado!",
+        description: "Verifique sua caixa de entrada (e spam) para redefinir sua senha.",
       });
+
       setForgotPasswordMode(false);
       setResetEmail("");
     } catch (error: any) {
+      console.error("Password reset error:", error);
       toast({
         title: "Erro ao enviar email",
-        description: error.message || "Não foi possível enviar o email de recuperação",
+        description: error.message || "Não foi possível enviar o email. Tente novamente mais tarde.",
         variant: "destructive",
       });
     } finally {
@@ -223,7 +281,7 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Senha atualizada!",
+        title: "✅ Senha atualizada!",
         description: "Sua senha foi redefinida com sucesso.",
       });
       
@@ -285,7 +343,14 @@ const Auth = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Atualizando..." : "Atualizar Senha"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Atualizando...
+                  </>
+                ) : (
+                  "Atualizar Senha"
+                )}
               </Button>
             </form>
           </CardContent>
@@ -337,7 +402,14 @@ const Auth = () => {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Entrando..." : "Entrar"}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Entrando...
+                      </>
+                    ) : (
+                      "Entrar"
+                    )}
                   </Button>
                   <button
                     type="button"
@@ -363,12 +435,18 @@ const Auth = () => {
                       Enviaremos um link para redefinir sua senha.
                     </p>
                     <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                      ℹ️ Por segurança, sempre mostraremos sucesso mesmo se o email não existir. 
-                      Caso não receba email, confirme se já possui cadastro.
+                      ℹ️ Verifique também a pasta de SPAM
                     </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Enviando..." : "Enviar link de recuperação"}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      "Enviar link de recuperação"
+                    )}
                   </Button>
                   <button
                     type="button"
@@ -389,8 +467,8 @@ const Auth = () => {
                     id="signup-name"
                     type="text"
                     placeholder="Seu nome"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
+                    value={signupData.name}
+                    onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                     required
                   />
                 </div>
@@ -400,8 +478,8 @@ const Auth = () => {
                     id="signup-company"
                     type="text"
                     placeholder="Sua empresa"
-                    value={signupCompanyName}
-                    onChange={(e) => setSignupCompanyName(e.target.value)}
+                    value={signupData.company_name}
+                    onChange={(e) => setSignupData({ ...signupData, company_name: e.target.value })}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
@@ -414,8 +492,8 @@ const Auth = () => {
                     id="signup-email"
                     type="email"
                     placeholder="seu@email.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
+                    value={signupData.email}
+                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                     required
                   />
                 </div>
@@ -424,18 +502,30 @@ const Auth = () => {
                   <Input
                     id="signup-password"
                     type="password"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
+                    value={signupData.password}
+                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                     required
-                    minLength={12}
-                    placeholder="Mín. 12 caracteres"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Deve conter: 12+ caracteres, maiúsculas, minúsculas, números e símbolos
-                  </p>
+                  {signupData.password && (
+                    <PasswordStrength 
+                      password={signupData.password}
+                      requirements={signupPasswordValidation.requirements}
+                    />
+                  )}
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Cadastrando..." : "Cadastrar"}
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={loading || !signupPasswordValidation.isValid}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Criando conta...
+                    </>
+                  ) : (
+                    "Criar Conta"
+                  )}
                 </Button>
               </form>
             </TabsContent>

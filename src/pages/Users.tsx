@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +14,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -28,18 +29,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Crown, Trash2, Mail, Clock, CheckCircle, XCircle } from "lucide-react";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserPlus, Trash2, Users, Clock, CheckCircle, XCircle, Loader2, Crown, Mail } from "lucide-react";
+import { inviteSchema } from "@/lib/validation";
 
-const Users = () => {
+export default function UsersPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"gestor" | "vendedor">("vendedor");
 
@@ -158,7 +162,7 @@ const Users = () => {
       if (error) throw error;
 
       // Send invite email via edge function
-      const { error: emailError } = await supabase.functions.invoke("send-invite", {
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-invite", {
         body: {
           inviteId: invite.id,
           email: invite.email,
@@ -172,21 +176,34 @@ const Users = () => {
         throw new Error("Convite criado mas erro ao enviar e-mail");
       }
 
+      if (emailData?.error) {
+        console.error("Send invite data error:", emailData);
+        
+        // Erro de configuração do Resend
+        if (emailData.details) {
+          throw new Error(emailData.details);
+        }
+        
+        throw new Error(emailData.error);
+      }
+
       return invite;
     },
     onSuccess: () => {
-      toast({ 
-        title: "Convite enviado!", 
-        description: "Um e-mail foi enviado para o usuário convidado." 
+      toast({
+        title: "✅ Convite enviado!",
+        description: `Um email de convite foi enviado para ${inviteEmail}`,
       });
       queryClient.invalidateQueries({ queryKey: ["invites"] });
-      setIsInviteOpen(false);
       setInviteEmail("");
+      setInviteRole("vendedor");
+      setDialogOpen(false);
     },
     onError: (error: any) => {
+      console.error("Invite error:", error);
       toast({
         title: "Erro ao enviar convite",
-        description: error.message,
+        description: error.message || "Não foi possível enviar o convite. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -207,8 +224,19 @@ const Users = () => {
     },
   });
 
-  const handleInvite = () => {
-    if (!inviteEmail || !inviteRole) return;
+  const handleInvite = async () => {
+    // Validação com Zod
+    try {
+      inviteSchema.parse({ email: inviteEmail, role: inviteRole });
+    } catch (error: any) {
+      toast({
+        title: "Dados inválidos",
+        description: error.errors?.[0]?.message || "Verifique os dados informados",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createInviteMutation.mutate({ email: inviteEmail, role: inviteRole });
   };
 
@@ -221,14 +249,6 @@ const Users = () => {
     const config = roleMap[role] || { label: role, variant: "outline" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
-
-  if (!canManageUsers) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Você não tem permissão para gerenciar usuários.</p>
-      </div>
-    );
-  }
 
   const getInviteStatusBadge = (status: string, expiresAt: string) => {
     const expired = new Date(expiresAt) < new Date();
@@ -248,8 +268,23 @@ const Users = () => {
     return <Badge variant={config.variant}><Icon className="h-3 w-3 mr-1" />{config.label}</Badge>;
   };
 
+  if (!canManageUsers) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Acesso Restrito</CardTitle>
+            <CardDescription>
+              Você não tem permissão para gerenciar usuários.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold">Gestão de Usuários</h2>
@@ -257,7 +292,7 @@ const Users = () => {
             {additionalUsers}/{userLimit} usuários adicionais
           </p>
         </div>
-        <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button disabled={!canInvite}>
               <UserPlus className="mr-2 h-4 w-4" />
@@ -272,23 +307,41 @@ const Users = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <Input
-                placeholder="email@exemplo.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                type="email"
-              />
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gestor">Gestor</SelectItem>
-                  <SelectItem value="vendedor">Vendedor</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={handleInvite} className="w-full" disabled={!inviteEmail}>
-                Enviar convite
+              <div className="space-y-2">
+                <Label htmlFor="invite-email">Email</Label>
+                <Input
+                  id="invite-email"
+                  placeholder="email@exemplo.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  type="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invite-role">Função</Label>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
+                  <SelectTrigger id="invite-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gestor">Gestor</SelectItem>
+                    <SelectItem value="vendedor">Vendedor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={handleInvite} 
+                className="w-full" 
+                disabled={!inviteEmail || createInviteMutation.isPending}
+              >
+                {createInviteMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Enviar convite"
+                )}
               </Button>
             </div>
           </DialogContent>
@@ -307,90 +360,108 @@ const Users = () => {
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Perfil</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users?.map((user) => {
-                const role = user.user_roles?.[0]?.role || "vendedor";
-                const isUserOwner = role === "gestor_owner";
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {user.name}
-                      {isUserOwner && <Crown className="inline ml-2 h-4 w-4 text-yellow-500" />}
-                    </TableCell>
-                    <TableCell>{getRoleBadge(role)}</TableCell>
-                    <TableCell>
-                      {!isUserOwner && isOwner && (
-                        <Button size="sm" variant="ghost" disabled>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Usuários Ativos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Perfil</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {users?.map((user) => {
+                    const role = user.user_roles?.[0]?.role || "vendedor";
+                    const isUserOwner = role === "gestor_owner";
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          {user.name}
+                          {isUserOwner && <Crown className="inline ml-2 h-4 w-4 text-yellow-500" />}
+                        </TableCell>
+                        <TableCell>{getRoleBadge(role)}</TableCell>
+                        <TableCell>
+                          {!isUserOwner && isOwner && (
+                            <Button size="sm" variant="ghost" disabled>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="invites" className="space-y-4">
-          {invites && invites.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Perfil</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Enviado em</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invites.map((invite) => (
-                  <TableRow key={invite.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {invite.email}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getRoleBadge(invite.role)}</TableCell>
-                    <TableCell>{getInviteStatusBadge(invite.status, invite.expires_at)}</TableCell>
-                    <TableCell>
-                      {new Date(invite.created_at).toLocaleDateString("pt-BR")}
-                    </TableCell>
-                    <TableCell>
-                      {invite.status === "pending" && isOwner && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteInviteMutation.mutate(invite.id)}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum convite pendente</p>
-            </div>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Convites
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {invites && invites.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Perfil</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Enviado em</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invites.map((invite) => (
+                      <TableRow key={invite.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {invite.email}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(invite.role)}</TableCell>
+                        <TableCell>{getInviteStatusBadge(invite.status, invite.expires_at)}</TableCell>
+                        <TableCell>
+                          {new Date(invite.created_at).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          {invite.status === "pending" && isOwner && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteInviteMutation.mutate(invite.id)}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum convite pendente</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-export default Users;
+}
