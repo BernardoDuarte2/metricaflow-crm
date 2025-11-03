@@ -7,6 +7,7 @@ import { SaleCelebration } from "@/components/gamification/SaleCelebration";
 import { BadgeUnlockedModal } from "@/components/gamification/BadgeUnlockedModal";
 import { BadgeProgress } from "@/components/gamification/BadgeProgress";
 import { AllBadgesDisplay } from "@/components/gamification/AllBadgesDisplay";
+import { ActivityFeed } from "@/components/gamification/ActivityFeed";
 import { useGamificationEvents } from "@/hooks/useGamificationEvents";
 import { useGamificationSounds } from "@/hooks/useGamificationSounds";
 import { SoundControls } from "@/components/gamification/SoundControls";
@@ -197,7 +198,17 @@ export default function GamificationLive() {
           </TabsList>
 
           <TabsContent value="ranking" className="mt-8">
-            <LeaderboardLive />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Leaderboard - Takes 2 columns */}
+              <div className="lg:col-span-2">
+                <LeaderboardLive />
+              </div>
+
+              {/* Activity Feed - Takes 1 column */}
+              <div className="lg:col-span-1">
+                <ActivityFeed />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="badges" className="mt-8 space-y-6">
