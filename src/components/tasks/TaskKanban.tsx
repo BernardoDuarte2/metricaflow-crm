@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TaskCard } from "./TaskCard";
 import { Badge } from "@/components/ui/badge";
+import { startOfDay, endOfDay } from "date-fns";
 
 interface TaskKanbanProps {
   tasks: any[];
@@ -9,6 +10,10 @@ interface TaskKanbanProps {
 }
 
 export function TaskKanban({ tasks, onEditTask, isGestor }: TaskKanbanProps) {
+  const today = new Date();
+  const startOfToday = startOfDay(today);
+  const endOfToday = endOfDay(today);
+
   const columns = [
     { id: "aberta", title: "Abertas", status: "aberta" },
     { id: "em_andamento", title: "Em Andamento", status: "em_andamento" },
@@ -18,7 +23,16 @@ export function TaskKanban({ tasks, onEditTask, isGestor }: TaskKanbanProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {columns.map((column) => {
-        const columnTasks = tasks.filter((task) => task.status === column.status);
+        let columnTasks = tasks.filter((task) => task.status === column.status);
+        
+        // Para tarefas abertas, mostrar apenas as do dia
+        if (column.status === "aberta") {
+          columnTasks = columnTasks.filter((task) => {
+            if (!task.due_date) return true; // Mostrar tarefas sem data
+            const dueDate = new Date(task.due_date);
+            return dueDate >= startOfToday && dueDate <= endOfToday;
+          });
+        }
 
         return (
           <Card key={column.id}>

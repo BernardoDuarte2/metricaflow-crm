@@ -9,6 +9,7 @@ import { CheckCircle2, Clock, Edit, Trash2, User, Link as LinkIcon, ChevronDown 
 import { useToast } from "@/hooks/use-toast";
 import { format, isPast, differenceInDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { TaskLeadNotesDrawer } from "./TaskLeadNotesDrawer";
 
 interface TaskCardProps {
   task: any;
@@ -18,6 +19,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onEdit, isGestor }: TaskCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -38,6 +40,15 @@ export function TaskCard({ task, onEdit, isGestor }: TaskCardProps) {
     if (days < 0 || days === 0) return "border-destructive";
     if (days <= 3) return "border-yellow-500";
     return "border-green-500";
+  };
+
+  const handleStartTask = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.lead_id) {
+      setIsNotesDrawerOpen(true);
+    } else {
+      updateStatusMutation.mutate("em_andamento");
+    }
   };
 
   const updateStatusMutation = useMutation({
@@ -160,10 +171,7 @@ export function TaskCard({ task, onEdit, isGestor }: TaskCardProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateStatusMutation.mutate("em_andamento");
-                      }}
+                      onClick={handleStartTask}
                       className="flex-1 h-7 text-xs"
                     >
                       Iniciar
@@ -213,6 +221,16 @@ export function TaskCard({ task, onEdit, isGestor }: TaskCardProps) {
           </CardContent>
         </CollapsibleContent>
       </Card>
+
+      {task.lead_id && (
+        <TaskLeadNotesDrawer
+          open={isNotesDrawerOpen}
+          onOpenChange={setIsNotesDrawerOpen}
+          leadId={task.lead_id}
+          taskId={task.id}
+          leadName={task.lead?.name || "Lead"}
+        />
+      )}
     </Collapsible>
   );
 }
