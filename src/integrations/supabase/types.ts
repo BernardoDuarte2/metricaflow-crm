@@ -661,6 +661,7 @@ export type Database = {
           lead_id: string | null
           status: string
           title: string
+          updated_at: string
         }
         Insert: {
           assigned_to: string
@@ -673,6 +674,7 @@ export type Database = {
           lead_id?: string | null
           status?: string
           title: string
+          updated_at?: string
         }
         Update: {
           assigned_to?: string
@@ -685,6 +687,7 @@ export type Database = {
           lead_id?: string | null
           status?: string
           title?: string
+          updated_at?: string
         }
         Relationships: [
           {
