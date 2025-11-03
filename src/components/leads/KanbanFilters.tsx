@@ -49,14 +49,14 @@ export const KanbanFilters = ({
                   </Label>
                   {activeOnly && (
                     <Badge variant="secondary" className="ml-2 text-xs">
-                      Com atividades agendadas este mês
+                      Com atividades futuras agendadas
                     </Badge>
                   )}
                 </div>
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs text-xs">
-                  Mostra apenas leads com reuniões, lembretes ou tarefas agendadas para o mês atual
+                  Mostra apenas leads com reuniões, lembretes ou tarefas agendadas para o futuro
                 </p>
               </TooltipContent>
             </Tooltip>

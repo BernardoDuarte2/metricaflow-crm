@@ -115,13 +115,14 @@ const Kanban = () => {
       if (!userProfile?.company_id) return [];
 
       const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      // Buscar atividades futuras sem limite de data final (próximos 365 dias)
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
       const { data, error } = await supabase.rpc('get_leads_with_future_activities', {
         p_company_id: userProfile.company_id,
         p_start_date: now.toISOString(),
-        p_end_date: endOfMonth.toISOString(),
+        p_end_date: oneYearFromNow.toISOString(),
       });
 
       if (error) throw error;
