@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { reminderFormSchema, type ReminderFormData } from "@/lib/schemas";
 
 interface ReminderDialogProps {
   open: boolean;
@@ -20,7 +22,8 @@ interface ReminderDialogProps {
 export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const form = useForm({
+  const form = useForm<ReminderFormData>({
+    resolver: zodResolver(reminderFormSchema),
     defaultValues: {
       description: "",
       reminder_date: "",
@@ -49,11 +52,11 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
   });
 
   const createReminderMutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: ReminderFormData) => {
       const { error } = await supabase.from("reminders").insert({
         description: values.description,
         reminder_date: values.reminder_date,
-        lead_id: values.lead_id || null,
+        lead_id: values.lead_id && values.lead_id !== "" ? values.lead_id : null,
         user_id: session?.user?.id,
         completed: false,
       });
@@ -79,13 +82,13 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
   });
 
   const updateReminderMutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: ReminderFormData) => {
       const { error } = await supabase
         .from("reminders")
         .update({
           description: values.description,
           reminder_date: values.reminder_date,
-          lead_id: values.lead_id || null,
+          lead_id: values.lead_id && values.lead_id !== "" ? values.lead_id : null,
         })
         .eq("id", reminder?.id);
       if (error) throw error;
@@ -127,7 +130,7 @@ export function ReminderDialog({ open, onOpenChange, reminder }: ReminderDialogP
     }
   }, [reminder, form]);
 
-  const onSubmit = (values: any) => {
+  const onSubmit = (values: ReminderFormData) => {
     if (reminder?.id) {
       updateReminderMutation.mutate(values);
     } else {
