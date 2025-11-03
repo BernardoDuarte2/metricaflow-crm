@@ -1,21 +1,50 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LeaderboardLive } from "@/components/gamification/LeaderboardLive";
 import { PointsBreakdown } from "@/components/gamification/PointsBreakdown";
 import { SaleCelebration } from "@/components/gamification/SaleCelebration";
+import { BadgeUnlockedModal } from "@/components/gamification/BadgeUnlockedModal";
+import { BadgeProgress } from "@/components/gamification/BadgeProgress";
+import { AllBadgesDisplay } from "@/components/gamification/AllBadgesDisplay";
 import { useGamificationEvents } from "@/hooks/useGamificationEvents";
 import { useGamificationSounds } from "@/hooks/useGamificationSounds";
 import { SoundControls } from "@/components/gamification/SoundControls";
-import { Trophy, Users, TrendingUp, RefreshCw } from "lucide-react";
+import { Trophy, Users, TrendingUp, RefreshCw, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { calculateUserStats, calculateBadges, getNextBadge, Badge } from "@/lib/gamification";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function GamificationLive() {
   const [showCelebration, setShowCelebration] = useState(false);
+  const [unlockedBadge, setUnlockedBadge] = useState<Badge | null>(null);
+  const previousBadgesRef = useRef<Set<string>>(new Set());
   const { latestSale, clearLatestSale } = useGamificationEvents();
   const { isMuted, volume, setIsMuted, setVolume, playSound } = useGamificationSounds();
   const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  // Buscar eventos para detectar novos badges
+  const { data: allEvents } = useQuery({
+    queryKey: ["gamification-events-badges"],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from("gamification_events")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("created_at", thirtyDaysAgo.toISOString());
+
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 5000,
+  });
 
   // Buscar dados do vendedor quando houver nova venda
   const { data: sellerData } = useQuery({
@@ -34,6 +63,32 @@ export default function GamificationLive() {
     },
     enabled: !!latestSale,
   });
+
+  // Detectar novos badges desbloqueados
+  useEffect(() => {
+    if (!allEvents) return;
+
+    const stats = calculateUserStats(allEvents);
+    const currentBadges = calculateBadges(stats);
+    const currentBadgeIds = new Set(currentBadges.map(b => b.id));
+
+    // Check for newly unlocked badges
+    currentBadgeIds.forEach(badgeId => {
+      if (!previousBadgesRef.current.has(badgeId)) {
+        const badge = currentBadges.find(b => b.id === badgeId);
+        if (badge) {
+          setUnlockedBadge(badge);
+          playSound('levelup');
+        }
+      }
+    });
+
+    previousBadgesRef.current = currentBadgeIds;
+  }, [allEvents, playSound]);
+
+  // Calcular próximo badge
+  const nextBadge = allEvents ? getNextBadge(calculateUserStats(allEvents)) : null;
+  const earnedBadges = allEvents ? calculateBadges(calculateUserStats(allEvents)) : [];
 
   // Mostrar celebração quando houver nova venda
   useEffect(() => {
@@ -67,7 +122,7 @@ export default function GamificationLive() {
         onVolumeChange={setVolume}
       />
 
-      {/* Modal de celebração */}
+      {/* Modal de celebração de venda */}
       {showCelebration && latestSale && sellerData && (
         <SaleCelebration
           sellerName={sellerData.name}
@@ -76,6 +131,14 @@ export default function GamificationLive() {
           saleValue={latestSale.metadata?.estimated_value || 0}
           points={latestSale.points}
           onComplete={handleCelebrationComplete}
+        />
+      )}
+
+      {/* Modal de badge desbloqueado */}
+      {unlockedBadge && (
+        <BadgeUnlockedModal
+          badge={unlockedBadge}
+          onComplete={() => setUnlockedBadge(null)}
         />
       )}
 
@@ -116,11 +179,56 @@ export default function GamificationLive() {
           </motion.div>
         </motion.div>
 
-        {/* Sistema de Pontuação */}
-        <PointsBreakdown />
+        {/* Tabs de conteúdo */}
+        <Tabs defaultValue="ranking" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+            <TabsTrigger value="ranking">
+              <Trophy className="h-4 w-4 mr-2" />
+              Ranking
+            </TabsTrigger>
+            <TabsTrigger value="badges">
+              <Award className="h-4 w-4 mr-2" />
+              Badges
+            </TabsTrigger>
+            <TabsTrigger value="pontos">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Pontos
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Ranking */}
-        <LeaderboardLive />
+          <TabsContent value="ranking" className="mt-8">
+            <LeaderboardLive />
+          </TabsContent>
+
+          <TabsContent value="badges" className="mt-8 space-y-6">
+            {/* Próximo Badge */}
+            {nextBadge && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Award className="h-6 w-6 text-primary" />
+                  Próximo Badge
+                </h2>
+                <BadgeProgress progress={nextBadge} />
+              </motion.div>
+            )}
+
+            {/* Galeria de Badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <AllBadgesDisplay earnedBadges={earnedBadges} />
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="pontos" className="mt-8">
+            <PointsBreakdown />
+          </TabsContent>
+        </Tabs>
 
         {/* Footer com indicadores */}
         <motion.div
