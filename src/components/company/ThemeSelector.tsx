@@ -21,6 +21,7 @@ import { Palette } from 'lucide-react';
 
 const ThemeSelector = () => {
   const [selectedTheme, setSelectedTheme] = useState<ThemeName | null>(null);
+  const [previewTheme, setPreviewTheme] = useState<ThemeName | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch current theme
@@ -86,6 +87,16 @@ const ThemeSelector = () => {
     setSelectedTheme(themeName);
   };
 
+  const handleThemePreview = (themeName: ThemeName | null) => {
+    setPreviewTheme(themeName);
+    if (themeName) {
+      applyTheme(themeName);
+    } else if (currentTheme) {
+      // Restore current theme when mouse leaves
+      applyTheme(currentTheme);
+    }
+  };
+
   const handleConfirm = () => {
     if (selectedTheme) {
       updateThemeMutation.mutate(selectedTheme);
@@ -115,11 +126,20 @@ const ThemeSelector = () => {
               return (
                 <Card
                   key={theme.name}
-                  className={`cursor-pointer transition-all hover:scale-105 ${
+                  className={`cursor-pointer transition-all hover:scale-105 relative ${
                     isActive ? 'ring-2 ring-primary' : ''
-                  }`}
+                  } ${previewTheme === theme.name ? 'ring-2 ring-accent' : ''}`}
                   onClick={() => handleThemeSelect(theme.name)}
+                  onMouseEnter={() => handleThemePreview(theme.name)}
+                  onMouseLeave={() => handleThemePreview(null)}
                 >
+                  {previewTheme === theme.name && (
+                    <div className="absolute -top-2 -right-2 z-10">
+                      <Badge variant="secondary" className="text-xs">
+                        Preview
+                      </Badge>
+                    </div>
+                  )}
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
