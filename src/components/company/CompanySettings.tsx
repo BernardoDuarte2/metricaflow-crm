@@ -51,7 +51,11 @@ const CompanySettings = () => {
     enabled: !!session?.user?.id,
   });
 
-  const isOwner = userRole?.role === "gestor_owner";
+  // Check if user is owner (via company.owner_id) or has gestor/gestor_owner role
+  const isOwnerOrGestor = 
+    profile?.company?.owner_id === session?.user?.id || 
+    userRole?.role === "gestor_owner" || 
+    userRole?.role === "gestor";
 
   const updateCompanyMutation = useMutation({
     mutationFn: async (data: { system_name?: string; logo_url?: string }) => {
@@ -138,12 +142,12 @@ const CompanySettings = () => {
     updateCompanyMutation.mutate({ system_name });
   };
 
-  if (!isOwner) {
+  if (!isOwnerOrGestor) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Configurações da Empresa</CardTitle>
-          <CardDescription>Apenas proprietários podem alterar essas configurações</CardDescription>
+          <CardDescription>Apenas proprietários e gestores podem alterar essas configurações</CardDescription>
         </CardHeader>
       </Card>
     );
