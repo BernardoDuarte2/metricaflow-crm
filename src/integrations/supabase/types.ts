@@ -60,6 +60,7 @@ export type Database = {
           name: string
           owner_id: string | null
           system_name: string | null
+          theme: string
           user_limit_adicionais: number | null
         }
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           system_name?: string | null
+          theme?: string
           user_limit_adicionais?: number | null
         }
         Update: {
@@ -78,6 +80,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           system_name?: string | null
+          theme?: string
           user_limit_adicionais?: number | null
         }
         Relationships: []

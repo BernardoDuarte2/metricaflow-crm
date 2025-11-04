@@ -26,6 +26,7 @@ import Header from "./components/layout/Header";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import OnboardingTour from "./components/onboarding/OnboardingTour";
 import WhatsAppButton from "./components/support/WhatsAppButton";
+import { useTheme } from "./hooks/useTheme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,17 +39,22 @@ const queryClient = new QueryClient({
   },
 });
 
-const DemoLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex h-screen bg-background">
-    <Sidebar />
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <Header />
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+const DemoLayout = ({ children }: { children: React.ReactNode }) => {
+  // Apply theme on mount
+  useTheme();
+  
+  return (
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
+      <OnboardingTour />
+      <WhatsAppButton />
     </div>
-    <OnboardingTour />
-    <WhatsAppButton />
-  </div>
-);
+  );
+};
 
 const App = () => {
   return (

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Upload } from "lucide-react";
+import ThemeSelector from "./ThemeSelector";
 
 const CompanySettings = () => {
   const { toast } = useToast();
@@ -150,6 +151,8 @@ const CompanySettings = () => {
 
   return (
     <div className="space-y-6">
+      <ThemeSelector />
+      
       <Card>
         <CardHeader>
           <CardTitle>Logo da Empresa</CardTitle>
