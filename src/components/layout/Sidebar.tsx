@@ -120,8 +120,18 @@ const Sidebar = () => {
 
   const navItems = allNavItems.filter(item => !item.requiresOwnerOrGestor || isOwnerOrGestor);
   return <aside className="w-64 bg-card border-r border-border flex flex-col sticky top-0 h-screen z-30 min-h-0">
-      <div className="p-6 border-b border-border">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Pro</h1>
+      <div className="p-6 border-b border-border flex items-center justify-center">
+        {profile?.company?.logo_url ? (
+          <img 
+            src={profile.company.logo_url} 
+            alt={profile.company.name || "Logo"} 
+            className="h-12 w-auto object-contain"
+          />
+        ) : (
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            {profile?.company?.system_name || "Pro"}
+          </h1>
+        )}
       </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">

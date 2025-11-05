@@ -112,13 +112,13 @@ const CompanySettings = () => {
       const filePath = `company-logos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("company-logos")
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
+        .from("company-logos")
         .getPublicUrl(filePath);
 
       await updateCompanyMutation.mutateAsync({ logo_url: publicUrl });
