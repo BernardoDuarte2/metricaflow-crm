@@ -53,7 +53,7 @@ const CompanySettings = () => {
   // Check if user is owner (via company.owner_id) or has gestor/gestor_owner role
   const isOwnerOrGestor = 
     profile?.company?.owner_id === session?.user?.id || 
-    userRoles?.some(ur => ur.role === "gestor_owner" || ur.role === "gestor");
+    (Array.isArray(userRoles) && userRoles.some(ur => ur.role === "gestor_owner" || ur.role === "gestor"));
 
   const updateCompanyMutation = useMutation({
     mutationFn: async (data: { system_name?: string; logo_url?: string }) => {

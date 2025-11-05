@@ -87,7 +87,7 @@ const ThemeSelector = () => {
 
   const canEditTheme = 
     profile?.company?.owner_id === session?.user?.id || 
-    userRoles?.some(ur => ur.role === 'gestor_owner' || ur.role === 'gestor');
+    (Array.isArray(userRoles) && userRoles.some(ur => ur.role === 'gestor_owner' || ur.role === 'gestor'));
 
   // Update theme mutation
   const updateThemeMutation = useMutation({
