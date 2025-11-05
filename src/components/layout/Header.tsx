@@ -120,7 +120,7 @@ const Header = () => {
   const userLimit = profile?.companies?.user_limit_adicionais || 10;
 
   return (
-    <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
+    <header className="sticky top-0 z-40 h-16 border-b border-border bg-card px-6 flex items-center justify-between">
       <div>
         <h2 className="text-lg font-semibold text-foreground">
           Bem-vindo(a), {profile?.name || session?.user?.email?.split('@')[0] || 'Usuário'}
@@ -151,7 +151,7 @@ const Header = () => {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-96" align="end">
+          <PopoverContent className="w-96 z-50 bg-popover" align="end">
             <Tabs defaultValue="tasks" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="tasks">Tarefas {tasks && tasks.length > 0 && `(${tasks.length})`}</TabsTrigger>
