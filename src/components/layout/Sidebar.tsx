@@ -22,7 +22,7 @@ const Sidebar = () => {
       if (!session?.user?.id) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("*, companies(*)")
+        .select("*, company:companies(*)")
         .eq("id", session.user.id)
         .single();
       return data;
@@ -54,7 +54,7 @@ const Sidebar = () => {
     navigate("/auth");
   };
 
-  const isOwnerOrGestor = userRole === 'gestor_owner' || userRole === 'gestor';
+  const isOwnerOrGestor = (profile?.company?.owner_id === session?.user?.id) || userRole === 'gestor_owner' || userRole === 'gestor';
 
   const allNavItems = [{
     to: "/",
