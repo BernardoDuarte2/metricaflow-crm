@@ -167,6 +167,13 @@ export default function UsersPage() {
       if (error) throw error;
 
       // Send invite email via edge function
+      console.log("📧 Enviando email de convite via edge function...", {
+        inviteId: invite.id,
+        email: invite.email,
+        role: invite.role,
+        companyName: profile.companies?.name || "sua empresa",
+      });
+
       const { data: emailData, error: emailError } = await supabase.functions.invoke("send-invite", {
         body: {
           inviteId: invite.id,
@@ -176,21 +183,25 @@ export default function UsersPage() {
         },
       });
 
+      console.log("📬 Resposta da edge function:", { emailData, emailError });
+
       if (emailError) {
-        console.error("Error sending invite email:", emailError);
-        throw new Error("Convite criado mas erro ao enviar e-mail");
+        console.error("❌ Error sending invite email:", emailError);
+        throw new Error(`Erro ao enviar e-mail: ${emailError.message}`);
       }
 
       if (emailData?.error) {
-        console.error("Send invite data error:", emailData);
+        console.error("❌ Send invite data error:", emailData);
         
         // Erro de configuração do Resend
         if (emailData.details) {
-          throw new Error(emailData.details);
+          throw new Error(`Configuração de email: ${emailData.details}`);
         }
         
-        throw new Error(emailData.error);
+        throw new Error(`Erro no envio: ${emailData.error}`);
       }
+
+      console.log("✅ Email enviado com sucesso!");
 
       return invite;
     },
