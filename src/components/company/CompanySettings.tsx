@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Upload } from "lucide-react";
+import { Building2, Upload, Trash2 } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 
 const CompanySettings = () => {
@@ -133,6 +133,32 @@ const CompanySettings = () => {
     }
   };
 
+  const handleLogoDelete = async () => {
+    if (!profile?.company?.logo_url) return;
+
+    try {
+      // Extrair o caminho do arquivo da URL
+      const url = new URL(profile.company.logo_url);
+      const filePath = url.pathname.split('/').slice(-2).join('/'); // pega 'company-logos/filename'
+
+      // Deletar do storage
+      const { error: deleteError } = await supabase.storage
+        .from("company-logos")
+        .remove([filePath]);
+
+      if (deleteError) throw deleteError;
+
+      // Atualizar o banco para remover a referência
+      await updateCompanyMutation.mutateAsync({ logo_url: null });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao deletar logo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSystemNameChange = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -187,6 +213,16 @@ const CompanySettings = () => {
                 Recomendado: PNG ou JPG, máximo 2MB
               </p>
             </div>
+            {profile?.company?.logo_url && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogoDelete}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
