@@ -617,6 +617,33 @@ export type Database = {
           },
         ]
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean
@@ -1143,6 +1170,7 @@ export type Database = {
         Args: { _meeting_id: string; _user_id: string }
         Returns: boolean
       }
+      cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       cleanup_old_integration_logs: { Args: never; Returns: undefined }
       cleanup_rate_limit_logs: { Args: never; Returns: undefined }
       count_additional_users: { Args: { _company_id: string }; Returns: number }

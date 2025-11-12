@@ -31,32 +31,41 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Generate password reset using Supabase Auth
-    const { data, error } = await supabase.auth.admin.generateLink({
-      type: 'recovery',
-      email: email,
-      options: {
-        redirectTo: `${redirectUrl}?reset=true`,
-      },
-    });
+    // Get user by email using admin API
+    const { data: { users }, error: getUserError } = await supabase.auth.admin.listUsers();
+    const user = users?.find(u => u.email === email);
 
-    if (error) {
-      console.error("Erro ao gerar link de recuperação:", error);
-      const status = (error as any)?.status || (error as any)?.code;
-      if (status === 404 || String(error.message).toLowerCase().includes('not found')) {
-        // Não revelar se o email existe: responder 200 de forma genérica
-        return new Response(
-          JSON.stringify({ success: true, message: "Se o email existir, enviaremos um link de recuperação." }),
-          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-      throw new Error(`Erro ao gerar link: ${error.message}`);
+    // Se não encontrar usuário, retornar sucesso genérico (segurança)
+    if (!user) {
+      console.log("User not found, returning generic success");
+      return new Response(
+        JSON.stringify({ success: true, message: "Se o email existir, enviaremos um link de recuperação." }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    const resetLink = data.properties?.action_link;
-    if (!resetLink) {
-      throw new Error("Link de recuperação não foi gerado");
+    // Generate custom reset token
+    const resetToken = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // Expira em 1 hora
+
+    // Save token to database
+    const { error: tokenError } = await supabase
+      .from('password_reset_tokens')
+      .insert({
+        user_id: user.id,
+        token: resetToken,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (tokenError) {
+      console.error("Error saving reset token:", tokenError);
+      throw new Error("Erro ao criar token de recuperação");
     }
+
+    // Build reset link using the redirect URL's origin
+    const urlOrigin = new URL(redirectUrl).origin;
+    const resetLink = `${urlOrigin}/reset-password?token=${resetToken}`;
 
     const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     const brevoFromEmail = Deno.env.get("BREVO_FROM_EMAIL");
