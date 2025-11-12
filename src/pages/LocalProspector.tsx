@@ -7,9 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Search, Download, Upload, Trash2, CheckSquare, Square, Sparkles } from "lucide-react";
+import { Search, Download, Upload, Trash2, CheckSquare, Square, Sparkles, Brain, Clock, Lightbulb, AlertTriangle } from "lucide-react";
 
 // ======= Types =======
+interface LeadAIAnalysis {
+  qualityScore: number;
+  approachSuggestions: string[];
+  bestContactTime: string;
+  probableObjections: string[];
+  insights: string;
+  analyzedAt: string;
+}
+
 interface Lead {
   id: string;
   nome: string;
@@ -23,6 +32,8 @@ interface Lead {
   status: string;
   site?: string;
   vendedor?: string;
+  aiAnalysis?: LeadAIAnalysis;
+  isAnalyzing?: boolean;
 }
 interface User {
   email: string;
@@ -291,6 +302,59 @@ export default function LocalProspector() {
     setLeads([]);
     setSelectedIds(new Set());
     toast.success("Todos os leads foram apagados");
+  }
+
+  async function analyzeLead(leadId: string) {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    // Marcar como analisando
+    updateLead(leadId, { isAnalyzing: true });
+    toast.info(`Analisando ${lead.nome} com IA...`);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-local-lead`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ lead })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao analisar lead');
+      }
+
+      updateLead(leadId, { 
+        aiAnalysis: data.analysis,
+        isAnalyzing: false,
+        rating: data.analysis.qualityScore
+      });
+      
+      toast.success(`✨ ${lead.nome} analisado! Score: ${data.analysis.qualityScore}/100`);
+    } catch (error) {
+      console.error('Erro ao analisar lead:', error);
+      updateLead(leadId, { isAnalyzing: false });
+      toast.error(error instanceof Error ? error.message : 'Erro ao analisar lead');
+    }
+  }
+
+  async function analyzeSelectedLeads() {
+    const selected = leads.filter(l => selectedIds.has(l.id));
+    if (!selected.length) {
+      return toast.error('Selecione pelo menos um lead');
+    }
+
+    toast.info(`Analisando ${selected.length} leads com IA...`);
+    
+    for (const lead of selected) {
+      await analyzeLead(lead.id);
+      // Delay entre requisições para evitar rate limit
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
 
   // Auto-correção simples de typos comuns
@@ -582,6 +646,10 @@ export default function LocalProspector() {
           <Square className="h-4 w-4 mr-2" />
           Limpar seleção
         </Button>
+        <Button onClick={analyzeSelectedLeads} variant="default" size="sm" className="bg-primary">
+          <Brain className="h-4 w-4 mr-2" />
+          Analisar com IA
+        </Button>
         <Button onClick={() => markSelectedStatus("contatado")} variant="outline" size="sm">
           Marcar Contatado
         </Button>
@@ -607,7 +675,7 @@ export default function LocalProspector() {
                   <th className="text-left p-3">UF</th>
                   <th className="text-left p-3">Site</th>
                   <th className="text-left p-3">Vendedor</th>
-                  <th className="text-left p-3">Rating</th>
+                  <th className="text-left p-3">Score/IA</th>
                   <th className="text-left p-3">Status</th>
                   <th className="text-left p-3">Notas</th>
                   <th className="text-right p-3">Ações</th>
@@ -652,9 +720,41 @@ export default function LocalProspector() {
                       </Select>
                     </td>
                     <td className="p-3">
-                      <Input type="number" min={0} max={5} value={l.rating} onChange={e => updateLead(l.id, {
-                    rating: Number(e.target.value) || 0
-                  })} className="w-20" />
+                      <div className="space-y-2 min-w-[200px]">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={l.rating >= 80 ? "default" : l.rating >= 50 ? "secondary" : "outline"}>
+                            {l.rating}/100
+                          </Badge>
+                          {l.aiAnalysis && (
+                            <span className="text-xs text-primary font-medium flex items-center gap-1">
+                              <Brain className="h-3 w-3" /> IA
+                            </span>
+                          )}
+                          {l.isAnalyzing && (
+                            <span className="text-xs text-muted-foreground animate-pulse">Analisando...</span>
+                          )}
+                        </div>
+                        {l.aiAnalysis && (
+                          <div className="space-y-1 text-xs">
+                            <div className="flex items-start gap-1">
+                              <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground">{l.aiAnalysis.bestContactTime}</span>
+                            </div>
+                            {l.aiAnalysis.approachSuggestions[0] && (
+                              <div className="flex items-start gap-1">
+                                <Lightbulb className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />
+                                <span className="line-clamp-2">{l.aiAnalysis.approachSuggestions[0]}</span>
+                              </div>
+                            )}
+                            {l.aiAnalysis.probableObjections[0] && (
+                              <div className="flex items-start gap-1">
+                                <AlertTriangle className="h-3 w-3 mt-0.5 text-orange-500 flex-shrink-0" />
+                                <span className="text-muted-foreground line-clamp-1">{l.aiAnalysis.probableObjections[0]}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3">
                       <Select value={l.status} onValueChange={value => updateLead(l.id, {
@@ -679,13 +779,24 @@ export default function LocalProspector() {
                   })} className="min-w-[200px]" rows={2} />
                     </td>
                     <td className="p-3 text-right">
-                      <Button onClick={() => deleteLead(l.id)} variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          onClick={() => analyzeLead(l.id)} 
+                          disabled={l.isAnalyzing}
+                          variant="ghost" 
+                          size="sm"
+                          title="Analisar com IA"
+                        >
+                          <Brain className={`h-4 w-4 ${l.isAnalyzing ? 'animate-pulse text-primary' : ''}`} />
+                        </Button>
+                        <Button onClick={() => deleteLead(l.id)} variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>)}
                 {!paginated.length && <tr>
-                    <td colSpan={9} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={11} className="p-8 text-center text-muted-foreground">
                       Nenhum lead encontrado.
                     </td>
                   </tr>}
