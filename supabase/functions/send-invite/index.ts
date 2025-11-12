@@ -10,6 +10,7 @@ interface SendInviteRequest {
   email: string;
   role: string;
   companyName: string;
+  appUrl: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,11 +21,11 @@ const handler = async (req: Request): Promise<Response> => {
   console.log("=== send-invite invoked ===");
 
   try {
-    const { inviteId, email, role, companyName }: SendInviteRequest = await req.json();
-    console.log("Invite request:", { inviteId, email, role, companyName });
+    const { inviteId, email, role, companyName, appUrl }: SendInviteRequest = await req.json();
+    console.log("Invite request:", { inviteId, email, role, companyName, appUrl });
     
     // Input validation
-    if (!inviteId || !email || !role || !companyName) {
+    if (!inviteId || !email || !role || !companyName || !appUrl) {
       return new Response(
         JSON.stringify({ error: "Dados obrigatórios não fornecidos" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -70,7 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('Sending invite email:', { inviteId, email, role, companyName });
 
-    const inviteUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'http://localhost:5173'}/accept-invite?token=${inviteId}`;
+    const inviteUrl = `${appUrl}/accept-invite?token=${inviteId}`;
     
     const roleLabel = role === "gestor" ? "Gestor" : "Vendedor";
 

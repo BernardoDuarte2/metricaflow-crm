@@ -180,6 +180,7 @@ export default function UsersPage() {
           email: invite.email,
           role: invite.role,
           companyName: profile.companies?.name || "sua empresa",
+          appUrl: window.location.origin,
         },
       });
 
