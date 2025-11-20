@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +33,7 @@ const columns = [
   { id: "contato_feito", title: "Contato Feito", color: "hsl(45 100% 65%)" },
   { id: "proposta", title: "Proposta", color: "hsl(280 85% 65%)" },
   { id: "negociacao", title: "Negociação", color: "hsl(25 100% 65%)" },
-  { id: "ganho", title: "Ganho", color: "hsl(142 76% 50%)" },
+  { id: "fechado", title: "Fechado", color: "hsl(142 76% 50%)" },
   { id: "perdido", title: "Perdido", color: "hsl(0 84% 60%)" },
 ];
 
@@ -65,29 +67,13 @@ const Kanban = () => {
     })
   );
 
-  const [activeOnly, setActiveOnly] = useState(() => {
-    const saved = localStorage.getItem("kanban_active_only");
-    return saved ? JSON.parse(saved) : false;
-  });
-  const [periodFilter, setPeriodFilter] = useState(() => {
-    return localStorage.getItem("kanban_period_filter") || "all";
-  });
-  const [statusFilter, setStatusFilter] = useState(() => {
-    return localStorage.getItem("kanban_status_filter") || "all";
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    localStorage.setItem("kanban_active_only", JSON.stringify(activeOnly));
-  }, [activeOnly]);
-
-  useEffect(() => {
-    localStorage.setItem("kanban_period_filter", periodFilter);
-  }, [periodFilter]);
-
-  useEffect(() => {
-    localStorage.setItem("kanban_status_filter", statusFilter);
-  }, [statusFilter]);
+  const [closedSearchTerm, setClosedSearchTerm] = useState("");
+  const [lostSearchTerm, setLostSearchTerm] = useState("");
 
   const { data: session } = useQuery({
     queryKey: ["session"],
@@ -110,29 +96,55 @@ const Kanban = () => {
     enabled: !!session,
   });
 
-  const { data: leads, isLoading: isLoadingLeads } = useQuery({
-    queryKey: ["kanban-leads", userProfile?.company_id],
+  const { data: allLeads, isLoading: isLoadingLeads } = useQuery({
+    queryKey: ["kanban-leads", userProfile?.company_id, selectedMonth],
     queryFn: async () => {
       if (!userProfile?.company_id) return [];
 
-      const now = new Date();
-      const oneYearFromNow = new Date();
-      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-
-      const { data, error } = await supabase.rpc('get_leads_with_future_activities', {
-        p_company_id: userProfile.company_id,
-        p_start_date: now.toISOString(),
-        p_end_date: oneYearFromNow.toISOString(),
-      });
+      const { data, error } = await supabase
+        .from("leads")
+        .select(`
+          *,
+          profiles:assigned_to(name),
+          lead_observations(id, created_at),
+          tasks(id, due_date),
+          meetings(id, start_time),
+          reminders(id, reminder_date)
+        `)
+        .eq("company_id", userProfile.company_id)
+        .order("updated_at", { ascending: false });
 
       if (error) throw error;
 
-      return data?.map((lead: any) => ({
-        ...lead,
-        profiles: lead.profile_name ? { name: lead.profile_name } : null,
-        hasFutureActivity: lead.has_future_activity,
-        futureActivitiesCount: Number(lead.future_activities_count),
-      })) || [];
+      return data?.map((lead: any) => {
+        const now = new Date();
+        const updatedAt = new Date(lead.updated_at);
+        const daysSinceUpdate = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Verificar se tem atividade futura agendada
+        const futureTasks = lead.tasks?.filter((t: any) => t.due_date && new Date(t.due_date) > now) || [];
+        const futureMeetings = lead.meetings?.filter((m: any) => m.start_time && new Date(m.start_time) > now) || [];
+        const futureReminders = lead.reminders?.filter((r: any) => r.reminder_date && new Date(r.reminder_date) > now) || [];
+        
+        const hasFutureActivity = futureTasks.length > 0 || futureMeetings.length > 0 || futureReminders.length > 0;
+        
+        // Pegar a data futura mais próxima
+        const allFutureDates = [
+          ...futureTasks.map((t: any) => new Date(t.due_date)),
+          ...futureMeetings.map((m: any) => new Date(m.start_time)),
+          ...futureReminders.map((r: any) => new Date(r.reminder_date))
+        ].sort((a, b) => a.getTime() - b.getTime());
+
+        const nextActivityDate = allFutureDates[0];
+
+        return {
+          ...lead,
+          daysSinceUpdate,
+          hasFutureActivity,
+          nextActivityDate,
+          futureActivitiesCount: futureTasks.length + futureMeetings.length + futureReminders.length,
+        };
+      }) || [];
     },
     enabled: !!userProfile?.company_id,
     staleTime: 2 * 60 * 1000,
@@ -148,18 +160,14 @@ const Kanban = () => {
       if (error) throw error;
     },
     onMutate: async ({ id, status }) => {
-      // Cancelar queries em andamento
       await queryClient.cancelQueries({ queryKey: ["kanban-leads"] });
+      const previousLeads = queryClient.getQueryData(["kanban-leads", userProfile?.company_id, selectedMonth]);
       
-      // Snapshot do estado anterior
-      const previousLeads = queryClient.getQueryData(["kanban-leads", userProfile?.company_id]);
-      
-      // Atualizar otimisticamente
-      queryClient.setQueryData(["kanban-leads", userProfile?.company_id], (old: any) => {
+      queryClient.setQueryData(["kanban-leads", userProfile?.company_id, selectedMonth], (old: any) => {
         if (!old) return old;
         return old.map((lead: any) => 
           lead.id === id 
-            ? { ...lead, status, updated_at: new Date().toISOString() }
+            ? { ...lead, status, updated_at: new Date().toISOString(), daysSinceUpdate: 0 }
             : lead
         );
       });
@@ -170,9 +178,8 @@ const Kanban = () => {
       toast({ title: "Status atualizado com sucesso!" });
     },
     onError: (error, variables, context) => {
-      // Reverter em caso de erro
       if (context?.previousLeads) {
-        queryClient.setQueryData(["kanban-leads", userProfile?.company_id], context.previousLeads);
+        queryClient.setQueryData(["kanban-leads", userProfile?.company_id, selectedMonth], context.previousLeads);
       }
       toast({ 
         title: "Erro ao atualizar status", 
@@ -180,13 +187,12 @@ const Kanban = () => {
       });
     },
     onSettled: () => {
-      // Sincronizar com servidor após mutation
       queryClient.invalidateQueries({ queryKey: ["kanban-leads"] });
     },
   });
 
   const handleDragStart = (event: DragStartEvent) => {
-    const lead = leads?.find((l: any) => l.id === event.active.id);
+    const lead = monthLeads?.find((l: any) => l.id === event.active.id);
     setActiveLead(lead);
   };
 
@@ -199,32 +205,94 @@ const Kanban = () => {
     const leadId = active.id as string;
     const newStatus = over.id as string;
 
-    const lead = leads?.find((l: any) => l.id === leadId);
+    const lead = monthLeads?.find((l: any) => l.id === leadId);
     if (!lead || lead.status === newStatus) return;
 
     updateStatusMutation.mutate({ id: leadId, status: newStatus });
   };
 
-  const filteredLeads = useMemo(() => {
-    if (!leads) return [];
+  // Leads do mês selecionado (com atividade agendada no mês)
+  const monthLeads = useMemo(() => {
+    if (!allLeads) return [];
+    
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59);
 
-    const hasAnyFutureActivity = leads.some((lead: any) => lead.hasFutureActivity);
+    return allLeads.filter((lead: any) => {
+      // Excluir fechados e perdidos do kanban principal
+      if (lead.status === 'fechado' || lead.status === 'perdido') return false;
+      
+      // Verificar se tem atividade agendada no mês
+      if (!lead.nextActivityDate) return false;
+      
+      const activityDate = new Date(lead.nextActivityDate);
+      return activityDate >= monthStart && activityDate <= monthEnd;
+    });
+  }, [allLeads, selectedMonth]);
 
-    return leads.filter((lead: any) => {
-      if (activeOnly && hasAnyFutureActivity && !lead.hasFutureActivity) {
-        return false;
+  // Leads fechados do mês
+  const closedLeads = useMemo(() => {
+    if (!allLeads) return [];
+    
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59);
+
+    return allLeads.filter((lead: any) => {
+      if (lead.status !== 'fechado') return false;
+      
+      const updatedAt = new Date(lead.updated_at);
+      const isInMonth = updatedAt >= monthStart && updatedAt <= monthEnd;
+      
+      if (!isInMonth) return false;
+
+      if (closedSearchTerm) {
+        const searchLower = closedSearchTerm.toLowerCase();
+        return (
+          lead.name?.toLowerCase().includes(searchLower) ||
+          lead.profiles?.name?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return true;
+    });
+  }, [allLeads, selectedMonth, closedSearchTerm]);
+
+  // Leads lost/inativos (>30 dias sem atualização, sem atividade futura)
+  const lostLeads = useMemo(() => {
+    if (!allLeads) return [];
+
+    return allLeads.filter((lead: any) => {
+      if (lead.status === 'fechado' || lead.status === 'perdido') return false;
+      
+      const hasNoFutureActivity = !lead.hasFutureActivity;
+      const isStale = lead.daysSinceUpdate > 30;
+      const hasNoRecentNotes = !lead.lead_observations || lead.lead_observations.length === 0 || 
+        (lead.lead_observations.every((note: any) => {
+          const noteDate = new Date(note.created_at);
+          const daysSinceNote = Math.floor((new Date().getTime() - noteDate.getTime()) / (1000 * 60 * 60 * 24));
+          return daysSinceNote > 30;
+        }));
+
+      if (!(hasNoFutureActivity && isStale && hasNoRecentNotes)) return false;
+
+      if (lostSearchTerm) {
+        const searchLower = lostSearchTerm.toLowerCase();
+        return (
+          lead.name?.toLowerCase().includes(searchLower) ||
+          lead.profiles?.name?.toLowerCase().includes(searchLower)
+        );
       }
 
-      if (periodFilter !== "all") {
-        const days = getDaysInCurrentStage(lead.updated_at);
-        const period = getTimePeriod(days);
-        if (period !== periodFilter) return false;
-      }
+      return true;
+    });
+  }, [allLeads, lostSearchTerm]);
 
-      if (statusFilter !== "all" && lead.status !== statusFilter) {
-        return false;
-      }
+  const filteredMonthLeads = useMemo(() => {
+    if (!monthLeads) return [];
 
+    return monthLeads.filter((lead: any) => {
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         return (
@@ -237,7 +305,7 @@ const Kanban = () => {
 
       return true;
     });
-  }, [leads, activeOnly, periodFilter, statusFilter, searchTerm]);
+  }, [monthLeads, searchTerm]);
 
   const visibleColumns = useMemo(() => columns, []);
 
@@ -252,16 +320,12 @@ const Kanban = () => {
       </div>
 
       <KanbanFilters
-        activeOnly={activeOnly}
-        onActiveOnlyChange={setActiveOnly}
-        periodFilter={periodFilter}
-        onPeriodFilterChange={setPeriodFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
-        totalLeads={leads?.length || 0}
-        visibleLeads={filteredLeads.length}
+        totalLeads={monthLeads?.length || 0}
+        visibleLeads={filteredMonthLeads.length}
       />
 
       {isLoadingLeads ? (
@@ -289,7 +353,7 @@ const Kanban = () => {
         >
           <div className="flex gap-4 overflow-x-auto pb-4">
             {visibleColumns.map((column, index) => {
-              const columnLeads = filteredLeads
+              const columnLeads = filteredMonthLeads
                 .filter((lead: any) => lead.status === column.id)
                 .sort((a: any, b: any) => {
                   const aDays = getDaysInCurrentStage(a.updated_at);
@@ -329,6 +393,125 @@ const Kanban = () => {
           </DragOverlay>
         </DndContext>
       )}
+
+      {/* Seção de Leads Fechados */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Fechados do Mês</h2>
+            <p className="text-sm text-muted-foreground">
+              Vendas concluídas em {format(new Date(selectedMonth + '-01'), 'MMMM/yyyy', { locale: ptBR })}
+            </p>
+          </div>
+          <Badge variant="secondary" className="text-lg px-4 py-2">
+            {closedLeads.length} vendas
+          </Badge>
+        </div>
+
+        <Input
+          placeholder="Buscar por nome do lead ou vendedor..."
+          value={closedSearchTerm}
+          onChange={(e) => setClosedSearchTerm(e.target.value)}
+          className="max-w-md"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {closedLeads.map((lead: any) => (
+            <Card key={lead.id} className="p-4 border-l-4 border-l-green-500">
+              <div className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold">{lead.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Vendedor: {lead.profiles?.name || 'Não atribuído'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/leads/${lead.id}`)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+                {lead.estimated_value && (
+                  <p className="text-sm font-medium text-green-600">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(lead.estimated_value)}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Fechado em {format(new Date(lead.updated_at), 'dd/MM/yyyy', { locale: ptBR })}
+                </p>
+              </div>
+            </Card>
+          ))}
+          {closedLeads.length === 0 && (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              Nenhuma venda fechada neste mês
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Seção de Leads Lost/Inativos */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Leads Inativos</h2>
+            <p className="text-sm text-muted-foreground">
+              Leads sem atualização há mais de 30 dias, sem atividades futuras
+            </p>
+          </div>
+          <Badge variant="destructive" className="text-lg px-4 py-2">
+            {lostLeads.length} inativos
+          </Badge>
+        </div>
+
+        <Input
+          placeholder="Buscar por nome do lead ou vendedor..."
+          value={lostSearchTerm}
+          onChange={(e) => setLostSearchTerm(e.target.value)}
+          className="max-w-md"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {lostLeads.map((lead: any) => (
+            <Card key={lead.id} className="p-4 border-l-4 border-l-red-500">
+              <div className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold">{lead.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Vendedor: {lead.profiles?.name || 'Não atribuído'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/leads/${lead.id}`)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Badge variant="destructive" className="text-xs">
+                  {lead.daysSinceUpdate} dias sem atualização
+                </Badge>
+                <p className="text-xs text-muted-foreground">
+                  Status: {columns.find(c => c.id === lead.status)?.title || lead.status}
+                </p>
+              </div>
+            </Card>
+          ))}
+          {lostLeads.length === 0 && (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              Nenhum lead inativo
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
