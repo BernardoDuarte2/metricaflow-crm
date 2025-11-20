@@ -476,6 +476,60 @@ export type Database = {
           },
         ]
       }
+      marketing_costs: {
+        Row: {
+          average_retention_months: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          marketing_cost: number | null
+          period_end: string
+          period_start: string
+          sales_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          average_retention_months?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          marketing_cost?: number | null
+          period_end: string
+          period_start: string
+          sales_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          average_retention_months?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          marketing_cost?: number | null
+          period_end?: string
+          period_start?: string
+          sales_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_costs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_costs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_participants: {
         Row: {
           created_at: string
