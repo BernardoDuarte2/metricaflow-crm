@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TrendingUp, Clock, DollarSign, Info } from "lucide-react";
+import { TrendingUp, Clock, DollarSign, Info, Settings } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MarketingCostsSettings } from "./MarketingCostsSettings";
 
 interface AdvancedMetricsCardProps {
   cac: number | null;
@@ -14,13 +17,34 @@ export const AdvancedMetricsCard = ({ cac, ltv, payback, avgTimeInFunnel }: Adva
   return (
     <Card className="hover:shadow-lg transition-all duration-300 border-accent/20 hover:border-accent/40">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <TrendingUp className="h-5 w-5 text-accent" />
-          Métricas Avançadas
-        </CardTitle>
-        <CardDescription>
-          Análise estratégica de desempenho
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingUp className="h-5 w-5 text-accent" />
+              Métricas Avançadas
+            </CardTitle>
+            <CardDescription>
+              Análise estratégica de desempenho
+            </CardDescription>
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar Custos
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Configuração de Custos</DialogTitle>
+                <DialogDescription>
+                  Configure os custos de marketing e vendas para cálculo automático de CAC, LTV e Payback
+                </DialogDescription>
+              </DialogHeader>
+              <MarketingCostsSettings />
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,8 +128,8 @@ export const AdvancedMetricsCard = ({ cac, ltv, payback, avgTimeInFunnel }: Adva
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              Algumas métricas avançadas requerem configuração adicional de custos e dados de retenção. 
-              Entre em contato com o suporte para configurar estes valores.
+              Algumas métricas avançadas requerem configuração de custos de marketing e vendas. 
+              Clique em "Configurar Custos" acima para adicionar os dados do período.
             </AlertDescription>
           </Alert>
         )}

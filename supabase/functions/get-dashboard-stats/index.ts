@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
       completedMeetingsResult,
       tasksResult,
       observationsResult,
+      marketingCostsResult,
     ] = await Promise.all([
       // Total leads
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true })),
@@ -115,6 +116,16 @@ Deno.serve(async (req) => {
 
       // Observations
       buildQuery(supabaseClient.from('lead_observations').select('*', { count: 'exact', head: true })),
+
+      // Marketing costs for the period
+      supabaseClient
+        .from('marketing_costs')
+        .select('*')
+        .lte('period_start', end_date)
+        .gte('period_end', start_date)
+        .order('period_start', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     // Calculate metrics
@@ -257,6 +268,27 @@ Deno.serve(async (req) => {
       };
     });
 
+    // Calculate CAC, LTV, and Payback
+    let cac = null;
+    let ltv = null;
+    let payback = null;
+
+    const marketingCostData = marketingCostsResult.data;
+    
+    if (marketingCostData && wonLeads > 0) {
+      const totalCost = (Number(marketingCostData.marketing_cost) || 0) + (Number(marketingCostData.sales_cost) || 0);
+      cac = totalCost / wonLeads;
+
+      // LTV = Average Ticket × Average Retention Months
+      const retentionMonths = marketingCostData.average_retention_months || 12;
+      ltv = averageTicket * retentionMonths;
+
+      // Payback = CAC / (Average Ticket Monthly)
+      // Assuming average ticket is for the entire period, we divide by retention months
+      const monthlyTicket = averageTicket / retentionMonths;
+      payback = monthlyTicket > 0 ? Math.ceil(cac / monthlyTicket) : null;
+    }
+
     const response = {
       stats: {
         totalLeads,
@@ -274,6 +306,9 @@ Deno.serve(async (req) => {
         completedMeetings,
         totalActivities,
         forecast,
+        cac: cac !== null ? Math.round(cac * 100) / 100 : null,
+        ltv: ltv !== null ? Math.round(ltv * 100) / 100 : null,
+        payback: payback,
       },
       statusData,
       sourceData,

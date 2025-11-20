@@ -607,9 +607,9 @@ const Dashboard = () => {
               <CollapsibleContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <AdvancedMetricsCard
-                    cac={null}
-                    ltv={null}
-                    payback={null}
+                    cac={stats?.cac ?? null}
+                    ltv={stats?.ltv ?? null}
+                    payback={stats?.payback ?? null}
                     avgTimeInFunnel={stats?.avgTimeInFunnel || 0}
                   />
                   {lossReasonsData && lossReasonsData.length > 0 && (
