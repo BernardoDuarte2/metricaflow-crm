@@ -258,6 +258,20 @@ const Leads = () => {
 
       const normalizedPhone = normalizePhone(data.phone);
       
+      // Verificar se o lead já existe (por telefone ou email)
+      const { data: existingLead } = await supabase
+        .from("leads")
+        .select("id, name, assigned_to, profiles!leads_assigned_to_fkey(name)")
+        .eq("company_id", profile.company_id)
+        .or(`phone.eq.${normalizedPhone}${data.email ? `,email.eq.${data.email}` : ''}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingLead) {
+        const vendorName = existingLead.profiles ? (existingLead.profiles as any).name : "Não atribuído";
+        throw new Error(`Lead já cadastrado e vinculado ao vendedor: ${vendorName || "Não atribuído"}`);
+      }
+      
       const { error } = await supabase.from("leads").insert({
         name: data.name,
         email: data.email || null,

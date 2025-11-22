@@ -136,36 +136,64 @@ export default function BulkImport() {
       </Card>
 
       {importResult && (
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle>Resultado da Importação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">{importResult.results.success}</p>
-                  <p className="text-sm text-muted-foreground">Importados</p>
+        <div className="space-y-4 max-w-4xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resultado da Importação</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{importResult.results.success}</p>
+                    <p className="text-sm text-muted-foreground">Importados</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <XCircle className="h-8 w-8 text-yellow-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{importResult.results.duplicates}</p>
+                    <p className="text-sm text-muted-foreground">Duplicados</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <XCircle className="h-8 w-8 text-red-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{importResult.results.errors}</p>
+                    <p className="text-sm text-muted-foreground">Erros</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <XCircle className="h-8 w-8 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">{importResult.results.duplicates}</p>
-                  <p className="text-sm text-muted-foreground">Duplicados</p>
+            </CardContent>
+          </Card>
+
+          {importResult.results.duplicate_details?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-yellow-600">Leads Duplicados</CardTitle>
+                <CardDescription>
+                  Estes leads já estão cadastrados no sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {importResult.results.duplicate_details.map((dup: any, idx: number) => (
+                    <Alert key={idx} className="border-yellow-200 bg-yellow-50">
+                      <AlertTitle className="text-sm font-semibold">
+                        {dup.lead.name} ({dup.lead.phone})
+                      </AlertTitle>
+                      <AlertDescription className="text-sm">
+                        Lead já vinculado ao vendedor: <span className="font-semibold">{dup.vendor_name}</span>
+                        {dup.lead.email && ` • ${dup.lead.email}`}
+                      </AlertDescription>
+                    </Alert>
+                  ))}
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <XCircle className="h-8 w-8 text-red-500" />
-                <div>
-                  <p className="text-2xl font-bold">{importResult.results.errors}</p>
-                  <p className="text-sm text-muted-foreground">Erros</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       <div className="flex justify-end">
