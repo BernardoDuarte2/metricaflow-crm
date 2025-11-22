@@ -16,6 +16,7 @@ interface CalendarGridProps {
   isLoading: boolean;
   onRefetch: () => void;
   viewMode?: "week" | "workweek" | "month";
+  onDayClick?: (date: Date) => void;
 }
 
 interface DroppableSlotProps {
@@ -40,7 +41,7 @@ const DroppableSlot = ({ id, children }: DroppableSlotProps) => {
   );
 };
 
-const CalendarGrid = ({ weekDays, meetings, isLoading, onRefetch, viewMode = "week" }: CalendarGridProps) => {
+const CalendarGrid = ({ weekDays, meetings, isLoading, onRefetch, viewMode = "week", onDayClick }: CalendarGridProps) => {
   const hours = Array.from({ length: 24 }, (_, i) => i); // 0h às 23h
   const today = format(new Date(), "yyyy-MM-dd");
   const [activeMeeting, setActiveMeeting] = useState<any>(null);
@@ -194,9 +195,10 @@ const CalendarGrid = ({ weekDays, meetings, isLoading, onRefetch, viewMode = "we
                   <div 
                     key={day.toString()} 
                     className={cn(
-                      "border-r border-border last:border-r-0 p-2 overflow-y-auto",
+                      "border-r border-border last:border-r-0 p-2 overflow-y-auto cursor-pointer",
                       "hover:bg-muted/30 transition-colors"
                     )}
+                    onClick={() => onDayClick?.(day)}
                   >
                     <div className={cn(
                       "text-sm mb-1 font-medium",
@@ -275,7 +277,16 @@ const CalendarGrid = ({ weekDays, meetings, isLoading, onRefetch, viewMode = "we
                 const dropId = `day-${format(day, "yyyy-MM-dd")}-hour-${hour}`;
                 return (
                   <DroppableSlot key={dropId} id={dropId}>
-                    <div className="space-y-1 p-1">
+                    <div 
+                      className="space-y-1 p-1 h-full cursor-pointer"
+                      onClick={() => {
+                        if (dayMeetings.length === 0 && onDayClick) {
+                          const clickedDate = new Date(day);
+                          clickedDate.setHours(hour, 0, 0, 0);
+                          onDayClick(clickedDate);
+                        }
+                      }}
+                    >
                       {dayMeetings.map((meeting) => (
                         <MeetingCard
                           key={meeting.id}
