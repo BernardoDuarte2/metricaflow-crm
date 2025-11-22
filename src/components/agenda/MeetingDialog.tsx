@@ -55,9 +55,10 @@ interface MeetingDialogProps {
   users: any[];
   onSuccess: () => void;
   meeting?: any;
+  selectedDate?: Date;
 }
 
-const MeetingDialog = ({ open, onOpenChange, leads, users, onSuccess, meeting }: MeetingDialogProps) => {
+const MeetingDialog = ({ open, onOpenChange, leads, users, onSuccess, meeting, selectedDate }: MeetingDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -70,6 +71,13 @@ const MeetingDialog = ({ open, onOpenChange, leads, users, onSuccess, meeting }:
       endTime: format(new Date(meeting.end_time), "HH:mm"),
       leadId: meeting.lead_id || undefined,
       participantIds: meeting.meeting_participants?.map((p: any) => p.user_id) || [],
+    } : selectedDate ? {
+      title: "",
+      description: "",
+      date: selectedDate,
+      startTime: format(selectedDate, "HH:mm"),
+      endTime: format(new Date(selectedDate.getTime() + 60 * 60 * 1000), "HH:mm"),
+      participantIds: [],
     } : {
       title: "",
       description: "",

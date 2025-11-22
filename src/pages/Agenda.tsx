@@ -24,6 +24,7 @@ const Agenda = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
   // Calculate date ranges based on view mode
   const getDateRange = () => {
@@ -187,17 +188,27 @@ const Agenda = () => {
     });
   };
 
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
+    setIsCreateDialogOpen(true);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <CalendarSidebar
-        currentDate={currentDate}
-        onDateChange={handleDateChange}
-        onCreateMeeting={() => setIsCreateDialogOpen(true)}
-        users={users || []}
-        selectedUsers={selectedUsers}
-        onUserToggle={handleUserToggle}
-      />
+      <div className="w-80 flex-shrink-0 border-r border-border overflow-y-auto">
+        <CalendarSidebar
+          currentDate={currentDate}
+          onDateChange={handleDateChange}
+          onCreateMeeting={() => {
+            setSelectedDate(undefined);
+            setIsCreateDialogOpen(true);
+          }}
+          users={users || []}
+          selectedUsers={selectedUsers}
+          onUserToggle={handleUserToggle}
+        />
+      </div>
 
       {/* Área Principal */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -250,22 +261,28 @@ const Agenda = () => {
             isLoading={isLoading}
             onRefetch={refetch}
             viewMode={viewMode}
+            onDayClick={handleDayClick}
           />
         </div>
       </div>
 
       <MeetingDialog
         open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) setSelectedDate(undefined);
+        }}
         leads={leads || []}
         users={users || []}
         onSuccess={() => {
           refetch();
+          setSelectedDate(undefined);
           toast({
             title: "Reunião criada",
             description: "A reunião foi criada com sucesso.",
           });
         }}
+        selectedDate={selectedDate}
       />
     </div>
   );
