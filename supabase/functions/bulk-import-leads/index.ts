@@ -86,6 +86,7 @@ serve(async (req) => {
       errors: 0,
       imported_leads: [] as any[],
       error_details: [] as any[],
+      duplicate_details: [] as any[],
     };
 
     // Processar cada lead
@@ -94,17 +95,23 @@ serve(async (req) => {
         // Limpar telefone
         const cleanPhone = leadData.phone.replace(/\D/g, '');
 
-        // Verificar duplicata
+        // Verificar duplicata - incluindo informação do vendedor
         const { data: existingLead } = await supabase
           .from('leads')
-          .select('id')
+          .select('id, name, assigned_to, profiles!leads_assigned_to_fkey(name)')
           .eq('company_id', profile.company_id)
-          .or(`phone.eq.${cleanPhone},email.eq.${leadData.email}`)
+          .or(`phone.eq.${cleanPhone}${leadData.email ? `,email.eq.${leadData.email}` : ''}`)
           .limit(1)
           .maybeSingle();
 
         if (existingLead) {
           results.duplicates++;
+          const vendorName = existingLead.profiles ? (existingLead.profiles as any).name : 'Não atribuído';
+          results.duplicate_details.push({
+            lead: leadData,
+            vendor_name: vendorName || 'Não atribuído',
+            existing_lead_name: existingLead.name,
+          });
           continue;
         }
 
