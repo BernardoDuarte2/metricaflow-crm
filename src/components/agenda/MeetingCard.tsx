@@ -78,7 +78,6 @@ const MeetingCard = ({ meeting, onRefetch }: MeetingCardProps) => {
         }}
         onClick={(e) => {
           const clickDuration = Date.now() - clickTimeRef.current;
-          // Só abre o dialog se foi um clique rápido (menos de 200ms) e não arrastou
           if (!isDragging && !hasDraggedRef.current && clickDuration < 200) {
             e.stopPropagation();
             setDetailOpen(true);
@@ -87,50 +86,18 @@ const MeetingCard = ({ meeting, onRefetch }: MeetingCardProps) => {
           hasDraggedRef.current = false;
         }}
         className={cn(
-          "p-2.5 rounded-lg border-l-4 cursor-grab active:cursor-grabbing",
-          "hover:shadow-md transition-all",
+          "text-xs rounded px-1 py-0.5 mb-0.5 cursor-pointer border-l-2",
+          "hover:shadow-sm transition-all truncate",
           userColor.bg,
           userColor.border,
           userColor.text,
-          isDragging && "shadow-lg opacity-50 cursor-grabbing"
+          isDragging && "opacity-50"
         )}
       >
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <p className="font-semibold line-clamp-2 text-sm flex-1">{meeting.title}</p>
-          <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0.5 shrink-0", getStatusBadgeColor(meeting.status))}>
-            {meeting.status === "agendada" ? "Agendada" : meeting.status === "realizada" ? "Realizada" : "Cancelada"}
-          </Badge>
+        <div className="font-medium truncate">{meeting.title}</div>
+        <div className="text-[10px] opacity-80">
+          {format(new Date(meeting.start_time), "HH:mm")}
         </div>
-        
-        <div className="flex items-center gap-1.5 mb-1">
-          <Clock className="h-3.5 w-3.5" />
-          <span className="text-xs font-medium">
-            {format(new Date(meeting.start_time), "HH:mm")} - {format(new Date(meeting.end_time), "HH:mm")}
-          </span>
-        </div>
-
-        {meeting.lead && (
-          <div className="flex items-center gap-1.5 mb-1">
-            <UserCircle className="h-3.5 w-3.5" />
-            <span className="line-clamp-1 text-xs">{meeting.lead.name}</span>
-          </div>
-        )}
-
-        {meeting.meeting_participants && meeting.meeting_participants.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            <div className="flex items-center gap-1 flex-wrap">
-              {meeting.meeting_participants.slice(0, 3).map((p: any, idx: number) => (
-                <span key={p.user_id} className="text-xs">
-                  {p.profile?.name?.split(' ')[0]}{idx < Math.min(2, meeting.meeting_participants.length - 1) ? ',' : ''}
-                </span>
-              ))}
-              {meeting.meeting_participants.length > 3 && (
-                <span className="text-xs">+{meeting.meeting_participants.length - 3}</span>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <MeetingDetailDialog
