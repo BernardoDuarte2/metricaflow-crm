@@ -30,8 +30,8 @@ const DroppableSlot = ({ id, children }: DroppableSlotProps) => {
     <div
       ref={setNodeRef}
       className={cn(
-        "p-2 border-l border-border/50 relative min-h-[90px] transition-colors",
-        isOver && "bg-primary/5 ring-2 ring-primary/30 ring-inset"
+        "border-r border-border relative h-full transition-colors hover:bg-muted/30",
+        isOver && "bg-primary/10"
       )}
     >
       {children}
@@ -40,7 +40,7 @@ const DroppableSlot = ({ id, children }: DroppableSlotProps) => {
 };
 
 const CalendarGrid = ({ weekDays, meetings, isLoading, onRefetch }: CalendarGridProps) => {
-  const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8h às 20h
+  const hours = Array.from({ length: 24 }, (_, i) => i); // 0h às 23h
   const today = format(new Date(), "yyyy-MM-dd");
   const [activeMeeting, setActiveMeeting] = useState<any>(null);
   const [optimisticMeetings, setOptimisticMeetings] = useState<any[]>([]);
@@ -146,76 +146,70 @@ const CalendarGrid = ({ weekDays, meetings, isLoading, onRefetch }: CalendarGrid
 
   if (isLoading) {
     return (
-      <Card className="p-4">
-        <div className="space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </Card>
+      <div className="p-8">
+        <Skeleton className="h-12 w-full mb-4" />
+        <Skeleton className="h-96 w-full" />
+      </div>
     );
   }
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <Card className="overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <div className="min-w-[900px]">
-          {/* Header com dias da semana */}
-          <div className="grid grid-cols-8 border-b-2 border-border bg-muted/30">
-            <div className="p-4 text-sm font-semibold text-muted-foreground">Horário</div>
+      <div className="min-w-full">
+        {/* Header com dias da semana - fixo no topo */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border">
+          <div className="grid grid-cols-8">
+            <div className="w-16 border-r border-border" /> {/* Coluna de horários */}
             {weekDays.map((day) => (
-              <div key={day.toString()} className="p-4 text-center border-l border-border">
-                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                  {format(day, "EEEE", { locale: ptBR })}
+              <div key={day.toString()} className="text-center py-2 border-r border-border last:border-r-0">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {format(day, "EEE", { locale: ptBR })}
                 </div>
                 <div className={cn(
-                  "text-2xl font-bold inline-flex items-center justify-center transition-all",
+                  "text-2xl font-normal mt-1 inline-flex items-center justify-center",
                   isToday(day) 
-                    ? "w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-md" 
+                    ? "w-12 h-12 rounded-full bg-primary text-primary-foreground" 
                     : "text-foreground"
                 )}>
-                  {format(day, "dd", { locale: ptBR })}
+                  {format(day, "dd")}
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Grid de horários */}
-          <div className="divide-y divide-border">
-            {hours.map((hour, index) => (
-              <div 
-                key={hour} 
-                className={cn(
-                  "grid grid-cols-8 min-h-[90px]",
-                  index % 2 === 0 && "bg-muted/10"
-                )}
-              >
-                <div className="p-3 text-sm text-muted-foreground font-semibold border-r border-border flex items-start">
-                  {hour}:00
-                </div>
-                {weekDays.map((day) => {
-                  const dayMeetings = getMeetingsForDateTime(day, hour);
-                  const dropId = `day-${format(day, "yyyy-MM-dd")}-hour-${hour}`;
-                  return (
-                    <DroppableSlot key={dropId} id={dropId}>
-                      <div className="space-y-1">
-                        {dayMeetings.map((meeting) => (
-                          <MeetingCard
-                            key={meeting.id}
-                            meeting={meeting}
-                            onRefetch={onRefetch}
-                          />
-                        ))}
-                      </div>
-                    </DroppableSlot>
-                  );
-                })}
+        {/* Grid de horários */}
+        <div className="relative">
+          {hours.map((hour) => (
+            <div 
+              key={hour} 
+              className="grid grid-cols-8 border-b border-border"
+              style={{ minHeight: '60px' }}
+            >
+              <div className="w-16 text-right pr-2 pt-1 text-xs text-muted-foreground border-r border-border">
+                {hour}:00
               </div>
-            ))}
-          </div>
+              {weekDays.map((day) => {
+                const dayMeetings = getMeetingsForDateTime(day, hour);
+                const dropId = `day-${format(day, "yyyy-MM-dd")}-hour-${hour}`;
+                return (
+                  <DroppableSlot key={dropId} id={dropId}>
+                    <div className="space-y-1 p-1">
+                      {dayMeetings.map((meeting) => (
+                        <MeetingCard
+                          key={meeting.id}
+                          meeting={meeting}
+                          onRefetch={onRefetch}
+                        />
+                      ))}
+                    </div>
+                  </DroppableSlot>
+                );
+              })}
+            </div>
+          ))}
         </div>
-        </div>
-      </Card>
+      </div>
 
       <DragOverlay>
         {activeMeeting ? (
