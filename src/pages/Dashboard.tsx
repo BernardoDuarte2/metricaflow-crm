@@ -1,20 +1,8 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/dashboard/MetricCard";
-import LeadsStatusChart from "@/components/dashboard/LeadsStatusChart";
-import FinancialMetricsChart from "@/components/dashboard/FinancialMetricsChart";
-import MonthlyClosedLeadsChart from "@/components/dashboard/MonthlyClosedLeadsChart";
-import SalesPerformanceDetailedChart from "@/components/dashboard/SalesPerformanceDetailedChart";
-import LeadsSourceChart from "@/components/dashboard/LeadsSourceChart";
-import { ImprovedConversionFunnelChart } from "@/components/dashboard/ImprovedConversionFunnelChart";
-import { ActivityMetricsCard } from "@/components/dashboard/ActivityMetricsCard";
-import { LossReasonsChart } from "@/components/dashboard/LossReasonsChart";
-import { ForecastCard } from "@/components/dashboard/ForecastCard";
-import { AdvancedMetricsCard } from "@/components/dashboard/AdvancedMetricsCard";
-import { ProductivityRankingCard } from "@/components/dashboard/ProductivityRankingCard";
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
-import { GoalsProgressCard } from "@/components/dashboard/GoalsProgressCard";
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
 import { Users, CheckCircle, Clock, TrendingUp, DollarSign, Target, FileDown, Layers } from "lucide-react";
@@ -23,8 +11,34 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+
+// Lazy load de componentes pesados para reduzir bundle inicial
+const LeadsStatusChart = lazy(() => import("@/components/dashboard/LeadsStatusChart"));
+const FinancialMetricsChart = lazy(() => import("@/components/dashboard/FinancialMetricsChart"));
+const MonthlyClosedLeadsChart = lazy(() => import("@/components/dashboard/MonthlyClosedLeadsChart"));
+const SalesPerformanceDetailedChart = lazy(() => import("@/components/dashboard/SalesPerformanceDetailedChart"));
+const LeadsSourceChart = lazy(() => import("@/components/dashboard/LeadsSourceChart"));
+const ImprovedConversionFunnelChart = lazy(() => import("@/components/dashboard/ImprovedConversionFunnelChart").then(m => ({ default: m.ImprovedConversionFunnelChart })));
+const ActivityMetricsCard = lazy(() => import("@/components/dashboard/ActivityMetricsCard").then(m => ({ default: m.ActivityMetricsCard })));
+const LossReasonsChart = lazy(() => import("@/components/dashboard/LossReasonsChart").then(m => ({ default: m.LossReasonsChart })));
+const ForecastCard = lazy(() => import("@/components/dashboard/ForecastCard").then(m => ({ default: m.ForecastCard })));
+const AdvancedMetricsCard = lazy(() => import("@/components/dashboard/AdvancedMetricsCard").then(m => ({ default: m.AdvancedMetricsCard })));
+const ProductivityRankingCard = lazy(() => import("@/components/dashboard/ProductivityRankingCard").then(m => ({ default: m.ProductivityRankingCard })));
+const GoalsProgressCard = lazy(() => import("@/components/dashboard/GoalsProgressCard").then(m => ({ default: m.GoalsProgressCard })));
+
+// Lazy load de bibliotecas pesadas (somente quando necessário)
+const generatePDF = async () => {
+  const [jsPDF, html2canvas] = await Promise.all([
+    import("jspdf").then(m => m.default),
+    import("html2canvas").then(m => m.default)
+  ]);
+  return { jsPDF, html2canvas };
+};
+
+// Componente de fallback para Suspense
+const ChartSkeleton = () => (
+  <Skeleton className="h-[400px] w-full rounded-lg" />
+);
 
 const Dashboard = () => {
   const currentYear = new Date().getFullYear();
@@ -131,7 +145,9 @@ const Dashboard = () => {
       return data;
     },
     enabled: !!profile && !!userRole,
-    staleTime: 3 * 60 * 1000, // Cache de 3 minutos para Dashboard
+    staleTime: 5 * 60 * 1000, // Cache de 5 minutos
+    gcTime: 10 * 60 * 1000, // Manter em cache por 10 minutos
+    refetchOnWindowFocus: false, // Não refetch ao focar janela
   });
 
   const stats = dashboardData?.stats;
@@ -142,7 +158,7 @@ const Dashboard = () => {
   const conversionByStage = dashboardData?.conversionByStage;
 
   const { data: monthlyClosedData } = useQuery({
-    queryKey: ["monthly-closed-leads", userRole, selectedMonth, selectedYear],
+    queryKey: ["monthly-closed-leads", userRole, selectedYear],
     queryFn: async () => {
       const {
         data: { session },
@@ -204,6 +220,8 @@ const Dashboard = () => {
       return monthlyStats;
     },
     enabled: !!profile,
+    staleTime: 10 * 60 * 1000, // 10 minutos de cache
+    gcTime: 15 * 60 * 1000,
   });
 
   const { data: financialData } = useQuery({
@@ -244,6 +262,8 @@ const Dashboard = () => {
       return Object.entries(monthlyStats).map(([month, stats]) => ({ month, ...stats }));
     },
     enabled: !!profile,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
 
@@ -265,6 +285,8 @@ const Dashboard = () => {
     const loadingToast = toast.loading("Gerando PDF com gráficos...");
 
     try {
+      // Lazy load das bibliotecas pesadas apenas quando necessário
+      const { jsPDF, html2canvas: html2canvasModule } = await generatePDF();
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
@@ -337,7 +359,7 @@ const Dashboard = () => {
         if (!chartElement) continue;
 
         try {
-          const canvas = await html2canvas(chartElement, {
+          const canvas = await html2canvasModule(chartElement, {
             backgroundColor: '#ffffff',
             scale: 2,
             logging: false,
@@ -516,7 +538,9 @@ const Dashboard = () => {
                 </div>
 
                 {/* Goals Progress Card */}
-                <GoalsProgressCard />
+                <Suspense fallback={<ChartSkeleton />}>
+                  <GoalsProgressCard />
+                </Suspense>
               </CollapsibleContent>
             </Collapsible>
 
@@ -549,8 +573,16 @@ const Dashboard = () => {
                 </div>
 
                 <div id="funnel-charts" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {funnelData && <ImprovedConversionFunnelChart data={funnelData} conversionRates={conversionByStage} />}
-                  {statusData && <LeadsStatusChart data={statusData} />}
+                  {funnelData && (
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <ImprovedConversionFunnelChart data={funnelData} conversionRates={conversionByStage} />
+                    </Suspense>
+                  )}
+                  {statusData && (
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <LeadsStatusChart data={statusData} />
+                    </Suspense>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -563,15 +595,19 @@ const Dashboard = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="grid grid-cols-1 gap-6">
-                  <ActivityMetricsCard
-                    scheduledMeetings={stats?.scheduledMeetings || 0}
-                    completedMeetings={stats?.completedMeetings || 0}
-                    totalActivities={stats?.totalActivities || 0}
-                    qualifiedLeads={stats?.qualifiedLeads || 0}
-                  />
+                  <Suspense fallback={<ChartSkeleton />}>
+                    <ActivityMetricsCard
+                      scheduledMeetings={stats?.scheduledMeetings || 0}
+                      completedMeetings={stats?.completedMeetings || 0}
+                      totalActivities={stats?.totalActivities || 0}
+                      qualifiedLeads={stats?.qualifiedLeads || 0}
+                    />
+                  </Suspense>
 
                   {userRole !== "vendedor" && detailedPerformanceData && detailedPerformanceData.length > 0 && (
-                    <ProductivityRankingCard vendedores={detailedPerformanceData} />
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <ProductivityRankingCard vendedores={detailedPerformanceData} />
+                    </Suspense>
                   )}
                 </div>
               </CollapsibleContent>
@@ -585,18 +621,32 @@ const Dashboard = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="space-y-6">
-                  <ForecastCard
-                    forecastValue={stats?.forecast || 0}
-                    currentRevenue={stats?.totalConvertedValue || 0}
-                  />
+                  <Suspense fallback={<ChartSkeleton />}>
+                    <ForecastCard
+                      forecastValue={stats?.forecast || 0}
+                      currentRevenue={stats?.totalConvertedValue || 0}
+                    />
+                  </Suspense>
 
                   <div id="financial-source-charts" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {financialData && <FinancialMetricsChart data={financialData} />}
-                    {sourceData && <LeadsSourceChart data={sourceData} />}
+                    {financialData && (
+                      <Suspense fallback={<ChartSkeleton />}>
+                        <FinancialMetricsChart data={financialData} />
+                      </Suspense>
+                    )}
+                    {sourceData && (
+                      <Suspense fallback={<ChartSkeleton />}>
+                        <LeadsSourceChart data={sourceData} />
+                      </Suspense>
+                    )}
                   </div>
 
                   <div id="monthly-closed-chart">
-                    {monthlyClosedData && <MonthlyClosedLeadsChart data={monthlyClosedData} />}
+                    {monthlyClosedData && (
+                      <Suspense fallback={<ChartSkeleton />}>
+                        <MonthlyClosedLeadsChart data={monthlyClosedData} />
+                      </Suspense>
+                    )}
                   </div>
                 </div>
               </CollapsibleContent>
@@ -610,20 +660,26 @@ const Dashboard = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <AdvancedMetricsCard
-                    cac={stats?.cac ?? null}
-                    ltv={stats?.ltv ?? null}
-                    payback={stats?.payback ?? null}
-                    avgTimeInFunnel={stats?.avgTimeInFunnel || 0}
-                  />
+                  <Suspense fallback={<ChartSkeleton />}>
+                    <AdvancedMetricsCard
+                      cac={stats?.cac ?? null}
+                      ltv={stats?.ltv ?? null}
+                      payback={stats?.payback ?? null}
+                      avgTimeInFunnel={stats?.avgTimeInFunnel || 0}
+                    />
+                  </Suspense>
                   {lossReasonsData && lossReasonsData.length > 0 && (
-                    <LossReasonsChart data={lossReasonsData} />
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <LossReasonsChart data={lossReasonsData} />
+                    </Suspense>
                   )}
                 </div>
 
                 {userRole !== "vendedor" && detailedPerformanceData && detailedPerformanceData.length > 0 && (
                   <div id="detailed-performance-chart" className="mt-6">
-                    <SalesPerformanceDetailedChart data={detailedPerformanceData} />
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <SalesPerformanceDetailedChart data={detailedPerformanceData} />
+                    </Suspense>
                   </div>
                 )}
               </CollapsibleContent>

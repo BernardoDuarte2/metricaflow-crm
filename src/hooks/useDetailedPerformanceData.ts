@@ -117,5 +117,7 @@ export const useDetailedPerformanceData = (
       }));
     },
     enabled: profileRole !== "vendedor",
+    staleTime: 5 * 60 * 1000, // 5 minutos de cache
+    gcTime: 10 * 60 * 1000,
   });
 };
