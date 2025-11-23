@@ -177,8 +177,7 @@ const Sidebar = () => {
         <LogOut className="h-4 w-4" />
         Sair
       </Button>
-    </nav>;
+    </nav>
 };
-export default Sidebar;
-};
+
 export default Sidebar;
