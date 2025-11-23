@@ -6,7 +6,8 @@ const corsHeaders = {
 };
 
 interface DemoDataRequest {
-  clearExisting?: boolean;
+  createUsers?: boolean;
+  userCount?: number;
 }
 
 Deno.serve(async (req) => {
@@ -45,7 +46,71 @@ Deno.serve(async (req) => {
 
     const companyId = profile.company_id;
 
+    // Parse request body
+    const body = await req.json().catch(() => ({})) as DemoDataRequest;
+    const shouldCreateUsers = body.createUsers ?? true;
+    const userCount = Math.min(15, Math.max(1, body.userCount ?? 5));
+
     console.log(`Starting demo data generation for company: ${companyId}`);
+    console.log(`Will create ${shouldCreateUsers ? userCount : 0} users`);
+
+    // Create fictional users if requested
+    let createdUsersCount = 0;
+    if (shouldCreateUsers) {
+      console.log(`Creating ${userCount} fictional users...`);
+      
+      const fictionalNames = [
+        'Carlos Silva', 'Ana Costa', 'Pedro Santos', 'Mariana Oliveira',
+        'Rafael Souza', 'Juliana Lima', 'Fernando Alves', 'Beatriz Rocha',
+        'Lucas Pereira', 'Camila Ferreira', 'Diego Martins', 'Larissa Mendes',
+        'Thiago Ribeiro', 'Patrícia Gomes', 'Bruno Cardoso'
+      ];
+
+      const roles = ['vendedor', 'gestor', 'vendedor', 'vendedor', 'vendedor']; // Mix de roles
+
+      for (let i = 0; i < userCount; i++) {
+        const name = fictionalNames[i % fictionalNames.length];
+        const email = `demo.${name.toLowerCase().replace(/\s+/g, '.')}@vvm.demo`;
+        const password = 'Demo@123456';
+        const role = roles[i % roles.length];
+
+        try {
+          // Create user in Auth
+          const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              name,
+              company_id: companyId,
+              role
+            }
+          });
+
+          if (createError) {
+            console.error(`Error creating user ${name}:`, createError);
+            continue;
+          }
+
+          if (newUser.user) {
+            // Create role
+            await supabase
+              .from('user_roles')
+              .insert({
+                user_id: newUser.user.id,
+                role
+              });
+
+            createdUsersCount++;
+            console.log(`✓ User created: ${name} (${role})`);
+          }
+        } catch (err) {
+          console.error(`Error creating user ${name}:`, err);
+        }
+      }
+
+      console.log(`Created ${createdUsersCount} fictional users`);
+    }
 
     // Arrays de dados fictícios
     const empresas = [
@@ -77,70 +142,89 @@ Deno.serve(async (req) => {
       'Sem retorno do cliente'
     ];
 
-    // Get all users in the company for assignment
+    // Get ALL active users in company (including newly created)
     const { data: companyUsers, error: usersError } = await supabase
       .from('profiles')
       .select('id, name')
       .eq('company_id', companyId)
-      .eq('active', true)
-      .limit(10);
+      .eq('active', true);
 
     if (usersError || !companyUsers || companyUsers.length === 0) {
       throw new Error('Nenhum usuário encontrado na empresa');
     }
 
-    console.log(`Found ${companyUsers.length} users for assignment`);
+    console.log(`Total of ${companyUsers.length} active users for data distribution`);
 
     // Helper function to get random date in last 12 months
-    const getRandomDate = (monthsAgo: number) => {
+    const getRandomDate = (monthsAgo?: number) => {
       const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 0);
+      const months = monthsAgo ?? Math.floor(Math.random() * 12);
+      const start = new Date(now.getFullYear(), now.getMonth() - months, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - months + 1, 0);
       return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
     };
 
     // Helper to get random item from array
     const random = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    
+    // Function to distribute leads with performance weights
+    const getUserWithPerformance = () => {
+      // 20% chance of top performer (first 20% of users)
+      // 50% chance of mid performer
+      // 30% chance of low performer
+      const rand = Math.random();
+      const topPerformers = companyUsers.slice(0, Math.max(1, Math.floor(companyUsers.length * 0.2)));
+      const midPerformers = companyUsers.slice(Math.max(1, Math.floor(companyUsers.length * 0.2)), Math.max(2, Math.floor(companyUsers.length * 0.7)));
+      const lowPerformers = companyUsers.slice(Math.max(2, Math.floor(companyUsers.length * 0.7)));
+      
+      if (rand < 0.2 && topPerformers.length > 0) return random(topPerformers);
+      if (rand < 0.7 && midPerformers.length > 0) return random(midPerformers);
+      if (lowPerformers.length > 0) return random(lowPerformers);
+      return random(companyUsers);
+    };
 
-    // Helper to get random user
-    const randomUser = () => random(companyUsers);
-
-    // 1. CREATE LEADS (300 leads)
-    console.log('Creating leads...');
+    // 1. CREATE LEADS (300 leads with performance distribution)
+    console.log('Creating 300 leads with performance distribution...');
+    
     const leadsToInsert = [];
-    const statusDistribution = [
-      { status: 'novo', count: 40 },
-      { status: 'contato', count: 35 },
-      { status: 'qualificado', count: 45 },
-      { status: 'proposta', count: 50 },
-      { status: 'negociacao', count: 40 },
-      { status: 'fechado', count: 60 },
-      { status: 'perdido', count: 30 }
-    ];
-
-    let leadIndex = 0;
-    for (const dist of statusDistribution) {
-      for (let i = 0; i < dist.count; i++) {
-        const monthsAgo = Math.floor(Math.random() * 12);
-        const createdAt = getRandomDate(monthsAgo);
-        const assignedUser = randomUser();
-        
-        leadsToInsert.push({
-          company_id: companyId,
-          name: nomes[leadIndex % nomes.length],
-          company: empresas[leadIndex % empresas.length] + ` Ltda`,
-          email: `contato${leadIndex}@${empresas[leadIndex % empresas.length].toLowerCase().replace(/\s/g, '')}.com.br`,
-          phone: `+55${Math.floor(Math.random() * 90 + 10)}9${Math.floor(Math.random() * 90000000 + 10000000)}`,
-          status: dist.status,
-          source: random(fontes),
-          assigned_to: assignedUser.id,
-          qualificado: ['qualificado', 'proposta', 'negociacao', 'fechado'].includes(dist.status),
-          motivo_perda: dist.status === 'perdido' ? random(motivosPerdas) : null,
-          created_at: createdAt.toISOString(),
-          updated_at: new Date(createdAt.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
-        leadIndex++;
+    for (let i = 0; i < 300; i++) {
+      const createdDate = getRandomDate();
+      const user = getUserWithPerformance();
+      
+      // Top performers have more leads in advanced stages
+      const userIndex = companyUsers.indexOf(user);
+      const isTopPerformer = userIndex < Math.max(1, Math.floor(companyUsers.length * 0.2));
+      const isMidPerformer = userIndex < Math.max(2, Math.floor(companyUsers.length * 0.7)) && !isTopPerformer;
+      
+      let status;
+      if (isTopPerformer) {
+        // Top performers: more closed and negotiations
+        const topStatuses = ['fechado', 'fechado', 'negociacao', 'proposta', 'qualificado', 'contato'];
+        status = random(topStatuses);
+      } else if (isMidPerformer) {
+        // Mid performers: balanced mix
+        const midStatuses = ['fechado', 'negociacao', 'proposta', 'qualificado', 'contato', 'perdido'];
+        status = random(midStatuses);
+      } else {
+        // Low performers: more early stage and lost
+        const lowStatuses = ['novo', 'contato', 'qualificado', 'perdido', 'perdido', 'proposta'];
+        status = random(lowStatuses);
       }
+      
+      leadsToInsert.push({
+        company_id: companyId,
+        name: nomes[i % nomes.length],
+        company: empresas[i % empresas.length] + ` Ltda`,
+        email: `contato${i}@${empresas[i % empresas.length].toLowerCase().replace(/\s/g, '')}.com.br`,
+        phone: `+55${Math.floor(Math.random() * 90 + 10)}9${Math.floor(Math.random() * 90000000 + 10000000)}`,
+        status,
+        source: random(fontes),
+        assigned_to: user.id,
+        qualificado: status !== 'novo' && status !== 'contato',
+        motivo_perda: status === 'perdido' ? random(motivosPerdas) : null,
+        created_at: createdDate.toISOString(),
+        updated_at: new Date(createdDate.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+      });
     }
 
     const { data: createdLeads, error: leadsError } = await supabase
@@ -305,14 +389,12 @@ Deno.serve(async (req) => {
     // Create 250 meetings
     for (let i = 0; i < 250; i++) {
       const lead = random(createdLeads.filter(l => ['qualificado', 'proposta', 'negociacao', 'fechado'].includes(l.status)));
-      const status = i < 75 ? 'agendada' : (i < 213 ? 'realizada' : 'cancelada'); // 30% agendada, 55% realizada, 15% cancelada
+      const status = i < 75 ? 'agendada' : (i < 213 ? 'realizada' : 'cancelada');
       
       let startTime: Date;
       if (status === 'agendada') {
-        // Future meetings
         startTime = new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000);
       } else {
-        // Past meetings
         startTime = new Date(new Date(lead.created_at).getTime() + Math.random() * 60 * 24 * 60 * 60 * 1000);
       }
       
@@ -346,14 +428,12 @@ Deno.serve(async (req) => {
       // Create meeting participants
       const participantsToInsert = [];
       for (const meeting of createdMeetings) {
-        // Organizer
         participantsToInsert.push({
           meeting_id: meeting.id,
           user_id: meeting.created_by,
           is_organizer: true
         });
         
-        // Add 0-2 additional participants
         const numParticipants = Math.floor(Math.random() * 3);
         const otherUsers = companyUsers.filter(u => u.id !== meeting.created_by);
         for (let i = 0; i < Math.min(numParticipants, otherUsers.length); i++) {
@@ -392,7 +472,7 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < 400; i++) {
       const lead = random(createdLeads);
-      const assignedUser = randomUser();
+      const assignedUser = getUserWithPerformance();
       const assignmentType = i < 240 ? 'individual' : (i < 360 ? 'multiple' : 'all');
       const status = i < 160 ? 'aberta' : (i < 260 ? 'em_andamento' : 'concluida');
       
@@ -441,7 +521,7 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < 200; i++) {
       const lead = random(createdLeads);
-      const completed = i < 120; // 60% completed
+      const completed = i < 120;
       const reminderDate = completed
         ? new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000)
         : new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000);
@@ -470,8 +550,10 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Dados de demonstração criados com sucesso!',
+        message: 'Dados demo gerados com sucesso!',
         stats: {
+          usersCreated: createdUsersCount,
+          totalUsers: companyUsers.length,
           leads: createdLeads.length,
           leadValues: leadValuesToInsert.length,
           observations: observationsToInsert.length,
@@ -485,13 +567,12 @@ Deno.serve(async (req) => {
         status: 200
       }
     );
-
   } catch (error) {
     console.error('Error in seed-demo-data:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
