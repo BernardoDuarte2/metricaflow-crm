@@ -141,7 +141,7 @@ const Sidebar = () => {
   }];
 
   const navItems = allNavItems.filter(item => !item.requiresOwnerOrGestor || isOwnerOrGestor);
-  return <nav className="bg-card border-b border-border flex items-center justify-between px-6 py-3 z-30 sticky top-0">
+  return <nav className="bg-card border-b border-border flex items-center justify-between px-6 py-3 sticky top-0 z-50 w-full">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
           {profile?.company?.logo_url ? (
