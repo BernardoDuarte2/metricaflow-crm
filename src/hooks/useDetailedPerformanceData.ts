@@ -22,19 +22,34 @@ export const useDetailedPerformanceData = (
         return [];
       }
 
-      // Buscar leads com informações do vendedor
+      // Buscar perfil para obter company_id
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", session.user.id)
+        .single();
+
+      if (!profile?.company_id) {
+        throw new Error("Empresa não encontrada.");
+      }
+
+      // Buscar leads com informações do vendedor (limitando para evitar URLs longas)
       const { data: leads } = await supabase
         .from("leads")
         .select("id, assigned_to, status, profiles(name), created_at, updated_at")
+        .eq("company_id", profile.company_id)
         .gte("created_at", dateRange.start)
-        .lte("created_at", dateRange.end);
+        .lte("created_at", dateRange.end)
+        .order("created_at", { ascending: false })
+        .limit(100);
 
-      // Buscar observações de todos os leads
-      const leadIds = leads?.map((l) => l.id) || [];
+      // Buscar observações usando company_id e date range em vez de lista de IDs
       const { data: observations } = await supabase
         .from("lead_observations")
-        .select("lead_id, user_id")
-        .in("lead_id", leadIds);
+        .select("lead_id, user_id, leads!inner(company_id)")
+        .eq("leads.company_id", profile.company_id)
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
 
       const salesStats: Record<
         string,
