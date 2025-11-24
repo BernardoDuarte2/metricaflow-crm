@@ -58,12 +58,12 @@ export function TaskCard({ task, onEdit, isGestor }: TaskCardProps) {
   );
 
   const getPriorityColor = (dueDate: string | null) => {
-    if (!dueDate) return "border-muted";
+    if (!dueDate) return "border-border/30";
     
     const days = differenceInDays(new Date(dueDate), new Date());
-    if (days < 0 || days === 0) return "border-destructive";
-    if (days <= 3) return "border-accent";
-    return "border-primary";
+    if (days < 0 || days === 0) return "border-accent/60 shadow-[0_0_15px_rgba(143,174,255,0.3)]";
+    if (days <= 3) return "border-accent/40";
+    return "border-primary/30";
   };
 
   const handleStartTask = (e: React.MouseEvent) => {
@@ -147,7 +147,7 @@ export function TaskCard({ task, onEdit, isGestor }: TaskCardProps) {
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <Card className={`border-l-4 ${getPriorityColor(task.due_date)} ${isCompleted ? "opacity-60" : ""}`}>
+      <Card className={`premium-card border-l-4 ${getPriorityColor(task.due_date)} ${isCompleted ? "opacity-60" : ""} transition-all duration-300`}>
         <CollapsibleTrigger asChild>
           <CardHeader className="p-3 cursor-pointer hover:bg-accent/50 transition-colors">
             <div className="flex items-start justify-between gap-2">
