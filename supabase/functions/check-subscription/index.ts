@@ -94,7 +94,14 @@ serve(async (req) => {
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       stripeSubscriptionId = subscription.id;
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      
+      // Safely convert timestamps - handle both number and undefined cases
+      const periodEnd = subscription.current_period_end;
+      const periodStart = subscription.current_period_start;
+      
+      if (periodEnd && typeof periodEnd === 'number') {
+        subscriptionEnd = new Date(periodEnd * 1000).toISOString();
+      }
       
       const productId = subscription.items.data[0].price.product as string;
       const planInfo = PRODUCT_TO_PLAN[productId];
@@ -108,23 +115,33 @@ serve(async (req) => {
         subscriptionId: subscription.id, 
         planType, 
         userLimit,
-        endDate: subscriptionEnd 
+        endDate: subscriptionEnd,
+        rawPeriodEnd: periodEnd,
+        rawPeriodStart: periodStart
       });
 
       // Update or create subscription record in database
+      const upsertData: Record<string, unknown> = {
+        company_id: profile.company_id,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: stripeSubscriptionId,
+        plan_type: planType,
+        status: "active",
+        user_limit: userLimit,
+        cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+      };
+      
+      // Only add date fields if they're valid
+      if (periodStart && typeof periodStart === 'number') {
+        upsertData.current_period_start = new Date(periodStart * 1000).toISOString();
+      }
+      if (subscriptionEnd) {
+        upsertData.current_period_end = subscriptionEnd;
+      }
+
       const { error: upsertError } = await supabaseClient
         .from("subscriptions")
-        .upsert({
-          company_id: profile.company_id,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: stripeSubscriptionId,
-          plan_type: planType,
-          status: "active",
-          user_limit: userLimit,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: subscriptionEnd,
-          cancel_at_period_end: subscription.cancel_at_period_end,
-        }, {
+        .upsert(upsertData, {
           onConflict: "company_id",
         });
 
