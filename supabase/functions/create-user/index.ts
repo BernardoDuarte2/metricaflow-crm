@@ -164,21 +164,6 @@ serve(async (req) => {
       }
     }
 
-    // Check if email exists globally in Supabase Auth
-    const { data: globalCheck } = await supabaseAdmin.auth.admin.listUsers();
-    const emailExistsGlobally = globalCheck?.users?.some(u => 
-      u.email?.toLowerCase() === email.toLowerCase()
-    );
-
-    if (emailExistsGlobally) {
-      return new Response(JSON.stringify({ 
-        error: 'Este email já está cadastrado no sistema. Use outro email.' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
     console.log(`Creating user: ${email} with role: ${role} for company: ${companyId}`);
 
     // Create the user in Supabase Auth
@@ -195,6 +180,18 @@ serve(async (req) => {
 
     if (createError) {
       console.error('Error creating user:', createError);
+      
+      // Handle duplicate email error from Supabase Auth
+      const errorMsg = createError.message?.toLowerCase() || '';
+      if (errorMsg.includes('already') || errorMsg.includes('exists') || errorMsg.includes('duplicate')) {
+        return new Response(JSON.stringify({ 
+          error: 'Este email já está em uso por outra empresa. Use outro email.' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         error: createError.message || 'Erro ao criar usuário' 
       }), {
