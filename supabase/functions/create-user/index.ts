@@ -77,12 +77,22 @@ serve(async (req) => {
       .eq('company_id', companyId)
       .single();
 
-    // Count current active users in company (excluding owner)
-    const { count: currentUsers } = await supabaseAdmin
+    // Count current ACTIVE users in company (excluding owner)
+    // Only active users count against the license limit
+    const { data: activeUsersData } = await supabaseAdmin
       .from('profiles')
-      .select('id', { count: 'exact', head: true })
+      .select('id')
       .eq('company_id', companyId)
       .eq('active', true);
+
+    const { data: ownerData } = await supabaseAdmin
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'gestor_owner');
+
+    const ownerIds = ownerData?.map(o => o.user_id) || [];
+    const activeNonOwners = activeUsersData?.filter(u => !ownerIds.includes(u.id)) || [];
+    const currentActiveUsers = activeNonOwners.length;
 
     const userLimit = subscription?.user_limit || 1;
     const planType = subscription?.plan_type || 'free';
@@ -97,10 +107,10 @@ serve(async (req) => {
       });
     }
 
-    // Check if limit reached
-    if (currentUsers && currentUsers >= userLimit) {
+    // Check if limit reached (only count active non-owner users)
+    if (currentActiveUsers >= userLimit - 1) { // -1 because owner is included in the limit
       return new Response(JSON.stringify({ 
-        error: `Limite de ${userLimit} usuários atingido` 
+        error: `Limite de ${userLimit} usuários ativos atingido. Desative um usuário para liberar uma licença.` 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

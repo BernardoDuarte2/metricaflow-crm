@@ -38,9 +38,16 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { UserPlus, Users, Loader2, Crown, Power, PowerOff, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Users, Loader2, Crown, Power, PowerOff, Eye, EyeOff, Pencil } from "lucide-react";
 import { createUserSchema } from "@/lib/validation";
 import { AvatarUpload } from "@/components/profile/AvatarUpload";
+
+interface UserToEdit {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 export default function UsersPage() {
   const { toast } = useToast();
@@ -48,6 +55,8 @@ export default function UsersPage() {
   const { planType, userLimit: subscriptionUserLimit } = useSubscription();
   
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<UserToEdit | null>(null);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPassword, setUserPassword] = useState("");
@@ -57,6 +66,13 @@ export default function UsersPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editRole, setEditRole] = useState<"gestor" | "vendedor">("vendedor");
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   const { data: session } = useQuery({
     queryKey: ["session"],
@@ -120,22 +136,40 @@ export default function UsersPage() {
         .in("user_id", userIds);
 
       if (rolesError) throw rolesError;
+      
+      // Fetch emails from auth (for owners only)
+      const { data: session } = await supabase.auth.getSession();
+      let userEmails: Record<string, string> = {};
+      
+      // We'll get emails via an edge function call for security
+      try {
+        const { data: emailsData } = await supabase.functions.invoke('get-user-emails', {
+          body: { userIds }
+        });
+        if (emailsData?.emails) {
+          userEmails = emailsData.emails;
+        }
+      } catch (e) {
+        console.log('Could not fetch user emails');
+      }
 
       return profiles?.map(profile => ({
         ...profile,
+        email: userEmails[profile.id] || '',
         user_roles: roles?.filter(r => r.user_id === profile.id) || []
       })) || [];
     },
     enabled: !!profile?.company_id && canManageUsers,
   });
 
-  const ownerCount = users?.filter(u => 
-    u.user_roles?.some((r: any) => r.role === "gestor_owner")
-  ).length || 0;
-  const additionalUsers = (users?.length || 0) - ownerCount;
+  // Count only ACTIVE non-owner users for license calculation
+  const activeNonOwnerUsers = users?.filter(u => 
+    u.active && !u.user_roles?.some((r: any) => r.role === "gestor_owner")
+  ) || [];
+  const activeUserCount = activeNonOwnerUsers.length;
   const effectiveUserLimit = subscriptionUserLimit || 10;
-  const canCreateUser = !isIndividualPlan && additionalUsers < effectiveUserLimit;
-
+  const maxAdditionalUsers = effectiveUserLimit - 1; // -1 for owner
+  const canCreateUser = !isIndividualPlan && activeUserCount < maxAdditionalUsers;
   const createUserMutation = useMutation({
     mutationFn: async ({ name, email, password, role }: { 
       name: string; 
@@ -189,6 +223,43 @@ export default function UsersPage() {
     onError: () => {
       toast({
         title: "Erro ao atualizar status do usuário",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, name, email, password, role }: { 
+      userId: string;
+      name?: string; 
+      email?: string; 
+      password?: string; 
+      role?: string 
+    }) => {
+      const { data, error } = await supabase.functions.invoke("update-user", {
+        body: { userId, name, email, password, role },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ Usuário atualizado!",
+        description: "As informações foram salvas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["company-users"] });
+      setEditDialogOpen(false);
+      setUserToEdit(null);
+      resetEditForm();
+    },
+    onError: (error: any) => {
+      console.error("Update user error:", error);
+      toast({
+        title: "Erro ao atualizar usuário",
+        description: error.message || "Não foi possível atualizar o usuário. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -272,6 +343,41 @@ export default function UsersPage() {
     });
   };
 
+  const resetEditForm = () => {
+    setEditName("");
+    setEditEmail("");
+    setEditPassword("");
+    setEditRole("vendedor");
+    setShowEditPassword(false);
+  };
+
+  const openEditDialog = (user: any) => {
+    const role = user.user_roles?.[0]?.role || "vendedor";
+    setUserToEdit({
+      id: user.id,
+      name: user.name,
+      email: user.email || '',
+      role: role
+    });
+    setEditName(user.name);
+    setEditEmail(user.email || '');
+    setEditPassword("");
+    setEditRole(role === 'gestor_owner' ? 'gestor' : role);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!userToEdit) return;
+
+    updateUserMutation.mutate({ 
+      userId: userToEdit.id,
+      name: editName !== userToEdit.name ? editName : undefined,
+      email: editEmail !== userToEdit.email ? editEmail : undefined,
+      password: editPassword || undefined,
+      role: editRole !== userToEdit.role ? editRole : undefined
+    });
+  };
+
   const getRoleBadge = (role: string) => {
     const roleMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
       gestor_owner: { label: "Proprietário", variant: "default" },
@@ -318,7 +424,7 @@ export default function UsersPage() {
           <p className="text-muted-foreground">
             {isIndividualPlan 
               ? "Plano Individual: 1 usuário" 
-              : `${additionalUsers + 1}/${effectiveUserLimit} usuários`
+              : `${activeUserCount + 1}/${effectiveUserLimit} licenças ativas`
             }
           </p>
         </div>
@@ -524,23 +630,36 @@ export default function UsersPage() {
                     </TableCell>
                     {isOwner && (
                       <TableCell>
-                        {!isUserOwner && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => toggleUserActiveMutation.mutate({
-                              userId: user.id,
-                              active: !user.active,
-                            })}
-                            disabled={toggleUserActiveMutation.isPending}
-                          >
-                            {user.active ? (
-                              <PowerOff className="h-4 w-4 text-red-500" />
-                            ) : (
-                              <Power className="h-4 w-4 text-green-500" />
-                            )}
-                          </Button>
-                        )}
+                        <div className="flex gap-1">
+                          {!isUserOwner && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => openEditDialog(user)}
+                                title="Editar usuário"
+                              >
+                                <Pencil className="h-4 w-4 text-primary" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => toggleUserActiveMutation.mutate({
+                                  userId: user.id,
+                                  active: !user.active,
+                                })}
+                                disabled={toggleUserActiveMutation.isPending}
+                                title={user.active ? "Desativar usuário" : "Ativar usuário"}
+                              >
+                                {user.active ? (
+                                  <PowerOff className="h-4 w-4 text-red-500" />
+                                ) : (
+                                  <Power className="h-4 w-4 text-green-500" />
+                                )}
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -550,6 +669,97 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) {
+          setUserToEdit(null);
+          resetEditForm();
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do usuário. Deixe os campos em branco para manter os valores atuais.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome</Label>
+              <Input
+                id="edit-name"
+                placeholder="Nome completo"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                placeholder="email@exemplo.com"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                type="email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">Nova Senha (opcional)</Label>
+              <div className="relative">
+                <Input
+                  id="edit-password"
+                  placeholder="Deixe em branco para manter a atual"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  type={showEditPassword ? "text" : "password"}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEditPassword(!showEditPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Mínimo 12 caracteres. Deixe em branco para não alterar.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Função</Label>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v as any)}>
+                <SelectTrigger id="edit-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gestor">Gestor</SelectItem>
+                  <SelectItem value="vendedor">Vendedor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button 
+              onClick={handleUpdateUser} 
+              className="w-full" 
+              disabled={updateUserMutation.isPending}
+            >
+              {updateUserMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Alterações"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
