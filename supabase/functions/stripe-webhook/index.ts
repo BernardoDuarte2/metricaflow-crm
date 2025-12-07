@@ -54,7 +54,7 @@ const sendWelcomeEmail = async (
   }
 
   const planName = planType === "team" ? "WorkFlow360 Equipe" : "WorkFlow360 Individual";
-  const loginUrl = "https://jppjrbxtvduhuyjuvxsw.lovableproject.com/auth";
+  const loginUrl = "https://myworkflow360.com/auth";
 
   const emailHtml = `
 <!DOCTYPE html>
