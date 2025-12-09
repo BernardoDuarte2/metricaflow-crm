@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BookOpen } from "lucide-react";
 import { KanbanCard } from "./KanbanCard";
+import { StageGuidePanel } from "./StageGuidePanel";
 import { cn } from "@/lib/utils";
 
 interface KanbanColumnProps {
@@ -27,6 +32,7 @@ export function KanbanColumn({
   isValidPhone,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const [guideOpen, setGuideOpen] = useState(false);
 
   return (
     <div className="flex items-start gap-4">
@@ -40,9 +46,28 @@ export function KanbanColumn({
               />
               <h3 className="font-semibold text-sm">{title}</h3>
             </div>
-            <Badge variant="secondary" className="font-medium">
-              {count}
-            </Badge>
+            <div className="flex items-center gap-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setGuideOpen(true)}
+                    >
+                      <BookOpen className="h-4 w-4 text-primary" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ver Manual Vivo</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Badge variant="secondary" className="font-medium">
+                {count}
+              </Badge>
+            </div>
           </div>
         </div>
 
@@ -76,6 +101,13 @@ export function KanbanColumn({
       {!isLast && (
         <div className="flex-shrink-0 w-px bg-border h-[500px] mt-12" />
       )}
+
+      <StageGuidePanel
+        stageId={id}
+        stageName={title}
+        isOpen={guideOpen}
+        onClose={() => setGuideOpen(false)}
+      />
     </div>
   );
 }
