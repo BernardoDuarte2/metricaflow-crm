@@ -827,6 +827,71 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_stage_guides: {
+        Row: {
+          common_mistakes: Json | null
+          company_id: string | null
+          created_at: string | null
+          how_not_to_advance: string | null
+          how_to_advance: string | null
+          id: string
+          ideal_time_days: number | null
+          is_default: boolean | null
+          mental_triggers: Json | null
+          mindset: string | null
+          objective: string
+          order_index: number | null
+          stage_id: string
+          stage_name: string
+          updated_at: string | null
+          what_to_say: string | null
+        }
+        Insert: {
+          common_mistakes?: Json | null
+          company_id?: string | null
+          created_at?: string | null
+          how_not_to_advance?: string | null
+          how_to_advance?: string | null
+          id?: string
+          ideal_time_days?: number | null
+          is_default?: boolean | null
+          mental_triggers?: Json | null
+          mindset?: string | null
+          objective: string
+          order_index?: number | null
+          stage_id: string
+          stage_name: string
+          updated_at?: string | null
+          what_to_say?: string | null
+        }
+        Update: {
+          common_mistakes?: Json | null
+          company_id?: string | null
+          created_at?: string | null
+          how_not_to_advance?: string | null
+          how_to_advance?: string | null
+          id?: string
+          ideal_time_days?: number | null
+          is_default?: boolean | null
+          mental_triggers?: Json | null
+          mindset?: string | null
+          objective?: string
+          order_index?: number | null
+          stage_id?: string
+          stage_name?: string
+          updated_at?: string | null
+          what_to_say?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stage_guides_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -1066,6 +1131,183 @@ export type Database = {
           },
           {
             foreignKeyName: "sales_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_advancement_criteria: {
+        Row: {
+          blocking: boolean | null
+          check_type: string
+          company_id: string | null
+          created_at: string | null
+          description: string
+          id: string
+          is_default: boolean | null
+          mandatory: boolean | null
+          order_index: number | null
+          stage_id: string
+        }
+        Insert: {
+          blocking?: boolean | null
+          check_type?: string
+          company_id?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          is_default?: boolean | null
+          mandatory?: boolean | null
+          order_index?: number | null
+          stage_id: string
+        }
+        Update: {
+          blocking?: boolean | null
+          check_type?: string
+          company_id?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_default?: boolean | null
+          mandatory?: boolean | null
+          order_index?: number | null
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_advancement_criteria_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_scripts: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          order_index: number | null
+          script_content: string
+          situation: string | null
+          stage_id: string
+          tags: Json | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          order_index?: number | null
+          script_content: string
+          situation?: string | null
+          stage_id: string
+          tags?: Json | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          order_index?: number | null
+          script_content?: string
+          situation?: string | null
+          stage_id?: string
+          tags?: Json | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_scripts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_violations: {
+        Row: {
+          company_id: string | null
+          detected_at: string | null
+          id: string
+          lead_id: string | null
+          message: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string | null
+          stage_from: string | null
+          stage_to: string | null
+          user_id: string | null
+          violation_type: string
+        }
+        Insert: {
+          company_id?: string | null
+          detected_at?: string | null
+          id?: string
+          lead_id?: string | null
+          message?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string | null
+          stage_from?: string | null
+          stage_to?: string | null
+          user_id?: string | null
+          violation_type: string
+        }
+        Update: {
+          company_id?: string | null
+          detected_at?: string | null
+          id?: string
+          lead_id?: string | null
+          message?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string | null
+          stage_from?: string | null
+          stage_to?: string | null
+          user_id?: string | null
+          violation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_violations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_violations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_violations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_violations_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
