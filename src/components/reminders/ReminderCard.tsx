@@ -20,7 +20,11 @@ export function ReminderCard({ reminder, onEdit, canManage }: ReminderCardProps)
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const isOverdue = isPast(new Date(reminder.reminder_date)) && !reminder.completed;
+  
+  // Validar data antes de usar
+  const reminderDate = reminder.reminder_date ? new Date(reminder.reminder_date) : null;
+  const isValidDate = reminderDate && !isNaN(reminderDate.getTime());
+  const isOverdue = isValidDate && isPast(reminderDate) && !reminder.completed;
 
   const completeReminderMutation = useMutation({
     mutationFn: async () => {
@@ -79,7 +83,9 @@ export function ReminderCard({ reminder, onEdit, canManage }: ReminderCardProps)
             <div className="flex-1">
               <p className="font-medium text-sm">{reminder.description}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {format(new Date(reminder.reminder_date), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                {isValidDate 
+                  ? format(reminderDate, "dd/MM/yyyy HH:mm", { locale: ptBR })
+                  : "Data inválida"}
               </p>
               {reminder.leads && (
                 <div className="flex items-center gap-2 mt-2">
