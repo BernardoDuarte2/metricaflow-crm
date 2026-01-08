@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { DollarSign } from "lucide-react";
+import { ChartDrilldownDialog, DrilldownData, SellerRevenueDetail } from "./ChartDrilldownDialog";
 
 interface RevenueBySellerData {
   month: string;
@@ -62,17 +63,46 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           </div>
         ))}
       </div>
+      <p className="text-xs text-cockpit-muted mt-2 pt-2 border-t border-cockpit-border">
+        Clique para ver detalhes
+      </p>
     </div>
   );
 };
 
 export function RevenueBySellerChart({ data, sellers, title = "Receita por Vendedor" }: RevenueBySellerChartProps) {
+  const [drilldownOpen, setDrilldownOpen] = useState(false);
+  const [drilldownData, setDrilldownData] = useState<DrilldownData | null>(null);
+
   const sellerColors = useMemo(() => {
     return sellers.map((seller, index) => ({
       ...seller,
       color: seller.color || CHART_COLORS[index % CHART_COLORS.length],
     }));
   }, [sellers]);
+
+  const handleBarClick = (monthData: RevenueBySellerData) => {
+    const revenueDetails: SellerRevenueDetail[] = sellerColors
+      .filter(seller => monthData[seller.name] !== undefined && Number(monthData[seller.name]) > 0)
+      .map(seller => {
+        const revenue = Number(monthData[seller.name]) || 0;
+        // Estimate deals based on average ticket (simplified)
+        const estimatedDeals = Math.max(1, Math.round(revenue / 5000));
+        return {
+          name: seller.name,
+          revenue,
+          deals: estimatedDeals,
+          avgTicket: revenue / estimatedDeals,
+        };
+      });
+
+    setDrilldownData({
+      type: 'revenue',
+      month: monthData.month as string,
+      revenueDetails,
+    });
+    setDrilldownOpen(true);
+  };
 
   if (!data || data.length === 0 || sellers.length === 0) {
     return (
@@ -91,56 +121,70 @@ export function RevenueBySellerChart({ data, sellers, title = "Receita por Vende
   }
 
   return (
-    <Card className="bg-cockpit-card border-cockpit-border">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-cockpit-foreground flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-cockpit-accent" />
-          {title}
-        </CardTitle>
-        <p className="text-sm text-cockpit-muted">Receita mensal por vendedor</p>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[350px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="hsl(var(--border))" 
-                opacity={0.3} 
-              />
-              <XAxis 
-                dataKey="month" 
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                axisLine={{ stroke: "hsl(var(--border))" }}
-              />
-              <YAxis 
-                tickFormatter={formatCurrency}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                axisLine={{ stroke: "hsl(var(--border))" }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend 
-                wrapperStyle={{ paddingTop: "20px" }}
-                formatter={(value) => (
-                  <span className="text-cockpit-muted text-sm">{value}</span>
-                )}
-              />
-              {sellerColors.map((seller) => (
-                <Bar
-                  key={seller.name}
-                  dataKey={seller.name}
-                  fill={seller.color}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
+    <>
+      <Card className="bg-cockpit-card border-cockpit-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold text-cockpit-foreground flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-cockpit-accent" />
+            {title}
+          </CardTitle>
+          <p className="text-sm text-cockpit-muted">Receita mensal por vendedor • Clique para detalhes</p>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                onClick={(e) => {
+                  if (e && e.activePayload && e.activePayload[0]) {
+                    handleBarClick(e.activePayload[0].payload);
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="hsl(var(--border))" 
+                  opacity={0.3} 
                 />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                />
+                <YAxis 
+                  tickFormatter={formatCurrency}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend 
+                  wrapperStyle={{ paddingTop: "20px" }}
+                  formatter={(value) => (
+                    <span className="text-cockpit-muted text-sm">{value}</span>
+                  )}
+                />
+                {sellerColors.map((seller) => (
+                  <Bar
+                    key={seller.name}
+                    dataKey={seller.name}
+                    fill={seller.color}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ChartDrilldownDialog
+        open={drilldownOpen}
+        onOpenChange={setDrilldownOpen}
+        data={drilldownData}
+      />
+    </>
   );
 }
