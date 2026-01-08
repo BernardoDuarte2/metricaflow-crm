@@ -1,4 +1,6 @@
 export { CockpitLayout } from './CockpitLayout';
+export { ChartDrilldownDialog } from './ChartDrilldownDialog';
+export type { DrilldownData, SellerRevenueDetail, LeadsConversionDetail } from './ChartDrilldownDialog';
 export { CommandKPI } from './CommandKPI';
 export { AlertPanel } from './AlertPanel';
 export { CriticalAlertsPanel } from './CriticalAlertsPanel';
