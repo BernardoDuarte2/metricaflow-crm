@@ -1,7 +1,7 @@
 # MetricaFlow CRM - Instruções de Desenvolvimento
 
 ## 📋 Visão Geral do Projeto
-
+ 
 MetricaFlow CRM é uma plataforma SaaS moderna para gestão de vendas com design **Futurista Premium**. O projeto utiliza React + TypeScript + Vite com TailwindCSS e Shadcn/UI para criar uma experiência premium e moderna.
 
 ---
