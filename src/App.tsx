@@ -27,6 +27,7 @@ import Goals from "./pages/Goals";
 import KPI from "./pages/KPI";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
+import Prospecting from "./pages/Prospecting";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import TermsOfService from "./pages/TermsOfService";
@@ -37,7 +38,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutos
-      gcTime: 10 * 60 * 1000, // 10 minutos  
+      gcTime: 10 * 60 * 1000, // 10 minutos
       refetchOnWindowFocus: false,
       retry: 1,
     },
@@ -184,6 +185,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <KPI />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/prospecting"
+              element={
+                <ProtectedRoute>
+                  <Prospecting />
                 </ProtectedRoute>
               }
             />

@@ -1,4 +1,20 @@
-import { LayoutDashboard, Users, KanbanSquare, Settings, LogOut, Plug, Calendar, ListTodo, Trophy, HelpCircle, ChevronLeft, ChevronRight, Shield, BarChart3 } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  KanbanSquare,
+  Settings,
+  LogOut,
+  Plug,
+  Calendar,
+  ListTodo,
+  Trophy,
+  HelpCircle,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  BarChart3,
+  Search,
+} from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +83,7 @@ const Sidebar = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "Logout realizado com sucesso"
+      title: "Logout realizado com sucesso",
     });
     navigate("/auth");
   };
@@ -76,95 +92,119 @@ const Sidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
-  const isOwnerOrGestor = (profile?.company?.owner_id === session?.user?.id) || userRole === 'gestor_owner' || userRole === 'gestor';
+  const isOwnerOrGestor =
+    profile?.company?.owner_id === session?.user?.id ||
+    userRole === "gestor_owner" ||
+    userRole === "gestor";
   const isSuperAdmin = profile?.is_super_admin === true;
 
-  const allNavItems = [{
-    to: "/",
-    icon: LayoutDashboard,
-    label: "Dashboard",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/leads",
-    icon: Users,
-    label: "Leads",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/kanban",
-    icon: KanbanSquare,
-    label: "Kanban",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/agenda",
-    icon: Calendar,
-    label: "Agenda",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/tasks",
-    icon: ListTodo,
-    label: "Tarefas",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/kpi",
-    icon: BarChart3,
-    label: "Desempenho & KPI",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/users",
-    icon: Settings,
-    label: "Gestão de Usuários",
-    requiresOwnerOrGestor: true,
-    requiresSuperAdmin: false
-  }, {
-    to: "/integrations",
-    icon: Plug,
-    label: "Integrações",
-    requiresOwnerOrGestor: true,
-    requiresSuperAdmin: false
-  }, {
-    to: "/gamification",
-    icon: Trophy,
-    label: "🎮 Gamificação Live",
-    requiresOwnerOrGestor: true,
-    requiresSuperAdmin: false
-  }, {
-    to: "/settings",
-    icon: Settings,
-    label: "Configurações",
-    requiresOwnerOrGestor: true,
-    requiresSuperAdmin: false
-  }, {
-    to: "/help",
-    icon: HelpCircle,
-    label: "Ajuda",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: false
-  }, {
-    to: "/admin",
-    icon: Shield,
-    label: "Administração",
-    requiresOwnerOrGestor: false,
-    requiresSuperAdmin: true
-  }];
+  const allNavItems = [
+    {
+      to: "/",
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/leads",
+      icon: Users,
+      label: "Leads",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/prospecting",
+      icon: Search,
+      label: "Prospecção",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/kanban",
+      icon: KanbanSquare,
+      label: "Kanban",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/agenda",
+      icon: Calendar,
+      label: "Agenda",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/tasks",
+      icon: ListTodo,
+      label: "Tarefas",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/kpi",
+      icon: BarChart3,
+      label: "Desempenho & KPI",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/users",
+      icon: Settings,
+      label: "Gestão de Usuários",
+      requiresOwnerOrGestor: true,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/integrations",
+      icon: Plug,
+      label: "Integrações",
+      requiresOwnerOrGestor: true,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/gamification",
+      icon: Trophy,
+      label: "🎮 Gamificação Live",
+      requiresOwnerOrGestor: true,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/settings",
+      icon: Settings,
+      label: "Configurações",
+      requiresOwnerOrGestor: true,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/help",
+      icon: HelpCircle,
+      label: "Ajuda",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/admin",
+      icon: Shield,
+      label: "Administração",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: true,
+    },
+  ];
 
-  const navItems = allNavItems.filter(item => {
+  const navItems = allNavItems.filter((item) => {
     if (item.requiresSuperAdmin) return isSuperAdmin;
     if (item.requiresOwnerOrGestor) return isOwnerOrGestor;
     return true;
   });
-  return <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center justify-between px-6 z-50">
+  return (
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center justify-between px-6 z-50">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
           {profile?.company?.logo_url ? (
-            <img 
-              src={profile.company.logo_url} 
-              alt={profile.company.name || "Logo"} 
+            <img
+              src={profile.company.logo_url}
+              alt={profile.company.name || "Logo"}
               className="h-8 w-auto object-contain"
             />
           ) : (
@@ -175,26 +215,31 @@ const Sidebar = () => {
         </div>
 
         <div className="flex items-center gap-1">
-          {navItems.map(item => <NavLink 
-            key={item.to} 
-            to={item.to} 
-            className={({isActive}) => `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${isActive ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-          >
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`
+              }
+            >
               <item.icon className="h-4 w-4 flex-shrink-0" />
               <span className="font-medium text-sm">{item.label}</span>
-            </NavLink>)}
+            </NavLink>
+          ))}
         </div>
       </div>
 
-      <Button 
-        variant="ghost" 
-        className="gap-2" 
-        onClick={handleLogout}
-      >
+      <Button variant="ghost" className="gap-2" onClick={handleLogout}>
         <LogOut className="h-4 w-4" />
         Sair
       </Button>
     </nav>
+  );
 };
 
 export default Sidebar;
