@@ -31,7 +31,13 @@ import { ProspectingStats } from "@/components/prospecting/ProspectingStats";
 
 // Webhook URL
 const WEBHOOK_URL =
-  "https://n8n-principal-n8n.dczlic.easypanel.host/webhook-test/112bb213-d3a9-442e-8c8a-1f55c890429e";
+  "https://n8n-principal-n8n.dczlic.easypanel.host/webhook/112bb213-d3a9-442e-8c8a-1f55c890429e";
+
+// Interface para erro do n8n
+interface N8nError {
+  code?: number;
+  message?: string;
+}
 
 // Interface para resposta do webhook
 interface WebhookResult {
@@ -92,16 +98,18 @@ const Prospecting = () => {
       const raw = await response.json();
 
       // Verificar se é erro do n8n
-      if (raw?.code !== undefined && raw?.message) {
-        throw new Error(raw.message || "Erro no workflow do n8n");
+      const errorCheck = raw as N8nError;
+      if (errorCheck?.code !== undefined && errorCheck?.message) {
+        throw new Error(errorCheck.message || "Erro no workflow do n8n");
       }
 
       // Se vier array, pega o primeiro elemento
       const data: WebhookResponse = Array.isArray(raw) ? raw[0] : raw;
 
       // Verificar novamente se é erro após extrair do array
-      if (data?.code !== undefined && data?.message) {
-        throw new Error(data.message || "Erro no workflow do n8n");
+      const dataErrorCheck = data as unknown as N8nError;
+      if (dataErrorCheck?.code !== undefined && dataErrorCheck?.message) {
+        throw new Error(dataErrorCheck.message || "Erro no workflow do n8n");
       }
 
       if (!data?.ok) {
