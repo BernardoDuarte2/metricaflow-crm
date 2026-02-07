@@ -31,7 +31,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import {
   CockpitLayout,
-  CriticalAlertsPanel,
+  AlertPanel,
   VelocityMeter,
   TeamProgressPanel,
   TrendChart,
@@ -258,53 +258,48 @@ const Dashboard = () => {
     }));
   }, [lossReasonsData, stats]);
 
-  // Critical alerts
-  const criticalAlerts = useMemo(() => {
+  // Alerts for AlertPanel
+  const alerts = useMemo(() => {
     if (!stats) return [];
     
     const alertsList = [];
     
+    if (stats.pendingLeads > 10 && stats.totalEstimatedValue > 50000) {
+      alertsList.push({
+        id: 'money-stuck',
+        type: 'money' as const,
+        title: 'Receita Travada',
+        message: `R$ ${(stats.totalEstimatedValue || 0).toLocaleString('pt-BR')} parados no pipeline com ${stats.pendingLeads} leads`,
+        value: stats.totalEstimatedValue,
+      });
+    }
+
     if (stats.inactiveLeads24h && stats.inactiveLeads24h > 0) {
       alertsList.push({
-        id: 'inactive-24h',
-        type: 'inactive24h' as const,
+        id: 'bottleneck',
+        type: 'bottleneck' as const,
         title: `${stats.inactiveLeads24h} Leads Parados`,
-        message: 'Leads sem contato há mais de 24 horas precisam de ação imediata',
+        message: 'Leads sem contato há mais de 24h precisam de ação imediata',
         value: stats.inactiveLeads24h,
-        severity: 'critical' as const
       });
     }
 
     if (parseFloat(stats.conversionRate) < 15) {
       alertsList.push({
         id: 'low-conversion',
-        type: 'lowConversion' as const,
-        title: 'Conversão Abaixo da Meta',
+        type: 'performance' as const,
+        title: 'Conversão Baixa',
         message: `Taxa atual de ${stats.conversionRate}% está abaixo do ideal de 15%`,
-        value: `${stats.conversionRate}%`,
-        severity: 'warning' as const
-      });
-    }
-    
-    if (stats.pendingLeads > 10 && stats.totalEstimatedValue > 50000) {
-      alertsList.push({
-        id: 'money-stuck',
-        type: 'moneyStuck' as const,
-        title: 'Receita Travada no Pipeline',
-        message: `${stats.pendingLeads} leads representam oportunidades não convertidas`,
-        value: stats.totalEstimatedValue,
-        severity: 'warning' as const
       });
     }
 
     if (stats.inactiveLeads7d && stats.inactiveLeads7d > 5) {
       alertsList.push({
-        id: 'inactive-7d',
-        type: 'inactive7d' as const,
+        id: 'stale-leads',
+        type: 'stale' as const,
         title: 'Leads Esfriando',
         message: `${stats.inactiveLeads7d} leads sem atividade há mais de 7 dias`,
         value: stats.inactiveLeads7d,
-        severity: 'info' as const
       });
     }
 
@@ -529,9 +524,9 @@ const Dashboard = () => {
             periodLabel={selectedMonth === 'all' ? `Ano ${selectedYear}` : `Mês ${selectedMonth}/${selectedYear}`}
           />
 
-          {/* 2. CRITICAL ALERTS */}
-          {criticalAlerts.length > 0 && (
-            <CriticalAlertsPanel alerts={criticalAlerts} />
+          {/* 2. ALERTAS INTELIGENTES */}
+          {alerts.length > 0 && (
+            <AlertPanel alerts={alerts} />
           )}
 
           {/* 3. VISUAL FUNNELS - Side by side */}
