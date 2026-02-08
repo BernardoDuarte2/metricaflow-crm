@@ -18,9 +18,7 @@ const CONTACT_STATUSES = ['contato_feito', 'contato', 'contatado'];
 const ACTIVE_PIPELINE_STATUSES = ['novo', 'contato_feito', 'contato', 'contatado', 'qualificado', 'proposta', 'negociacao'];
 const OPPORTUNITY_STATUSES = ['proposta', 'negociacao', 'ganho', 'fechado'];
 
-// Helper to check if a status is "won"
 const isWonStatus = (status: string) => WON_STATUSES.includes(status);
-const isContactStatus = (status: string) => CONTACT_STATUSES.includes(status);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -31,75 +29,54 @@ Deno.serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
     const { start_date, end_date, user_role, user_id }: DashboardStatsRequest = await req.json();
-
     console.log('Fetching dashboard stats:', { start_date, end_date, user_role, user_id });
 
-    // Base query builder
     const buildQuery = (baseQuery: any) => {
-      let query = baseQuery
-        .gte('created_at', start_date)
-        .lte('created_at', end_date);
-      
-      if (user_role === 'vendedor' && user_id) {
-        query = query.eq('assigned_to', user_id);
-      }
-      
+      let query = baseQuery.gte('created_at', start_date).lte('created_at', end_date);
+      if (user_role === 'vendedor' && user_id) query = query.eq('assigned_to', user_id);
       return query;
     };
 
-    // Calculate dates for inactive leads
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Calculate previous period dates
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
     const periodLength = endDateObj.getTime() - startDateObj.getTime();
     const prevStart = new Date(startDateObj.getTime() - periodLength).toISOString();
     const prevEnd = new Date(startDateObj.getTime() - 1).toISOString();
 
-    // Execute all queries in parallel
     const [
-      totalLeadsResult,
-      wonLeadsResult,
-      pendingLeadsResult,
-      leadValuesResult,
-      wonLeadValuesResult,
-      statusDataResult,
-      sourceDataResult,
-      funnelDataResult,
-      qualifiedLeadsResult,
-      opportunitiesResult,
-      closedLeadsWithTimeResult,
-      lostLeadsResult,
-      activeLeadValuesForForecastResult,
-      scheduledMeetingsResult,
-      completedMeetingsResult,
-      tasksResult,
-      observationsResult,
-      marketingCostsResult,
-      inactiveLeads24hResult,
-      inactiveLeads7dResult,
-      salesGoalResult,
-      leadsWithRecentActivityResult,
-      allLeadsWithAssignedResult,
-      allMeetingsResult,
-      allTasksResult,
-      allObservationsResult,
-      allKPIsResult,
-      previousPeriodLeadsResult,
-      previousPeriodWonResult,
-      monthlyLeadsDataResult,
-      monthlyRevenueBySellerResult,
+      totalLeadsResult, wonLeadsResult, pendingLeadsResult, leadValuesResult,
+      wonLeadValuesResult, statusDataResult, sourceDataResult, funnelDataResult,
+      qualifiedLeadsResult, opportunitiesResult, closedLeadsWithTimeResult,
+      lostLeadsResult, activeLeadValuesForForecastResult, scheduledMeetingsResult,
+      completedMeetingsResult, tasksResult, observationsResult, marketingCostsResult,
+      inactiveLeads24hResult, inactiveLeads7dResult, salesGoalResult,
+      leadsWithRecentActivityResult, allLeadsWithAssignedResult,
+      allMeetingsResult, allTasksResult, allObservationsResult, allKPIsResult,
+      previousPeriodLeadsResult, previousPeriodWonResult,
+      monthlyLeadsDataResult, monthlyRevenueBySellerResult,
+      // NEW: stalled alerts queries
+      stalledProposalsResult, stalledNegotiationsResult, leadsNoContactResult,
+      // NEW: all current leads for funnel stage days
+      currentLeadsForFunnelResult,
+      // NEW: pipeline values
+      pipelineValuesResult,
+      // NEW: qualificado leads for no-followup check
+      qualificadoLeadsResult,
+      // NEW: tasks linked to leads
+      tasksWithLeadsResult,
+      // NEW: previous period qualified & converted value
+      previousQualifiedResult, previousPipelineValuesResult,
     ] = await Promise.all([
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true })),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', WON_STATUSES)),
@@ -130,13 +107,22 @@ Deno.serve(async (req) => {
       supabaseClient.from('seller_kpi_monthly').select('*').gte('month', start_date.split('T')[0]).lte('month', end_date.split('T')[0]),
       supabaseClient.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', prevStart).lte('created_at', prevEnd),
       supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', WON_STATUSES).gte('created_at', prevStart).lte('created_at', prevEnd),
-      // Monthly leads data for charts
       supabaseClient.from('leads').select('id, status, assigned_to, created_at').gte('created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('created_at', end_date),
-      // Monthly revenue by seller (won leads with values)
       supabaseClient.from('lead_values').select('amount, lead_id, leads!inner(id, assigned_to, status, created_at)').in('leads.status', WON_STATUSES).gte('leads.created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('leads.created_at', end_date),
+      // NEW queries
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'proposta').lt('updated_at', fourteenDaysAgo),
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'negociacao').lt('updated_at', tenDaysAgo),
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'novo').lt('updated_at', threeDaysAgo),
+      supabaseClient.from('leads').select('status, updated_at').in('status', [...ACTIVE_PIPELINE_STATUSES, ...WON_STATUSES]),
+      supabaseClient.from('lead_values').select('amount, leads!inner(status)').in('leads.status', ['proposta', 'negociacao', ...WON_STATUSES]),
+      supabaseClient.from('leads').select('id').eq('status', 'qualificado'),
+      supabaseClient.from('tasks').select('lead_id').not('lead_id', 'is', null),
+      // Previous period: qualified count and pipeline values
+      supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualificado').gte('created_at', prevStart).lte('created_at', prevEnd),
+      supabaseClient.from('lead_values').select('amount, leads!inner(status, created_at)').in('leads.status', ['proposta', 'negociacao']).gte('leads.created_at', prevStart).lte('leads.created_at', prevEnd),
     ]);
 
-    // Calculate metrics
+    // ========== EXISTING CALCULATIONS ==========
     const totalLeads = totalLeadsResult.count || 0;
     const wonLeads = wonLeadsResult.count || 0;
     const pendingLeads = pendingLeadsResult.count || 0;
@@ -168,20 +154,12 @@ Deno.serve(async (req) => {
     }, {} as Record<string, number>) || {};
 
     const lossReasonsData = Object.entries(lossReasons).map(([reason, count]) => ({
-      reason,
-      count,
-      percentage: ((count as number / (lostLeadsResult.data?.length || 1)) * 100).toFixed(1)
+      reason, count, percentage: ((count as number / (lostLeadsResult.data?.length || 1)) * 100).toFixed(1)
     }));
 
-    // Probability map including aliases
     const probabilityMap: Record<string, number> = {
-      'novo': 0.10,
-      'contato_feito': 0.20,
-      'contato': 0.20,
-      'contatado': 0.20,
-      'qualificado': 0.30,
-      'proposta': 0.40,
-      'negociacao': 0.70,
+      'novo': 0.10, 'contato_feito': 0.20, 'contato': 0.20, 'contatado': 0.20,
+      'qualificado': 0.30, 'proposta': 0.40, 'negociacao': 0.70,
     };
     const forecast = activeLeadValuesForForecastResult.data?.reduce((sum: number, value: any) => {
       const amount = Number(value.amount) || 0;
@@ -195,13 +173,11 @@ Deno.serve(async (req) => {
     const totalObservations = observationsResult.count || 0;
     const totalActivities = scheduledMeetings + totalTasks + totalObservations;
 
-    // Raw status counts from DB
     const rawStatusCounts = statusDataResult.data?.reduce((acc: Record<string, number>, lead: any) => {
       acc[lead.status] = (acc[lead.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>) || {};
 
-    // Grouped status counts for display (merge aliases)
     const statusCounts: Record<string, number> = {
       'novo': rawStatusCounts['novo'] || 0,
       'contato_feito': (rawStatusCounts['contato_feito'] || 0) + (rawStatusCounts['contato'] || 0) + (rawStatusCounts['contatado'] || 0),
@@ -232,7 +208,6 @@ Deno.serve(async (req) => {
       source, count, color: chartColors[index % chartColors.length],
     }));
 
-    // Funnel stages with aliases grouped
     const stages = [
       { stage: 'Novos', statuses: ['novo'], color: 'hsl(var(--chart-1))' },
       { stage: 'Contato Feito', statuses: ['contato_feito', 'contato', 'contatado'], color: 'hsl(var(--chart-2))' },
@@ -248,7 +223,6 @@ Deno.serve(async (req) => {
       color: stage.color,
     }));
 
-    // Conversion by stage flow (using grouped counts)
     const stagesFlow = [
       { from: 'novo', to: 'contato_feito', fromLabel: 'Novos', toLabel: 'Contato Feito' },
       { from: 'contato_feito', to: 'qualificado', fromLabel: 'Contato Feito', toLabel: 'Qualificado' },
@@ -264,7 +238,6 @@ Deno.serve(async (req) => {
       return { from: flow.from, to: flow.to, rate: `${rate}%` };
     });
 
-    // CAC, LTV, Payback
     let cac = null, ltv = null, payback = null;
     const marketingCostData = marketingCostsResult.data;
     if (marketingCostData && wonLeads > 0) {
@@ -289,7 +262,73 @@ Deno.serve(async (req) => {
     const lostLeadsCount = lostLeadsResult.data?.length || 0;
     const lossRate = totalLeads > 0 ? ((lostLeadsCount / totalLeads) * 100).toFixed(1) : '0.0';
 
-    // Team performance data
+    // ========== NEW CALCULATIONS ==========
+
+    // Stalled alerts
+    const stalledProposals14d = stalledProposalsResult.count || 0;
+    const stalledNegotiations10d = stalledNegotiationsResult.count || 0;
+    const leadsNoContact3d = leadsNoContactResult.count || 0;
+
+    // SQL without follow-up tasks
+    const qualificadoLeadIds = new Set((qualificadoLeadsResult.data || []).map((l: any) => l.id));
+    const leadsWithTasks = new Set((tasksWithLeadsResult.data || []).map((t: any) => t.lead_id));
+    let sqlNoFollowUp = 0;
+    qualificadoLeadIds.forEach(id => { if (!leadsWithTasks.has(id)) sqlNoFollowUp++; });
+
+    // Pipeline values by status
+    const pipelineValues = (pipelineValuesResult.data || []);
+    let pipelineProposalsValue = 0, pipelineNegotiationsValue = 0, pipelineClosedValue = 0;
+    pipelineValues.forEach((pv: any) => {
+      const status = pv.leads?.status;
+      const amount = Number(pv.amount) || 0;
+      if (status === 'proposta') pipelineProposalsValue += amount;
+      else if (status === 'negociacao') pipelineNegotiationsValue += amount;
+      else if (isWonStatus(status)) pipelineClosedValue += amount;
+    });
+
+    // Marketing conversion rate (all leads -> qualificado)
+    const sqlCount = statusCounts['qualificado'] || 0;
+    const marketingConversionRate = totalLeads > 0 ? ((sqlCount / totalLeads) * 100) : 0;
+
+    // Sales conversion rate (qualificado -> ganho)
+    const closedCount = statusCounts['ganho'] || 0;
+    const salesConversionRate = sqlCount > 0 ? ((closedCount / sqlCount) * 100) : 0;
+
+    // Funnel stage days (avg days in current stage)
+    const funnelStageGroups = [
+      { stage: 'Leads', statuses: ['novo'] },
+      { stage: 'MQL', statuses: ['contato_feito', 'contato', 'contatado'] },
+      { stage: 'SQL', statuses: ['qualificado'] },
+      { stage: 'Proposta', statuses: ['proposta'] },
+      { stage: 'Negociação', statuses: ['negociacao'] },
+      { stage: 'Fechado', statuses: ['ganho', 'fechado'] },
+    ];
+
+    const currentLeads = currentLeadsForFunnelResult.data || [];
+    const funnelStageDays = funnelStageGroups.map(group => {
+      const stageLeads = currentLeads.filter((l: any) => group.statuses.includes(l.status));
+      const count = stageLeads.length;
+      const totalDays = stageLeads.reduce((sum: number, l: any) => {
+        const days = Math.max(0, Math.ceil((now.getTime() - new Date(l.updated_at).getTime()) / (1000 * 60 * 60 * 24)));
+        return sum + days;
+      }, 0);
+      const avgDays = count > 0 ? Math.round(totalDays / count) : 0;
+      return { stage: group.stage, count, avgDays };
+    });
+
+    // Previous period comparisons for new cards
+    const previousQualified = previousQualifiedResult.count || 0;
+    const previousPipelineValue = (previousPipelineValuesResult.data || []).reduce(
+      (sum: number, pv: any) => sum + (Number(pv.amount) || 0), 0
+    );
+    const currentOpenOpportunitiesValue = pipelineProposalsValue + pipelineNegotiationsValue;
+    const previousConvertedValue = (() => {
+      // Estimate from previous won leads
+      const prevWon = previousPeriodWonResult.count || 0;
+      return prevWon > 0 && wonLeads > 0 ? (totalConvertedValue / wonLeads) * prevWon : 0;
+    })();
+
+    // ========== TEAM PERFORMANCE ==========
     const teamPerformance: Record<string, any> = {};
     const allLeads = allLeadsWithAssignedResult.data || [];
     const allMeetings = allMeetingsResult.data || [];
@@ -328,29 +367,18 @@ Deno.serve(async (req) => {
     const wonLeadIdsSet = new Set(allLeads.filter((l: any) => isWonStatus(l.status)).map((l: any) => l.id));
     (wonLeadValuesResult.data || []).forEach((lv: any) => {
       if (wonLeadIdsSet.has(lv.lead_id) && lv.leads?.assigned_to && teamPerformance[lv.leads.assigned_to]) {
-        const tp = teamPerformance[lv.leads.assigned_to];
-        tp.revenue = (tp.revenue || 0) + Number(lv.amount || 0);
+        teamPerformance[lv.leads.assigned_to].revenue = (teamPerformance[lv.leads.assigned_to].revenue || 0) + Number(lv.amount || 0);
       }
     });
 
-    allMeetings.forEach((meeting: any) => {
-      if (meeting.created_by && teamPerformance[meeting.created_by]) {
-        teamPerformance[meeting.created_by].meetings += 1;
+    allMeetings.forEach((m: any) => { if (m.created_by && teamPerformance[m.created_by]) teamPerformance[m.created_by].meetings += 1; });
+    allTasks.forEach((t: any) => {
+      if (t.assigned_to && teamPerformance[t.assigned_to]) {
+        teamPerformance[t.assigned_to].tasks += 1;
+        if (t.status === 'concluida') teamPerformance[t.assigned_to].completedTasks += 1;
       }
     });
-
-    allTasks.forEach((task: any) => {
-      if (task.assigned_to && teamPerformance[task.assigned_to]) {
-        teamPerformance[task.assigned_to].tasks += 1;
-        if (task.status === 'concluida') teamPerformance[task.assigned_to].completedTasks += 1;
-      }
-    });
-
-    allObservations.forEach((obs: any) => {
-      if (obs.user_id && teamPerformance[obs.user_id]) {
-        teamPerformance[obs.user_id].observations += 1;
-      }
-    });
+    allObservations.forEach((o: any) => { if (o.user_id && teamPerformance[o.user_id]) teamPerformance[o.user_id].observations += 1; });
 
     const userIdsArray = Array.from(userIds);
     let profilesMap: Record<string, any> = {};
@@ -369,20 +397,11 @@ Deno.serve(async (req) => {
       const avgClose = tp.closedCount > 0 ? Math.round(tp.totalCloseTime / tp.closedCount) : 0;
       const avgTicket = tp.convertedLeads > 0 ? tp.revenue / tp.convertedLeads : 0;
       const goalProg = kpi && kpi.target_revenue > 0 ? (tp.revenue / kpi.target_revenue) * 100 : undefined;
-
       return {
-        id: tp.id,
-        name: profile?.name || 'Usuário',
-        avatar: profile?.avatar_url,
-        leads: tp.leads,
-        convertedLeads: tp.convertedLeads,
-        conversionRate: Number(convRate.toFixed(1)),
-        revenue: tp.revenue,
-        averageTicket: Math.round(avgTicket),
-        avgCloseTime: avgClose,
-        meetings: tp.meetings,
-        tasks: tp.tasks,
-        observations: tp.observations,
+        id: tp.id, name: profile?.name || 'Usuário', avatar: profile?.avatar_url,
+        leads: tp.leads, convertedLeads: tp.convertedLeads, conversionRate: Number(convRate.toFixed(1)),
+        revenue: tp.revenue, averageTicket: Math.round(avgTicket), avgCloseTime: avgClose,
+        meetings: tp.meetings, tasks: tp.tasks, observations: tp.observations,
         goalProgress: goalProg !== undefined ? Number(goalProg.toFixed(1)) : undefined,
       };
     }).filter((t: any) => t.leads > 0 || t.meetings > 0 || t.tasks > 0);
@@ -395,23 +414,19 @@ Deno.serve(async (req) => {
     const previousTotalLeads = previousPeriodLeadsResult.count || 0;
     const previousWonLeads = previousPeriodWonResult.count || 0;
 
-    // Process monthly leads data for Leads vs Closed chart
+    // Monthly leads data
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const monthlyLeadsData = monthlyLeadsDataResult.data || [];
     
     const monthlyLeadsConversion = monthNames.map((month, index) => {
-      const monthLeads = monthlyLeadsData.filter((lead: any) => {
-        const leadMonth = new Date(lead.created_at).getMonth();
-        return leadMonth === index;
-      });
+      const monthLeads = monthlyLeadsData.filter((lead: any) => new Date(lead.created_at).getMonth() === index);
       const totalMonthLeads = monthLeads.length;
       const closedLeads = monthLeads.filter((lead: any) => isWonStatus(lead.status)).length;
       const convRate = totalMonthLeads > 0 ? (closedLeads / totalMonthLeads) * 100 : 0;
-      
       return { month, totalLeads: totalMonthLeads, closedLeads, conversionRate: convRate };
     }).filter(m => m.totalLeads > 0 || m.closedLeads > 0);
 
-    // Process monthly revenue by seller
+    // Monthly revenue by seller
     const monthlyRevenueData = monthlyRevenueBySellerResult.data || [];
     const sellerRevenueMap: Record<string, Record<string, number>> = {};
     const sellerNames = new Set<string>();
@@ -420,29 +435,17 @@ Deno.serve(async (req) => {
       const leadMonth = new Date(item.leads.created_at).getMonth();
       const monthName = monthNames[leadMonth];
       const sellerId = item.leads.assigned_to;
-      
       if (!sellerId) return;
-      
-      if (!sellerRevenueMap[monthName]) {
-        sellerRevenueMap[monthName] = {};
-      }
-      
+      if (!sellerRevenueMap[monthName]) sellerRevenueMap[monthName] = {};
       sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(item.amount || 0);
       sellerNames.add(sellerId);
     });
 
-    // Get seller names from profiles
     const sellerIdsArray = Array.from(sellerNames);
     let sellerProfilesMap: Record<string, string> = {};
     if (sellerIdsArray.length > 0) {
-      const { data: sellerProfiles } = await supabaseClient
-        .from('profiles')
-        .select('id, name')
-        .in('id', sellerIdsArray);
-      
-      (sellerProfiles || []).forEach((p: any) => {
-        sellerProfilesMap[p.id] = p.name;
-      });
+      const { data: sellerProfiles } = await supabaseClient.from('profiles').select('id, name').in('id', sellerIdsArray);
+      (sellerProfiles || []).forEach((p: any) => { sellerProfilesMap[p.id] = p.name; });
     }
 
     const sellerColors = [
@@ -467,6 +470,7 @@ Deno.serve(async (req) => {
         return monthData;
       });
 
+    // ========== RESPONSE ==========
     const response = {
       stats: {
         totalLeads, wonLeads, pendingLeads, qualifiedLeads, conversionRate, qualificationRate, winRate,
@@ -479,19 +483,25 @@ Deno.serve(async (req) => {
         totalTeamGoal, totalTeamAchieved, teamSize, daysRemaining,
         previousTotalLeads, previousWonLeads,
         previousConversionRate: previousTotalLeads > 0 ? ((previousWonLeads / previousTotalLeads) * 100).toFixed(1) : '0.0',
+        // NEW stats
+        stalledProposals14d, stalledNegotiations10d, leadsNoContact3d, sqlNoFollowUp,
+        pipelineProposalsValue, pipelineNegotiationsValue, pipelineClosedValue,
+        marketingConversionRate: Number(marketingConversionRate.toFixed(1)),
+        salesConversionRate: Number(salesConversionRate.toFixed(1)),
+        sqlCount,
+        previousQualified,
+        previousPipelineValue,
+        currentOpenOpportunitiesValue,
+        previousConvertedValue: Math.round(previousConvertedValue),
       },
       statusData, sourceData, funnelData, lossReasonsData, conversionByStage, teamData,
-      monthlyLeadsConversion,
-      monthlyRevenueBySellerData,
-      sellers,
+      monthlyLeadsConversion, monthlyRevenueBySellerData, sellers,
+      funnelStageDays,
     };
 
     console.log('Dashboard stats fetched successfully:', {
-      totalLeads: response.stats.totalLeads,
-      wonLeads: response.stats.wonLeads,
-      pendingLeads: response.stats.pendingLeads,
-      conversionRate: response.stats.conversionRate,
-      totalConvertedValue: response.stats.totalConvertedValue,
+      totalLeads, wonLeads, stalledProposals14d, stalledNegotiations10d,
+      leadsNoContact3d, sqlNoFollowUp, funnelStageDays: funnelStageDays.map(f => `${f.stage}:${f.count}/${f.avgDays}d`),
     });
 
     return new Response(JSON.stringify(response), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
