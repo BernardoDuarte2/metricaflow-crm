@@ -14,6 +14,7 @@ import {
   Shield,
   BarChart3,
   Search,
+  Target,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -145,6 +146,13 @@ const Sidebar = () => {
       to: "/kpi",
       icon: BarChart3,
       label: "Desempenho & KPI",
+      requiresOwnerOrGestor: false,
+      requiresSuperAdmin: false,
+    },
+    {
+      to: "/goals",
+      icon: Target,
+      label: "Metas",
       requiresOwnerOrGestor: false,
       requiresSuperAdmin: false,
     },

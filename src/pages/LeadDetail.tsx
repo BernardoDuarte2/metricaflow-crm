@@ -105,11 +105,7 @@ const LeadDetail = () => {
         .eq("lead_id", id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Erro ao carregar notas:", error);
-        throw error;
-      }
-      console.log("Notas carregadas:", data);
+      if (error) throw error;
       return data;
     },
   });
