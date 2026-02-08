@@ -191,7 +191,7 @@ const Dashboard = () => {
       let query = supabase
         .from("leads")
         .select("created_at, status, estimated_value")
-        .eq("status", "ganho")
+        .in("status", ["ganho", "fechado"])
         .gte("created_at", startDate)
         .lte("created_at", endDate);
       

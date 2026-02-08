@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, BarChart3, Target, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfMonth, subMonths, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import Sidebar from "@/components/layout/Sidebar";
 import { KPIGoalCard, KPISummaryCard, KPIFeedbackTabs, KPIGoalEditor, KPIFeedbackForm } from "@/components/kpi";
 
 const KPI = () => {
@@ -142,10 +141,7 @@ const KPI = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="pt-16">
-        <main className="p-6 space-y-6">
+    <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -298,8 +294,6 @@ const KPI = () => {
               />
             </>
           )}
-        </main>
-      </div>
     </div>
   );
 };

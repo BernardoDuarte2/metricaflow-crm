@@ -194,7 +194,7 @@ const Agenda = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background -m-6">
       {/* Sidebar */}
       <div className="w-80 flex-shrink-0 border-r border-border overflow-y-auto">
         <CalendarSidebar

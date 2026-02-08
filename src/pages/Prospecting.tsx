@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import Sidebar from "@/components/layout/Sidebar";
 import { ProspectingCard } from "@/components/prospecting/ProspectingCard";
 import { ProspectingStats } from "@/components/prospecting/ProspectingStats";
 
@@ -167,11 +166,7 @@ const Prospecting = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-
-      <main className="pt-20 pb-8 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -355,8 +350,6 @@ const Prospecting = () => {
               </Card>
             )}
           </motion.div>
-        </div>
-      </main>
     </div>
   );
 };
