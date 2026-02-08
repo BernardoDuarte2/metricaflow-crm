@@ -21,10 +21,3 @@ export { RevenueBySellerChart } from './RevenueBySellerChart';
 export { LeadsConversionMonthlyChart } from './LeadsConversionMonthlyChart';
 export { GoalHeroCard } from './GoalHeroCard';
 export { VisualFunnel } from './VisualFunnel';
-// New components
-export { BusinessScoreCards } from './BusinessScoreCards';
-export { UnifiedFunnel } from './UnifiedFunnel';
-export { MarketingVsSales } from './MarketingVsSales';
-export { MoneyPipeline } from './MoneyPipeline';
-export { MoneyLeakAlerts } from './MoneyLeakAlerts';
-export { DashboardEvolutionChart } from './DashboardEvolutionChart';

@@ -1,183 +1,163 @@
 
 
-## Reestruturacao Completa do Dashboard - Novo Layout Comercial
+## Correcao Critica: Edge Function `get-dashboard-stats` - Mapeamento de Status
 
-### Visao Geral
+### Problema Identificado
 
-Substituir o layout atual do Dashboard por uma estrutura mais objetiva e orientada a acao, com 7 blocos claros: Placar do Negocio, Funil Unico End-to-End, Marketing vs Vendas, Pipeline de Dinheiro, Alertas Clicaveis com redirecionamento para Leads, e Evolucao no Tempo. Inclui tambem integracoes com a pagina de Leads para filtros via URL.
+O Kanban esta correto apos as correções anteriores. Porem, a edge function `get-dashboard-stats` que alimenta o Dashboard **NAO reconhece os status alternativos** do banco de dados.
+
+**Dados reais no banco de dados:**
+
+```text
+Status        | Quantidade
+--------------|-----------
+fechado       | 331
+qualificado   | 183
+proposta      | 170
+contato       | 159
+negociacao    | 140
+perdido       | 115
+novo          | 75
+contatado     | 40
+ganho         | 13
+contato_feito | 9
+```
+
+**Impacto:** O Dashboard mostra apenas 13 vendas ganhas quando deveria mostrar 344 (ganho + fechado). A receita, taxa de conversao, ticket medio e todos os KPIs estao drasticamente errados.
 
 ---
 
-### Estrutura do Novo Dashboard
+### Alteracoes Necessarias
 
-```text
-+------------------------------------------------------+
-| FILTRO DE PERIODO: Hoje / Semana / Mes               |
-+------------------------------------------------------+
-| 1. PLACAR DO NEGOCIO (4 cards em grid)               |
-|  [Leads no Periodo] [SQL Gerados] [Oport. R$] [Rec.] |
-|   cada um com comparacao vs periodo anterior          |
-+------------------------------------------------------+
-| 2. FUNIL UNICO END-TO-END                            |
-|  Leads > MQL > SQL > Proposta > Negociacao > Fechado  |
-|  Cada etapa: quantidade + tempo parado + cor dinamica |
-+------------------------------------------------------+
-| 3. MARKETING vs VENDAS (2 colunas)                   |
-|  [Leads por Origem - barras] | [SQL->Fechado % KPI]  |
-|  "Mktg converteu X%..."     | "Vendas acima/abaixo"  |
-+------------------------------------------------------+
-| 4. PIPELINE DE DINHEIRO                               |
-|  Barras horizontais: Propostas R$ | Negoc. R$ | Fech  |
-|  "Pipeline cobre X vezes a meta mensal"               |
-+------------------------------------------------------+
-| 5. ONDE ESTAMOS PERDENDO DINHEIRO (Alertas clicaveis) |
-|  Propostas paradas +14d | Negociacoes +10d           |
-|  Leads sem contato +3d  | SQL sem follow-up           |
-|  -> Clique redireciona para /leads?filtros            |
-+------------------------------------------------------+
-| 6. EVOLUCAO NO TEMPO (Menor destaque)                 |
-|  Grafico de linha dupla: Gerados vs Fechados          |
-+------------------------------------------------------+
-```
+#### 1. Edge Function `supabase/functions/get-dashboard-stats/index.ts`
+
+Todas as queries que filtram por status precisam incluir os aliases:
+
+**Won leads (15 ocorrencias de `eq('status', 'ganho')`):**
+- Trocar `.eq('status', 'ganho')` por `.in('status', ['ganho', 'fechado'])`
+- Afeta: wonLeads, wonLeadValues, closedLeadsWithTime, opportunities, previousPeriodWon, monthlyRevenueBySellerResult
+- Afeta tambem: contagem de `status === 'ganho'` no forEach (linhas 280, 291, 371)
+
+**Pending leads (pipeline ativo):**
+- Trocar `.in('status', ['novo', 'contato_feito', 'proposta', 'negociacao'])` por `.in('status', ['novo', 'contato_feito', 'contato', 'contatado', 'proposta', 'negociacao'])`
+- Afeta: pendingLeads count, forecast pipeline, inactive leads queries
+
+**Funnel data stages (linhas 204-210):**
+- Adicionar stage `qualificado` no funil
+- Agrupar `contato + contatado + contato_feito` juntos como "Contato Feito"
+- Agrupar `ganho + fechado` juntos como "Ganho/Fechado"
+
+**Team performance (linhas 276-296):**
+- Trocar `lead.status === 'ganho'` por `['ganho', 'fechado'].includes(lead.status)` nos calculos de receita por vendedor
+
+**Monthly leads conversion chart (linha 371):**
+- Trocar `.filter(lead => lead.status === 'ganho')` por `.filter(lead => ['ganho', 'fechado'].includes(lead.status))`
 
 ---
 
-### Detalhes Tecnicos
+#### 2. Dashboard frontend `src/pages/Dashboard.tsx`
 
-#### Arquivo 1: `supabase/functions/get-dashboard-stats/index.ts`
+**Marketing funnel data (linhas 364-376):**
+- Os dados do funil de marketing usam `stats.qualifiedLeads` que vem de `eq('qualificado', true)` - esta query busca um campo booleano `qualificado` e nao o status. Verificar se faz sentido ou trocar para contar status `qualificado`.
 
-**Novas queries necessarias no backend:**
-
-1. **Tempo medio parado por etapa**: Para cada etapa do funil, calcular `now() - updated_at` dos leads naquele status. Retornar como `avgStaleDays` por stage.
-
-2. **Alertas com contagem**: 
-   - Propostas paradas ha +14 dias: `status IN ['proposta'] AND updated_at < now() - 14 days`
-   - Negociacoes paradas ha +10 dias: `status IN ['negociacao'] AND updated_at < now() - 10 days`
-   - Leads sem contato ha +3 dias: `status IN ['novo'] AND updated_at < now() - 3 days`
-   - SQL sem tarefa vinculada: leads com status qualificado que NAO tem registro na tabela `tasks`
-
-3. **Pipeline de dinheiro**: Somar `lead_values.amount` agrupado por status (`proposta`, `negociacao`, `ganho+fechado`).
-
-4. **Conversao Marketing**: Total leads vs SQL (status qualificado) = taxa de conversao marketing.
-
-5. **Conversao Vendas**: SQL (qualificado) vs Fechado (ganho+fechado) = taxa de conversao vendas.
-
-6. **Dados mensais para grafico de evolucao**: Leads gerados por mes vs Leads fechados por mes (ja existe parcialmente em `monthlyLeadsConversion`).
-
-**Novo formato de resposta** (campos adicionados ao `response.stats`):
-```text
-stalledProposals14d: number
-stalledNegotiations10d: number  
-leadsNoContact3d: number
-sqlNoFollowUp: number
-pipelineProposalsValue: number
-pipelineNegotiationsValue: number
-pipelineClosedValue: number
-marketingConversionRate: number (leads -> SQL %)
-salesConversionRate: number (SQL -> Fechado %)
-funnelStageDays: { stage: string, avgDays: number, count: number }[]
-```
-
-#### Arquivo 2: Novo componente `src/components/dashboard/cockpit/BusinessScoreCards.tsx`
-
-4 cards em grid (2x2 mobile, 4x1 desktop):
-- **Leads no Periodo**: `stats.totalLeads` com `% vs previousTotalLeads`
-- **SQL Gerados**: contagem de leads com status `qualificado` com comparacao
-- **Oportunidades Abertas (R$)**: soma de `lead_values` para status `proposta + negociacao`  
-- **Receita Fechada (R$)**: `stats.totalConvertedValue` com comparacao
-
-Cada card mostra:
-- Numero grande em destaque
-- Seta verde (positiva) ou vermelha (negativa) com `% vs periodo anterior`
-
-#### Arquivo 3: Novo componente `src/components/dashboard/cockpit/UnifiedFunnel.tsx`
-
-Funil horizontal end-to-end com 6 etapas:
-- Leads (todos) -> MQL (contato_feito + contato + contatado) -> SQL (qualificado) -> Proposta -> Negociacao -> Fechado (ganho + fechado)
-
-Cada etapa mostra:
-- Nome da etapa
-- Quantidade de leads
-- Tempo medio parado (dias) - calculado do `updated_at`
-- Cor dinamica:
-  - Verde: tempo <= ideal (configuravel, ex: 3 dias)
-  - Amarelo: tempo entre ideal e critico
-  - Vermelho: tempo > critico (ex: 7+ dias)
-- Seta com taxa de conversao entre etapas
-
-#### Arquivo 4: Novo componente `src/components/dashboard/cockpit/MarketingVsSales.tsx`
-
-Duas colunas lado a lado:
-- **Esquerda (Marketing)**: Grafico de barras com leads por origem (reusa dados de `sourceData`). Texto automatico: "Marketing converteu X% dos leads em SQL no periodo."
-- **Direita (Vendas)**: Numero destacado com SQL -> Fechado %. Texto automatico com comparacao contra benchmark de 18%.
-
-#### Arquivo 5: Novo componente `src/components/dashboard/cockpit/MoneyPipeline.tsx`
-
-Barras horizontais mostrando:
-- Propostas: R$ (soma valores leads em proposta)
-- Negociacao: R$ (soma valores leads em negociacao)
-- Fechados: R$ (totalConvertedValue)
-
-Texto automatico calculando `pipeline total / meta mensal = X vezes`.
-
-#### Arquivo 6: Novo componente `src/components/dashboard/cockpit/MoneyLeakAlerts.tsx`
-
-Card com alertas clicaveis. Cada alerta:
-- Icone vermelho + descricao + contagem
-- `cursor-pointer` + `hover` effect
-- Ao clicar: `navigate('/leads?status=proposta&stalled_days=14')`
-- Se contagem = 0: texto "Nenhum lead nessa condicao" com check verde, item desabilitado
-
-#### Arquivo 7: Atualizar `src/pages/Leads.tsx`
-
-Ler filtros da URL com `useSearchParams`:
-- `status` -> aplicar filtro de status
-- `stalled_days` -> filtrar `updated_at < now() - X days`
-- `no_contact_days` -> filtrar leads sem observacoes recentes
-- `no_tasks` -> filtrar leads sem tarefas vinculadas
-
-Exibir banner quando filtros vem da URL:
-```text
-"Filtro aplicado: Propostas paradas ha +14 dias" [X Limpar]
-```
-
-Garantir que clique no lead abre `/leads/{id}` diretamente (sem modal).
-
-#### Arquivo 8: Novo componente `src/components/dashboard/cockpit/EvolutionChart.tsx`
-
-Grafico de linha dupla usando Recharts:
-- Linha 1 (azul): Leads gerados por mes
-- Linha 2 (verde): Leads fechados por mes
-
-Reusa dados de `monthlyLeadsConversion` que ja existe no backend.
-
-#### Arquivo 9: Refatorar `src/pages/Dashboard.tsx`
-
-Substituir o layout atual por:
-1. Filtro de periodo simplificado (Hoje / Semana / Mes) - substituir o DashboardFilters complexo
-2. BusinessScoreCards (4 cards)
-3. UnifiedFunnel (funil unico)
-4. MarketingVsSales (2 colunas)
-5. MoneyPipeline (barras horizontais)
-6. MoneyLeakAlerts (alertas clicaveis)
-7. EvolutionChart (grafico de tendencia)
-8. Manter secoes de time/performance abaixo (para gestores)
-9. Manter metricas avancadas no collapsible
-
-#### Arquivo 10: Atualizar `src/components/dashboard/cockpit/index.ts`
-
-Exportar os novos componentes.
+**Sales funnel data (linhas 378-391):**
+- Calculo usa `Math.round()` sobre `pendingLeads` - apos a correção do backend, esses numeros serao mais precisos.
 
 ---
 
-### Regras de UX
+### Detalhes Tecnicos - Edge Function
 
-- Cards brancos com bordas sutis, layout em grid limpo
-- Funil como elemento central e mais visualmente proeminente
-- Vermelho APENAS para alertas e dados negativos
-- Hover + cursor pointer em todos itens clicaveis
-- Alertas sem leads mostram "Nenhum lead nessa condicao" com icone de check
-- Dados zerados nao quebram o Dashboard (safe checks em todos componentes)
+Mudancas especificas no arquivo `supabase/functions/get-dashboard-stats/index.ts`:
+
+**Linha 95:** Won leads count
+```
+Antes:  .eq('status', 'ganho')
+Depois: .in('status', ['ganho', 'fechado'])
+```
+
+**Linha 96:** Pending leads count
+```
+Antes:  .in('status', ['novo', 'contato_feito', 'proposta', 'negociacao'])
+Depois: .in('status', ['novo', 'contato_feito', 'contato', 'contatado', 'proposta', 'negociacao'])
+```
+
+**Linha 98:** Won lead values
+```
+Antes:  .eq('leads.status', 'ganho')
+Depois: .in('leads.status', ['ganho', 'fechado'])
+```
+
+**Linha 103:** Opportunities
+```
+Antes:  .in('status', ['proposta', 'negociacao', 'ganho'])
+Depois: .in('status', ['proposta', 'negociacao', 'ganho', 'fechado'])
+```
+
+**Linha 104:** Closed leads with time
+```
+Antes:  .eq('status', 'ganho')
+Depois: .in('status', ['ganho', 'fechado'])
+```
+
+**Linha 106:** Forecast pipeline
+```
+Antes:  .in('leads.status', ['novo', 'contato_feito', 'proposta', 'negociacao'])
+Depois: .in('leads.status', ['novo', 'contato_feito', 'contato', 'contatado', 'proposta', 'negociacao'])
+```
+
+**Linhas 112-113:** Inactive leads
+```
+Antes:  .in('status', ['novo', 'contato_feito', 'proposta', 'negociacao'])
+Depois: .in('status', ['novo', 'contato_feito', 'contato', 'contatado', 'proposta', 'negociacao'])
+```
+
+**Linha 122:** Previous period won
+```
+Antes:  .eq('status', 'ganho')
+Depois: .in('status', ['ganho', 'fechado'])
+```
+
+**Linha 126:** Monthly revenue by seller
+```
+Antes:  .eq('leads.status', 'ganho')
+Depois: .in('leads.status', ['ganho', 'fechado'])
+```
+
+**Linha 166:** Probability map (adicionar aliases)
+```
+Antes:  { 'novo': 0.10, 'contato_feito': 0.20, 'proposta': 0.40, 'negociacao': 0.70 }
+Depois: { 'novo': 0.10, 'contato_feito': 0.20, 'contato': 0.20, 'contatado': 0.20, 'proposta': 0.40, 'negociacao': 0.70 }
+```
+
+**Linhas 179-182:** Status counts - agrupar aliases no statusData
+
+**Linhas 204-210:** Funnel stages - adicionar qualificado e agrupar contato
+```
+Antes:
+  { stage: 'Novos', status: 'novo' },
+  { stage: 'Contato Feito', status: 'contato_feito' },
+  ...
+
+Depois: calcular cada stage somando os aliases
+  Novos = count(novo)
+  Contato Feito = count(contato_feito) + count(contato) + count(contatado)
+  Qualificado = count(qualificado)
+  Proposta = count(proposta)
+  Negociacao = count(negociacao)
+  Ganho = count(ganho) + count(fechado)
+```
+
+**Linhas 280, 291:** Team performance forEach
+```
+Antes:  lead.status === 'ganho'
+Depois: ['ganho', 'fechado'].includes(lead.status)
+```
+
+**Linha 371:** Monthly conversion chart
+```
+Antes:  lead.status === 'ganho'
+Depois: ['ganho', 'fechado'].includes(lead.status)
+```
 
 ---
 
@@ -185,14 +165,14 @@ Exportar os novos componentes.
 
 | Arquivo | Acao |
 |---------|------|
-| `supabase/functions/get-dashboard-stats/index.ts` | Adicionar queries para tempo parado, alertas especificos, pipeline por valor |
-| `src/components/dashboard/cockpit/BusinessScoreCards.tsx` | NOVO - 4 cards topo |
-| `src/components/dashboard/cockpit/UnifiedFunnel.tsx` | NOVO - Funil end-to-end |
-| `src/components/dashboard/cockpit/MarketingVsSales.tsx` | NOVO - Mktg vs Vendas |
-| `src/components/dashboard/cockpit/MoneyPipeline.tsx` | NOVO - Pipeline R$ |
-| `src/components/dashboard/cockpit/MoneyLeakAlerts.tsx` | NOVO - Alertas clicaveis |
-| `src/components/dashboard/cockpit/EvolutionChart.tsx` | NOVO - Linha dupla evolucao |
-| `src/components/dashboard/cockpit/index.ts` | Atualizar exports |
-| `src/pages/Dashboard.tsx` | Refatorar layout completo |
-| `src/pages/Leads.tsx` | Adicionar leitura de filtros via URL + banner |
+| `supabase/functions/get-dashboard-stats/index.ts` | Atualizar ~20 queries e filtros para incluir status aliases |
+| `src/pages/Dashboard.tsx` | Ajustes menores nos dados do funil (se necessario apos backend) |
+
+### Resultado Esperado
+
+Apos as correções:
+- Dashboard mostrara 344 vendas ganhas em vez de 13
+- Taxa de conversao, receita, ticket medio serao precisos
+- Funil do Dashboard tera as mesmas contagens do Kanban
+- KPIs de performance do time serao corretos
 
