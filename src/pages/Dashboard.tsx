@@ -46,6 +46,8 @@ import {
   LeadsConversionMonthlyChart,
   GoalHeroCard,
   VisualFunnel,
+  UnifiedFunnel,
+  MoneyLeakAlerts,
 } from "@/components/dashboard/cockpit";
 
 // Lazy load de componentes pesados
@@ -360,36 +362,27 @@ const Dashboard = () => {
     ];
   }, [stats]);
 
-  // Visual funnel data
-  const marketingFunnelData = useMemo(() => {
+  // Unified funnel data (end-to-end)
+  const unifiedFunnelData = useMemo(() => {
     if (!funnelData) return [];
-    const totalLeads = stats?.totalLeads || 0;
-    const qualifiedLeads = stats?.qualifiedLeads || 0;
-    // MQL = qualified, SQL = subset
-    const mql = qualifiedLeads;
-    const sql = Math.round(mql * 0.5);
-    return [
-      { name: 'Leads', value: totalLeads },
-      { name: 'MQL', value: mql },
-      { name: 'SQL', value: sql },
-    ];
-  }, [funnelData, stats]);
+    const funnelMap: Record<string, any> = {};
+    funnelData.forEach((f: any) => { funnelMap[f.stage] = f; });
 
-  const salesFunnelData = useMemo(() => {
-    if (!funnelData) return [];
-    // Use actual funnel data from backend (already grouped by aliases)
-    const funnelMap: Record<string, number> = {};
-    funnelData.forEach((f: any) => { funnelMap[f.stage] = f.count; });
-    
-    const qualificado = funnelMap['Qualificado'] || 0;
-    const propostas = funnelMap['Proposta'] || 0;
-    const negociacoes = funnelMap['Negociação'] || 0;
-    const fechados = funnelMap['Ganho'] || stats?.wonLeads || 0;
+    // Map: Leads → MQL → SQL → Proposta → Negociação → Fechado
+    const totalLeads = stats?.totalLeads || 0;
+    const contatoFeito = funnelMap['Contato Feito']?.count || 0;
+    const qualificado = funnelMap['Qualificado']?.count || 0;
+    const propostas = funnelMap['Proposta']?.count || 0;
+    const negociacoes = funnelMap['Negociação']?.count || 0;
+    const fechados = funnelMap['Ganho']?.count || stats?.wonLeads || 0;
+
     return [
-      { name: 'Qualificados', value: qualificado },
-      { name: 'Propostas', value: propostas },
-      { name: 'Negociações', value: negociacoes },
-      { name: 'Fechados', value: fechados },
+      { name: 'Leads', value: totalLeads, avgStaleDays: funnelMap['Novos']?.avgStaleDays || 0 },
+      { name: 'MQL', value: contatoFeito, avgStaleDays: funnelMap['Contato Feito']?.avgStaleDays || 0 },
+      { name: 'SQL', value: qualificado, avgStaleDays: funnelMap['Qualificado']?.avgStaleDays || 0 },
+      { name: 'Proposta', value: propostas, avgStaleDays: funnelMap['Proposta']?.avgStaleDays || 0 },
+      { name: 'Negociação', value: negociacoes, avgStaleDays: funnelMap['Negociação']?.avgStaleDays || 0 },
+      { name: 'Fechado', value: fechados },
     ];
   }, [funnelData, stats]);
 
@@ -532,19 +525,21 @@ const Dashboard = () => {
             <AlertPanel alerts={alerts} />
           )}
 
-          {/* 3. VISUAL FUNNELS - Side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <VisualFunnel
-              stages={marketingFunnelData}
-              title="Funil de Marketing"
-              colorScheme="blue"
+          {/* 3. FUNIL ÚNICO END-TO-END */}
+          <UnifiedFunnel
+            stages={unifiedFunnelData}
+            title="Funil End-to-End"
+          />
+
+          {/* 3.5 MONEY LEAK ALERTS */}
+          {dashboardData?.moneyLeakAlerts && (
+            <MoneyLeakAlerts
+              stalledProposals={dashboardData.moneyLeakAlerts.stalledProposals}
+              stalledNegotiations={dashboardData.moneyLeakAlerts.stalledNegotiations}
+              noContactLeads={dashboardData.moneyLeakAlerts.noContactLeads}
+              noFollowUpLeads={dashboardData.moneyLeakAlerts.noFollowUpLeads}
             />
-            <VisualFunnel
-              stages={salesFunnelData}
-              title="Funil de Vendas"
-              colorScheme="green"
-            />
-          </div>
+          )}
 
           {/* 4. VELOCITY METER */}
           <VelocityMeter 

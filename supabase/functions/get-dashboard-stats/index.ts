@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).in('leads.status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('status')),
       buildQuery(supabaseClient.from('leads').select('source')),
-      buildQuery(supabaseClient.from('leads').select('status')),
+      buildQuery(supabaseClient.from('leads').select('status, updated_at')),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('qualificado', true)),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', OPPORTUNITY_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('created_at, updated_at').in('status', WON_STATUSES)),
@@ -242,11 +242,45 @@ Deno.serve(async (req) => {
       { stage: 'Ganho', statuses: ['ganho', 'fechado'], color: 'hsl(var(--chart-5))' },
     ];
 
-    const funnelData = stages.map((stage) => ({
-      stage: stage.stage,
-      count: funnelDataResult.data?.filter((lead: any) => stage.statuses.includes(lead.status)).length || 0,
-      color: stage.color,
-    }));
+    const funnelData = stages.map((stage) => {
+      const stageLeads = funnelDataResult.data?.filter((lead: any) => stage.statuses.includes(lead.status)) || [];
+      const count = stageLeads.length;
+      // Calculate avg stale days (time since last update)
+      let avgStaleDays = 0;
+      if (count > 0 && stage.stage !== 'Ganho') {
+        const totalStaleDays = stageLeads.reduce((sum: number, lead: any) => {
+          const updatedAt = new Date(lead.updated_at || lead.created_at || now);
+          const days = Math.max(0, Math.ceil((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)));
+          return sum + days;
+        }, 0);
+        avgStaleDays = Math.round(totalStaleDays / count);
+      }
+      return { stage: stage.stage, count, color: stage.color, avgStaleDays };
+    });
+
+    // Money leak alerts data
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [
+      stalledProposalsResult,
+      stalledNegotiationsResult,
+      noContactLeadsResult,
+      noFollowUpLeadsResult,
+    ] = await Promise.all([
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'proposta').lt('updated_at', fourteenDaysAgo),
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'negociacao').lt('updated_at', tenDaysAgo),
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).in('status', ACTIVE_PIPELINE_STATUSES).lt('updated_at', threeDaysAgo),
+      supabaseClient.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'qualificado'),
+    ]);
+
+    const moneyLeakAlerts = {
+      stalledProposals: stalledProposalsResult.count || 0,
+      stalledNegotiations: stalledNegotiationsResult.count || 0,
+      noContactLeads: noContactLeadsResult.count || 0,
+      noFollowUpLeads: noFollowUpLeadsResult.count || 0,
+    };
 
     // Conversion by stage flow (using grouped counts)
     const stagesFlow = [
@@ -480,7 +514,7 @@ Deno.serve(async (req) => {
         previousTotalLeads, previousWonLeads,
         previousConversionRate: previousTotalLeads > 0 ? ((previousWonLeads / previousTotalLeads) * 100).toFixed(1) : '0.0',
       },
-      statusData, sourceData, funnelData, lossReasonsData, conversionByStage, teamData,
+      statusData, sourceData, funnelData, lossReasonsData, conversionByStage, teamData, moneyLeakAlerts,
       monthlyLeadsConversion,
       monthlyRevenueBySellerData,
       sellers,
