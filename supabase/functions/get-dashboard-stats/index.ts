@@ -12,6 +12,16 @@ interface DashboardStatsRequest {
   user_id?: string;
 }
 
+// Status alias constants for consistency
+const WON_STATUSES = ['ganho', 'fechado'];
+const CONTACT_STATUSES = ['contato_feito', 'contato', 'contatado'];
+const ACTIVE_PIPELINE_STATUSES = ['novo', 'contato_feito', 'contato', 'contatado', 'qualificado', 'proposta', 'negociacao'];
+const OPPORTUNITY_STATUSES = ['proposta', 'negociacao', 'ganho', 'fechado'];
+
+// Helper to check if a status is "won"
+const isWonStatus = (status: string) => WON_STATUSES.includes(status);
+const isContactStatus = (status: string) => CONTACT_STATUSES.includes(status);
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -92,25 +102,25 @@ Deno.serve(async (req) => {
       monthlyRevenueBySellerResult,
     ] = await Promise.all([
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true })),
-      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'ganho')),
-      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', ['novo', 'contato_feito', 'proposta', 'negociacao'])),
+      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', WON_STATUSES)),
+      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', ACTIVE_PIPELINE_STATUSES)),
       buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`)),
-      buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).eq('leads.status', 'ganho')),
+      buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).in('leads.status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('status')),
       buildQuery(supabaseClient.from('leads').select('source')),
       buildQuery(supabaseClient.from('leads').select('status')),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('qualificado', true)),
-      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', ['proposta', 'negociacao', 'ganho'])),
-      buildQuery(supabaseClient.from('leads').select('created_at, updated_at').eq('status', 'ganho')),
+      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', OPPORTUNITY_STATUSES)),
+      buildQuery(supabaseClient.from('leads').select('created_at, updated_at').in('status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('motivo_perda').eq('status', 'perdido')),
-      buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).in('leads.status', ['novo', 'contato_feito', 'proposta', 'negociacao'])),
+      buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).in('leads.status', ACTIVE_PIPELINE_STATUSES)),
       buildQuery(supabaseClient.from('meetings').select('*', { count: 'exact', head: true }).neq('status', 'cancelada')),
       buildQuery(supabaseClient.from('meetings').select('*', { count: 'exact', head: true }).eq('status', 'realizada')),
       buildQuery(supabaseClient.from('tasks').select('*', { count: 'exact', head: true })),
       buildQuery(supabaseClient.from('lead_observations').select('*', { count: 'exact', head: true })),
       supabaseClient.from('marketing_costs').select('*').lte('period_start', end_date).gte('period_end', start_date).order('period_start', { ascending: false }).limit(1).maybeSingle(),
-      supabaseClient.from('leads').select('id, name, updated_at').in('status', ['novo', 'contato_feito', 'proposta', 'negociacao']).lt('updated_at', twentyFourHoursAgo),
-      supabaseClient.from('leads').select('id, name, updated_at').in('status', ['novo', 'contato_feito', 'proposta', 'negociacao']).lt('updated_at', sevenDaysAgo),
+      supabaseClient.from('leads').select('id, name, updated_at').in('status', ACTIVE_PIPELINE_STATUSES).lt('updated_at', twentyFourHoursAgo),
+      supabaseClient.from('leads').select('id, name, updated_at').in('status', ACTIVE_PIPELINE_STATUSES).lt('updated_at', sevenDaysAgo),
       supabaseClient.from('sales_goals').select('*').lte('start_date', end_date).gte('end_date', start_date).order('start_date', { ascending: false }).limit(1).maybeSingle(),
       supabaseClient.from('lead_observations').select('lead_id').gte('created_at', sevenDaysAgo).lte('created_at', now.toISOString()),
       buildQuery(supabaseClient.from('leads').select('id, status, assigned_to, created_at, updated_at, estimated_value')),
@@ -119,11 +129,11 @@ Deno.serve(async (req) => {
       buildQuery(supabaseClient.from('lead_observations').select('id, user_id')),
       supabaseClient.from('seller_kpi_monthly').select('*').gte('month', start_date.split('T')[0]).lte('month', end_date.split('T')[0]),
       supabaseClient.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', prevStart).lte('created_at', prevEnd),
-      supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'ganho').gte('created_at', prevStart).lte('created_at', prevEnd),
-      // New: Monthly leads data for charts
+      supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', WON_STATUSES).gte('created_at', prevStart).lte('created_at', prevEnd),
+      // Monthly leads data for charts
       supabaseClient.from('leads').select('id, status, assigned_to, created_at').gte('created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('created_at', end_date),
-      // New: Monthly revenue by seller (won leads with values)
-      supabaseClient.from('lead_values').select('amount, lead_id, leads!inner(id, assigned_to, status, created_at)').eq('leads.status', 'ganho').gte('leads.created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('leads.created_at', end_date),
+      // Monthly revenue by seller (won leads with values)
+      supabaseClient.from('lead_values').select('amount, lead_id, leads!inner(id, assigned_to, status, created_at)').in('leads.status', WON_STATUSES).gte('leads.created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('leads.created_at', end_date),
     ]);
 
     // Calculate metrics
@@ -163,7 +173,16 @@ Deno.serve(async (req) => {
       percentage: ((count as number / (lostLeadsResult.data?.length || 1)) * 100).toFixed(1)
     }));
 
-    const probabilityMap: Record<string, number> = { 'novo': 0.10, 'contato_feito': 0.20, 'proposta': 0.40, 'negociacao': 0.70 };
+    // Probability map including aliases
+    const probabilityMap: Record<string, number> = {
+      'novo': 0.10,
+      'contato_feito': 0.20,
+      'contato': 0.20,
+      'contatado': 0.20,
+      'qualificado': 0.30,
+      'proposta': 0.40,
+      'negociacao': 0.70,
+    };
     const forecast = activeLeadValuesForForecastResult.data?.reduce((sum: number, value: any) => {
       const amount = Number(value.amount) || 0;
       const probability = probabilityMap[value.leads.status] || 0;
@@ -176,14 +195,26 @@ Deno.serve(async (req) => {
     const totalObservations = observationsResult.count || 0;
     const totalActivities = scheduledMeetings + totalTasks + totalObservations;
 
-    const statusCounts = statusDataResult.data?.reduce((acc: Record<string, number>, lead: any) => {
+    // Raw status counts from DB
+    const rawStatusCounts = statusDataResult.data?.reduce((acc: Record<string, number>, lead: any) => {
       acc[lead.status] = (acc[lead.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>) || {};
 
+    // Grouped status counts for display (merge aliases)
+    const statusCounts: Record<string, number> = {
+      'novo': rawStatusCounts['novo'] || 0,
+      'contato_feito': (rawStatusCounts['contato_feito'] || 0) + (rawStatusCounts['contato'] || 0) + (rawStatusCounts['contatado'] || 0),
+      'qualificado': rawStatusCounts['qualificado'] || 0,
+      'proposta': rawStatusCounts['proposta'] || 0,
+      'negociacao': rawStatusCounts['negociacao'] || 0,
+      'ganho': (rawStatusCounts['ganho'] || 0) + (rawStatusCounts['fechado'] || 0),
+      'perdido': rawStatusCounts['perdido'] || 0,
+    };
+
     const colors: Record<string, string> = {
-      novo: 'hsl(var(--chart-1))', contato_feito: 'hsl(var(--chart-2))', proposta: 'hsl(var(--chart-3))',
-      negociacao: 'hsl(var(--chart-4))', ganho: 'hsl(var(--chart-5))', perdido: 'hsl(var(--chart-6))',
+      novo: 'hsl(var(--chart-1))', contato_feito: 'hsl(var(--chart-2))', qualificado: 'hsl(var(--chart-7, 280 65% 60%))',
+      proposta: 'hsl(var(--chart-3))', negociacao: 'hsl(var(--chart-4))', ganho: 'hsl(var(--chart-5))', perdido: 'hsl(var(--chart-6))',
     };
 
     const statusData = Object.entries(statusCounts).map(([status, count]) => ({
@@ -201,23 +232,29 @@ Deno.serve(async (req) => {
       source, count, color: chartColors[index % chartColors.length],
     }));
 
+    // Funnel stages with aliases grouped
     const stages = [
-      { stage: 'Novos', status: 'novo', color: 'hsl(var(--chart-1))' },
-      { stage: 'Contato Feito', status: 'contato_feito', color: 'hsl(var(--chart-2))' },
-      { stage: 'Proposta', status: 'proposta', color: 'hsl(var(--chart-3))' },
-      { stage: 'Negociação', status: 'negociacao', color: 'hsl(var(--chart-4))' },
-      { stage: 'Ganho', status: 'ganho', color: 'hsl(var(--chart-5))' },
+      { stage: 'Novos', statuses: ['novo'], color: 'hsl(var(--chart-1))' },
+      { stage: 'Contato Feito', statuses: ['contato_feito', 'contato', 'contatado'], color: 'hsl(var(--chart-2))' },
+      { stage: 'Qualificado', statuses: ['qualificado'], color: 'hsl(var(--chart-7, 280 65% 60%))' },
+      { stage: 'Proposta', statuses: ['proposta'], color: 'hsl(var(--chart-3))' },
+      { stage: 'Negociação', statuses: ['negociacao'], color: 'hsl(var(--chart-4))' },
+      { stage: 'Ganho', statuses: ['ganho', 'fechado'], color: 'hsl(var(--chart-5))' },
     ];
 
     const funnelData = stages.map((stage) => ({
       stage: stage.stage,
-      count: funnelDataResult.data?.filter((lead: any) => lead.status === stage.status).length || 0,
+      count: funnelDataResult.data?.filter((lead: any) => stage.statuses.includes(lead.status)).length || 0,
       color: stage.color,
     }));
 
+    // Conversion by stage flow (using grouped counts)
     const stagesFlow = [
-      { from: 'novo', to: 'contato_feito' }, { from: 'contato_feito', to: 'proposta' },
-      { from: 'proposta', to: 'negociacao' }, { from: 'negociacao', to: 'ganho' }
+      { from: 'novo', to: 'contato_feito', fromLabel: 'Novos', toLabel: 'Contato Feito' },
+      { from: 'contato_feito', to: 'qualificado', fromLabel: 'Contato Feito', toLabel: 'Qualificado' },
+      { from: 'qualificado', to: 'proposta', fromLabel: 'Qualificado', toLabel: 'Proposta' },
+      { from: 'proposta', to: 'negociacao', fromLabel: 'Proposta', toLabel: 'Negociação' },
+      { from: 'negociacao', to: 'ganho', fromLabel: 'Negociação', toLabel: 'Ganho' },
     ];
 
     const conversionByStage = stagesFlow.map(flow => {
@@ -277,7 +314,7 @@ Deno.serve(async (req) => {
       if (!lead.assigned_to || !teamPerformance[lead.assigned_to]) return;
       const tp = teamPerformance[lead.assigned_to];
       tp.leads += 1;
-      if (lead.status === 'ganho') {
+      if (isWonStatus(lead.status)) {
         tp.convertedLeads += 1;
         tp.revenue += Number(lead.estimated_value) || 0;
         const created = new Date(lead.created_at);
@@ -288,7 +325,7 @@ Deno.serve(async (req) => {
       }
     });
 
-    const wonLeadIdsSet = new Set(allLeads.filter((l: any) => l.status === 'ganho').map((l: any) => l.id));
+    const wonLeadIdsSet = new Set(allLeads.filter((l: any) => isWonStatus(l.status)).map((l: any) => l.id));
     (wonLeadValuesResult.data || []).forEach((lv: any) => {
       if (wonLeadIdsSet.has(lv.lead_id) && lv.leads?.assigned_to && teamPerformance[lv.leads.assigned_to]) {
         const tp = teamPerformance[lv.leads.assigned_to];
@@ -367,11 +404,11 @@ Deno.serve(async (req) => {
         const leadMonth = new Date(lead.created_at).getMonth();
         return leadMonth === index;
       });
-      const totalLeads = monthLeads.length;
-      const closedLeads = monthLeads.filter((lead: any) => lead.status === 'ganho').length;
-      const conversionRate = totalLeads > 0 ? (closedLeads / totalLeads) * 100 : 0;
+      const totalMonthLeads = monthLeads.length;
+      const closedLeads = monthLeads.filter((lead: any) => isWonStatus(lead.status)).length;
+      const convRate = totalMonthLeads > 0 ? (closedLeads / totalMonthLeads) * 100 : 0;
       
-      return { month, totalLeads, closedLeads, conversionRate };
+      return { month, totalLeads: totalMonthLeads, closedLeads, conversionRate: convRate };
     }).filter(m => m.totalLeads > 0 || m.closedLeads > 0);
 
     // Process monthly revenue by seller
@@ -449,7 +486,13 @@ Deno.serve(async (req) => {
       sellers,
     };
 
-    console.log('Dashboard stats fetched successfully:', response.stats);
+    console.log('Dashboard stats fetched successfully:', {
+      totalLeads: response.stats.totalLeads,
+      wonLeads: response.stats.wonLeads,
+      pendingLeads: response.stats.pendingLeads,
+      conversionRate: response.stats.conversionRate,
+      totalConvertedValue: response.stats.totalConvertedValue,
+    });
 
     return new Response(JSON.stringify(response), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 

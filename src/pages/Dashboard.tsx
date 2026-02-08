@@ -377,16 +377,19 @@ const Dashboard = () => {
 
   const salesFunnelData = useMemo(() => {
     if (!funnelData) return [];
-    const qualifiedLeads = stats?.qualifiedLeads || 0;
-    const sql = Math.round(qualifiedLeads * 0.5);
-    const proposals = stats?.pendingLeads ? Math.round(stats.pendingLeads * 0.6) : Math.round(sql * 0.7);
-    const negotiations = Math.round(proposals * 0.6);
-    const closed = stats?.wonLeads || 0;
+    // Use actual funnel data from backend (already grouped by aliases)
+    const funnelMap: Record<string, number> = {};
+    funnelData.forEach((f: any) => { funnelMap[f.stage] = f.count; });
+    
+    const qualificado = funnelMap['Qualificado'] || 0;
+    const propostas = funnelMap['Proposta'] || 0;
+    const negociacoes = funnelMap['Negociação'] || 0;
+    const fechados = funnelMap['Ganho'] || stats?.wonLeads || 0;
     return [
-      { name: 'SQL', value: sql },
-      { name: 'Propostas', value: proposals },
-      { name: 'Negociações', value: negotiations },
-      { name: 'Fechados', value: closed },
+      { name: 'Qualificados', value: qualificado },
+      { name: 'Propostas', value: propostas },
+      { name: 'Negociações', value: negociacoes },
+      { name: 'Fechados', value: fechados },
     ];
   }, [funnelData, stats]);
 
