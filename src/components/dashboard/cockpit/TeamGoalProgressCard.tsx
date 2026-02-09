@@ -1,12 +1,15 @@
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, Target, Users, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
+import { TrendingUp, Target, Users, Calendar, AlertTriangle, CheckCircle, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface TeamGoalProgressCardProps {
   totalGoal: number;
   totalAchieved: number;
   teamSize: number;
   daysRemaining: number;
+  isManager?: boolean;
+  onEditGoal?: () => void;
 }
 
 export const TeamGoalProgressCard = ({
@@ -14,6 +17,8 @@ export const TeamGoalProgressCard = ({
   totalAchieved,
   teamSize,
   daysRemaining,
+  isManager = false,
+  onEditGoal,
 }: TeamGoalProgressCardProps) => {
   const percentage = totalGoal > 0 ? (totalAchieved / totalGoal) * 100 : 0;
   const gap = Math.max(totalGoal - totalAchieved, 0);
@@ -62,12 +67,25 @@ export const TeamGoalProgressCard = ({
               <p className="text-xs text-muted-foreground">Progresso mensal consolidado</p>
             </div>
           </div>
-          <div className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold",
-            status.color
-          )}>
-            <StatusIcon className="h-3 w-3" />
-            <span>{status.text}</span>
+          <div className="flex items-center gap-2">
+            {isManager && onEditGoal && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditGoal}
+                className="text-xs gap-1.5"
+              >
+                <Pencil className="h-3 w-3" />
+                Editar meta
+              </Button>
+            )}
+            <div className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold",
+              status.color
+            )}>
+              <StatusIcon className="h-3 w-3" />
+              <span>{status.text}</span>
+            </div>
           </div>
         </div>
 

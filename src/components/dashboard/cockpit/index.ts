@@ -19,3 +19,7 @@ export { MonthlyComparisonCard } from './MonthlyComparisonCard';
 export { SalesRepDetailedPanel } from './SalesRepDetailedPanel';
 export { RevenueBySellerChart } from './RevenueBySellerChart';
 export { LeadsConversionMonthlyChart } from './LeadsConversionMonthlyChart';
+export { GoalHeroCard } from './GoalHeroCard';
+export { VisualFunnel } from './VisualFunnel';
+export { UnifiedFunnel } from './UnifiedFunnel';
+export { MoneyLeakAlerts } from './MoneyLeakAlerts';

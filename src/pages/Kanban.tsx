@@ -32,12 +32,22 @@ import { KanbanCard } from "@/components/leads/KanbanCard";
 
 const columns = [
   { id: "novo", title: "Novo", color: "hsl(210 100% 60%)" },
-  { id: "contato_feito", title: "Contato Feito", color: "hsl(45 100% 65%)" },
+  { id: "contato_feito", title: "Contato Feito", color: "hsl(45 100% 65%)", aliases: ["contato", "contatado"] },
+  { id: "qualificado", title: "Qualificado", color: "hsl(170 70% 50%)" },
   { id: "proposta", title: "Proposta", color: "hsl(280 85% 65%)" },
   { id: "negociacao", title: "Negociação", color: "hsl(25 100% 65%)" },
-  { id: "fechado", title: "Fechado", color: "hsl(142 76% 50%)" },
+  { id: "fechado", title: "Fechado", color: "hsl(142 76% 50%)", aliases: ["ganho"] },
   { id: "perdido", title: "Perdido", color: "hsl(0 84% 60%)" },
-];
+] as const;
+
+// Helper: resolve a lead's status to the canonical column id
+const resolveColumnId = (status: string): string => {
+  for (const col of columns) {
+    if (col.id === status) return col.id;
+    if ('aliases' in col && (col.aliases as readonly string[])?.includes(status)) return col.id;
+  }
+  return status;
+};
 
 const formatPhoneForWhatsApp = (phone: string): string => {
   const cleanPhone = phone.replace(/\D/g, "");
@@ -231,6 +241,7 @@ const Kanban = () => {
       return allLeads.filter((lead: any) => {
         // Excluir perdidos do kanban principal
         if (lead.status === 'perdido') return false;
+        const canonicalStatus = resolveColumnId(lead.status);
         
         // Lead criado/atualizado no ano
         const updatedDate = new Date(lead.updated_at);
@@ -240,7 +251,7 @@ const Kanban = () => {
         const wasCreatedThisYear = createdDate.getFullYear() === year;
         
         // Incluir leads fechados do ano
-        if (lead.status === 'fechado') {
+        if (canonicalStatus === 'fechado') {
           return wasUpdatedThisYear;
         }
         
@@ -267,7 +278,7 @@ const Kanban = () => {
       return allLeads.filter((lead: any) => {
         // Excluir perdidos do kanban principal
         if (lead.status === 'perdido') return false;
-        
+        const canonicalStatus = resolveColumnId(lead.status);
         // Lead criado/atualizado no mês
         const updatedDate = new Date(lead.updated_at);
         const createdDate = new Date(lead.created_at);
@@ -276,7 +287,7 @@ const Kanban = () => {
         const wasCreatedThisMonth = createdDate >= monthStart && createdDate <= monthEnd;
         
         // Incluir leads fechados do mês
-        if (lead.status === 'fechado') {
+        if (canonicalStatus === 'fechado') {
           return wasUpdatedThisMonth;
         }
         
@@ -305,7 +316,7 @@ const Kanban = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
 
     return allLeads.filter((lead: any) => {
-      if (lead.status !== 'fechado') return false;
+      if (lead.status !== 'fechado' && lead.status !== 'ganho') return false;
       
       const updatedAt = new Date(lead.updated_at);
       
@@ -338,7 +349,7 @@ const Kanban = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
 
     return allLeads.filter((lead: any) => {
-      if (lead.status === 'fechado' || lead.status === 'perdido') return false;
+      if (lead.status === 'fechado' || lead.status === 'ganho' || lead.status === 'perdido') return false;
       
       const hasNoFutureActivity = !lead.hasFutureActivity;
       const isStale = lead.daysSinceUpdate > 30;
@@ -446,7 +457,7 @@ const Kanban = () => {
           <div className="flex gap-4 overflow-x-auto pb-4">
             {visibleColumns.map((column, index) => {
               const columnLeads = filteredMonthLeads
-                .filter((lead: any) => lead.status === column.id)
+                .filter((lead: any) => resolveColumnId(lead.status) === column.id)
                 .sort((a: any, b: any) => {
                   const aDays = getDaysInCurrentStage(a.updated_at);
                   const bDays = getDaysInCurrentStage(b.updated_at);

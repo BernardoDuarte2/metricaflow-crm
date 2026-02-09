@@ -20,32 +20,34 @@ import {
   Timer,
   UserX,
   AlertTriangle,
-  CalendarCheck
+  CalendarCheck,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonDashboard, SkeletonKPI, SkeletonChart } from "@/components/ui/skeleton-card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import {
   CockpitLayout,
-  CommandKPI,
-  CriticalAlertsPanel,
-  HorizontalFunnel,
+  AlertPanel,
   VelocityMeter,
-  TeamPerformancePanel,
   TeamProgressPanel,
   TrendChart,
   LossWaterfallChart,
   SourceConversionChart,
-  GoalGauge,
   QuickStats,
   TeamGoalProgressCard,
   ActivityBreakdownPanel,
   MonthlyComparisonCard,
   SalesRepDetailedPanel,
   RevenueBySellerChart,
-  LeadsConversionMonthlyChart
+  LeadsConversionMonthlyChart,
+  GoalHeroCard,
+  VisualFunnel,
+  UnifiedFunnel,
+  MoneyLeakAlerts,
 } from "@/components/dashboard/cockpit";
 
 // Lazy load de componentes pesados
@@ -83,6 +85,7 @@ const Dashboard = () => {
   const [compareMonth, setCompareMonth] = useState(String(new Date().getMonth()));
   const [compareYear, setCompareYear] = useState(String(currentYear - 1));
   const [isExporting, setIsExporting] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Hook centralizado de realtime
   useRealtimeLeads();
@@ -190,7 +193,7 @@ const Dashboard = () => {
       let query = supabase
         .from("leads")
         .select("created_at, status, estimated_value")
-        .eq("status", "ganho")
+        .in("status", ["ganho", "fechado"])
         .gte("created_at", startDate)
         .lte("created_at", endDate);
       
@@ -231,28 +234,6 @@ const Dashboard = () => {
     userRole
   );
 
-  // Processar dados do funil para o componente
-  const processedFunnelData = useMemo(() => {
-    if (!funnelData) return [];
-    
-    const funnelColors = [
-      'linear-gradient(135deg, hsl(215 70% 55%), hsl(215 70% 45%))',
-      'linear-gradient(135deg, hsl(255 60% 60%), hsl(255 60% 50%))',
-      'linear-gradient(135deg, hsl(195 80% 50%), hsl(195 80% 40%))',
-      'linear-gradient(135deg, hsl(38 90% 50%), hsl(38 90% 40%))',
-      'linear-gradient(135deg, hsl(142 70% 45%), hsl(142 70% 35%))'
-    ];
-
-    return funnelData.map((item: any, index: number) => ({
-      name: item.name,
-      value: item.value,
-      percentage: funnelData[0]?.value > 0 
-        ? (item.value / funnelData[0].value) * 100 
-        : 0,
-      color: funnelColors[index % funnelColors.length]
-    }));
-  }, [funnelData]);
-
   // Processar dados de conversão por fonte
   const processedSourceData = useMemo(() => {
     if (!sourceData) return [];
@@ -279,113 +260,69 @@ const Dashboard = () => {
     }));
   }, [lossReasonsData, stats]);
 
-  // Critical alerts (new system)
-  const criticalAlerts = useMemo(() => {
+  // Alerts for AlertPanel
+  const alerts = useMemo(() => {
     if (!stats) return [];
     
     const alertsList = [];
     
-    // CRITICAL: Leads inactive 24h+
-    if (stats.inactiveLeads24h && stats.inactiveLeads24h > 0) {
-      alertsList.push({
-        id: 'inactive-24h',
-        type: 'inactive24h' as const,
-        title: `${stats.inactiveLeads24h} Leads Parados`,
-        message: 'Leads sem contato há mais de 24 horas precisam de ação imediata',
-        value: stats.inactiveLeads24h,
-        severity: 'critical' as const
-      });
-    }
-
-    // WARNING: Low conversion rate
-    if (parseFloat(stats.conversionRate) < 15) {
-      alertsList.push({
-        id: 'low-conversion',
-        type: 'lowConversion' as const,
-        title: 'Conversão Abaixo da Meta',
-        message: `Taxa atual de ${stats.conversionRate}% está abaixo do ideal de 15%`,
-        value: `${stats.conversionRate}%`,
-        severity: 'warning' as const
-      });
-    }
-    
-    // WARNING: Money stuck in pipeline
     if (stats.pendingLeads > 10 && stats.totalEstimatedValue > 50000) {
       alertsList.push({
         id: 'money-stuck',
-        type: 'moneyStuck' as const,
-        title: 'Receita Travada no Pipeline',
-        message: `${stats.pendingLeads} leads representam oportunidades não convertidas`,
+        type: 'money' as const,
+        title: 'Receita Travada',
+        message: `R$ ${(stats.totalEstimatedValue || 0).toLocaleString('pt-BR')} parados no pipeline com ${stats.pendingLeads} leads`,
         value: stats.totalEstimatedValue,
-        severity: 'warning' as const
       });
     }
 
-    // INFO: Leads inactive 7d+
+    if (stats.inactiveLeads24h && stats.inactiveLeads24h > 0) {
+      alertsList.push({
+        id: 'bottleneck',
+        type: 'bottleneck' as const,
+        title: `${stats.inactiveLeads24h} Leads Parados`,
+        message: 'Leads sem contato há mais de 24h precisam de ação imediata',
+        value: stats.inactiveLeads24h,
+      });
+    }
+
+    if (parseFloat(stats.conversionRate) < 15) {
+      alertsList.push({
+        id: 'low-conversion',
+        type: 'performance' as const,
+        title: 'Conversão Baixa',
+        message: `Taxa atual de ${stats.conversionRate}% está abaixo do ideal de 15%`,
+      });
+    }
+
     if (stats.inactiveLeads7d && stats.inactiveLeads7d > 5) {
       alertsList.push({
-        id: 'inactive-7d',
-        type: 'inactive7d' as const,
+        id: 'stale-leads',
+        type: 'stale' as const,
         title: 'Leads Esfriando',
         message: `${stats.inactiveLeads7d} leads sem atividade há mais de 7 dias`,
         value: stats.inactiveLeads7d,
-        severity: 'info' as const
       });
     }
 
     return alertsList;
   }, [stats]);
 
-  // Quick stats data
+  // Quick stats data (moved to advanced section)
   const quickStatsData = useMemo(() => {
     if (!stats) return [];
     
     return [
-      { 
-        label: "CAC", 
-        value: stats.cac || 0, 
-        icon: DollarSign, 
-        color: "primary" as const, 
-        prefix: "R$ " 
-      },
-      { 
-        label: "LTV", 
-        value: stats.ltv || 0, 
-        icon: TrendingUp, 
-        color: "success" as const, 
-        prefix: "R$ " 
-      },
-      { 
-        label: "Payback", 
-        value: stats.payback || 0, 
-        icon: Timer, 
-        color: "muted" as const, 
-        suffix: " meses" 
-      },
-      { 
-        label: "Follow-up Rate", 
-        value: stats.followUpRate || 0, 
-        icon: Activity, 
-        color: parseFloat(stats.followUpRate || '0') >= 70 ? "success" as const : "warning" as const, 
-        suffix: "%" 
-      },
-      { 
-        label: "Taxa de Perda", 
-        value: stats.lossRate || 0, 
-        icon: UserX, 
-        color: parseFloat(stats.lossRate || '0') < 30 ? "muted" as const : "danger" as const, 
-        suffix: "%" 
-      },
-      { 
-        label: "Atividades", 
-        value: stats.totalActivities || 0, 
-        icon: CalendarCheck, 
-        color: "primary" as const 
-      },
+      { label: "CAC", value: stats.cac || 0, icon: DollarSign, color: "primary" as const, prefix: "R$ " },
+      { label: "LTV", value: stats.ltv || 0, icon: TrendingUp, color: "success" as const, prefix: "R$ " },
+      { label: "Payback", value: stats.payback || 0, icon: Timer, color: "muted" as const, suffix: " meses" },
+      { label: "Follow-up Rate", value: stats.followUpRate || 0, icon: Activity, color: parseFloat(stats.followUpRate || '0') >= 70 ? "success" as const : "warning" as const, suffix: "%" },
+      { label: "Taxa de Perda", value: stats.lossRate || 0, icon: UserX, color: parseFloat(stats.lossRate || '0') < 30 ? "muted" as const : "danger" as const, suffix: "%" },
+      { label: "Atividades", value: stats.totalActivities || 0, icon: CalendarCheck, color: "primary" as const },
     ];
   }, [stats]);
 
-  // Dados do ranking do time - now from backend
+  // Team ranking data
   const teamRankingData = useMemo(() => {
     if (!dashboardData?.teamData || userRole === 'vendedor') return [];
     return dashboardData.teamData;
@@ -414,7 +351,7 @@ const Dashboard = () => {
     ];
   }, [stats]);
 
-  // Velocidade do funil (dados simulados baseados em stats)
+  // Velocity data
   const velocityData = useMemo(() => {
     const avgTime = stats?.avgTimeInFunnel || 15;
     return [
@@ -424,6 +361,30 @@ const Dashboard = () => {
       { stage: 'Proposta → Fechado', avgDays: Math.round(avgTime * 0.30), idealDays: 7 },
     ];
   }, [stats]);
+
+  // Unified funnel data (end-to-end)
+  const unifiedFunnelData = useMemo(() => {
+    if (!funnelData) return [];
+    const funnelMap: Record<string, any> = {};
+    funnelData.forEach((f: any) => { funnelMap[f.stage] = f; });
+
+    // Map: Leads → MQL → SQL → Proposta → Negociação → Fechado
+    const totalLeads = stats?.totalLeads || 0;
+    const contatoFeito = funnelMap['Contato Feito']?.count || 0;
+    const qualificado = funnelMap['Qualificado']?.count || 0;
+    const propostas = funnelMap['Proposta']?.count || 0;
+    const negociacoes = funnelMap['Negociação']?.count || 0;
+    const fechados = funnelMap['Ganho']?.count || stats?.wonLeads || 0;
+
+    return [
+      { name: 'Leads', value: totalLeads, avgStaleDays: funnelMap['Novos']?.avgStaleDays || 0 },
+      { name: 'MQL', value: contatoFeito, avgStaleDays: funnelMap['Contato Feito']?.avgStaleDays || 0 },
+      { name: 'SQL', value: qualificado, avgStaleDays: funnelMap['Qualificado']?.avgStaleDays || 0 },
+      { name: 'Proposta', value: propostas, avgStaleDays: funnelMap['Proposta']?.avgStaleDays || 0 },
+      { name: 'Negociação', value: negociacoes, avgStaleDays: funnelMap['Negociação']?.avgStaleDays || 0 },
+      { name: 'Fechado', value: fechados },
+    ];
+  }, [funnelData, stats]);
 
   const handleExportPDF = async () => {
     if (!stats || !profile) {
@@ -440,7 +401,6 @@ const Dashboard = () => {
       const pageWidth = doc.internal.pageSize.width;
       let yPosition = 20;
 
-      // Header
       doc.setFillColor(59, 130, 246);
       doc.rect(0, 0, pageWidth, 35, 'F');
       doc.setTextColor(255, 255, 255);
@@ -452,7 +412,6 @@ const Dashboard = () => {
 
       yPosition = 50;
 
-      // Métricas principais
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -484,6 +443,8 @@ const Dashboard = () => {
       setIsExporting(false);
     }
   };
+
+  const isManager = userRole !== 'vendedor';
 
   return (
     <CockpitLayout>
@@ -552,119 +513,57 @@ const Dashboard = () => {
             <OnboardingChecklist />
           )}
           
-          {/* HERO SECTION - Goal Gauge + Main KPIs */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Goal Gauge */}
-            <div className="lg:col-span-1">
-              <GoalGauge
-                goal={stats.monthlyGoal || 100000}
-                achieved={stats.totalConvertedValue || 0}
-                title="Meta vs Realizado"
-                subtitle={selectedMonth === 'all' ? 'Ano completo' : 'Período selecionado'}
-              />
-            </div>
+          {/* 1. GOAL HERO CARD - Full width */}
+          <GoalHeroCard
+            goal={stats.monthlyGoal || 100000}
+            achieved={stats.totalConvertedValue || 0}
+            periodLabel={selectedMonth === 'all' ? `Ano ${selectedYear}` : `Mês ${selectedMonth}/${selectedYear}`}
+          />
 
-            {/* Main KPIs Grid */}
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-              <CommandKPI
-                title="Receita Realizada"
-                value={`R$ ${(stats.totalConvertedValue || 0).toLocaleString('pt-BR')}`}
-                icon={DollarSign}
-                subtitle={`${stats.wonLeads || 0} vendas fechadas`}
-                accentColor="success"
-                size="large"
-                trend={stats.wonLeads > 0 ? { value: 12, isPositive: true } : undefined}
-              />
-              <CommandKPI
-                title="Taxa de Conversão"
-                value={`${stats.conversionRate || 0}%`}
-                icon={Percent}
-                subtitle="Leads → Vendas"
-                accentColor={parseFloat(stats.conversionRate) >= 15 ? "success" : "warning"}
-                size="large"
-              />
-              <CommandKPI
-                title="Ticket Médio"
-                value={`R$ ${(stats.averageTicket || 0).toLocaleString('pt-BR')}`}
-                icon={Target}
-                subtitle="Por venda fechada"
-                accentColor="primary"
-              />
-              <CommandKPI
-                title="Ciclo do Funil"
-                value={`${stats.avgTimeInFunnel || 0} dias`}
-                icon={Timer}
-                subtitle="Tempo médio até fechamento"
-                accentColor={stats.avgTimeInFunnel <= 15 ? "success" : "warning"}
-              />
-            </div>
-          </div>
-
-          {/* Quick Stats Row */}
-          <QuickStats stats={quickStatsData} />
-
-          {/* Critical Alerts Panel */}
-          {criticalAlerts.length > 0 && (
-            <CriticalAlertsPanel alerts={criticalAlerts} />
+          {/* 2. ALERTAS INTELIGENTES */}
+          {alerts.length > 0 && (
+            <AlertPanel alerts={alerts} />
           )}
 
-          {/* Secondary KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <CommandKPI
-              title="Total de Leads"
-              value={stats.totalLeads || 0}
-              icon={Users}
-              subtitle="No período selecionado"
-              accentColor="primary"
-            />
-            <CommandKPI
-              title="Em Andamento"
-              value={stats.pendingLeads || 0}
-              icon={Clock}
-              subtitle={`R$ ${(stats.totalEstimatedValue || 0).toLocaleString('pt-BR')} em pipeline`}
-              accentColor="primary"
-              alert={stats.inactiveLeads24h > 0}
-            />
-            <CommandKPI
-              title="Leads Qualificados"
-              value={stats.qualifiedLeads || 0}
-              icon={Target}
-              subtitle={`${stats.qualificationRate || 0}% de qualificação`}
-              accentColor="success"
-            />
-            <CommandKPI
-              title="Win Rate"
-              value={`${stats.winRate || 0}%`}
-              icon={Zap}
-              subtitle="Oportunidades fechadas"
-              accentColor={parseFloat(stats.winRate) >= 20 ? "success" : "warning"}
-            />
-          </div>
+          {/* 3. FUNIL ÚNICO END-TO-END */}
+          <UnifiedFunnel
+            stages={unifiedFunnelData}
+            title="Funil End-to-End"
+          />
 
-          {/* Main Grid - Funnel and Velocity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HorizontalFunnel 
-              data={processedFunnelData} 
-              title="Funil de Vendas"
+          {/* 3.5 MONEY LEAK ALERTS */}
+          {dashboardData?.moneyLeakAlerts && (
+            <MoneyLeakAlerts
+              stalledProposals={dashboardData.moneyLeakAlerts.stalledProposals}
+              stalledNegotiations={dashboardData.moneyLeakAlerts.stalledNegotiations}
+              noContactLeads={dashboardData.moneyLeakAlerts.noContactLeads}
+              noFollowUpLeads={dashboardData.moneyLeakAlerts.noFollowUpLeads}
             />
-            <VelocityMeter 
-              data={velocityData} 
-              title="Velocidade do Funil"
-            />
-          </div>
+          )}
 
-          {/* Team Goal Progress (Gestores only) */}
-          {userRole !== 'vendedor' && stats?.totalTeamGoal > 0 && (
+          {/* 4. VELOCITY METER */}
+          <VelocityMeter 
+            data={velocityData} 
+            title="Velocidade do Funil"
+          />
+
+          {/* 5. TEAM GOAL PROGRESS (Managers) */}
+          {isManager && stats?.totalTeamGoal > 0 && (
             <TeamGoalProgressCard
               totalGoal={stats.totalTeamGoal}
               totalAchieved={stats.totalTeamAchieved}
               teamSize={stats.teamSize}
               daysRemaining={stats.daysRemaining}
+              isManager={isManager}
+              onEditGoal={() => {
+                // Navigate to goals page for editing
+                window.location.href = '/goals';
+              }}
             />
           )}
 
-          {/* Monthly Comparison */}
-          {userRole !== 'vendedor' && comparisonData.length > 0 && (
+          {/* 6. MONTHLY COMPARISON (Managers) */}
+          {isManager && comparisonData.length > 0 && (
             <MonthlyComparisonCard
               metrics={comparisonData}
               currentPeriod={selectedMonth === 'all' ? selectedYear : `${selectedMonth}/${selectedYear}`}
@@ -672,34 +571,33 @@ const Dashboard = () => {
             />
           )}
 
-          {/* Detailed Team Performance (Gestores only) */}
-          {userRole !== 'vendedor' && teamRankingData.length > 0 && (
+          {/* 7. DETAILED TEAM PERFORMANCE (Managers) */}
+          {isManager && teamRankingData.length > 0 && (
             <SalesRepDetailedPanel 
               data={teamRankingData} 
               title="Performance Detalhada do Time"
             />
           )}
 
-          {/* Activity Breakdown (Gestores only) */}
-          {userRole !== 'vendedor' && activityData.length > 0 && (
+          {/* 8. ACTIVITY BREAKDOWN (Managers) */}
+          {isManager && activityData.length > 0 && (
             <ActivityBreakdownPanel
               data={activityData}
               title="Atividades por Vendedor"
             />
           )}
 
-          {/* Team Progress - KPI Goals (All users) */}
+          {/* 9. TEAM PROGRESS */}
           {profile?.company_id && (
             <TeamProgressPanel 
               companyId={profile.company_id}
               currentUserId={profile.id}
-              isManager={userRole !== 'vendedor'}
+              isManager={isManager}
             />
           )}
 
-          {/* Charts Grid */}
+          {/* 10. CHARTS GRID - Revenue Trend + Source Conversion */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue Trend */}
             {monthlyClosedData && monthlyClosedData.length > 0 && (
               <TrendChart
                 data={monthlyClosedData}
@@ -710,7 +608,6 @@ const Dashboard = () => {
               />
             )}
 
-            {/* Source Conversion */}
             {processedSourceData.length > 0 && (
               <SourceConversionChart
                 data={processedSourceData}
@@ -719,10 +616,9 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* NEW: Monthly Charts - Revenue by Seller and Leads vs Closed */}
+          {/* 11. MONTHLY CHARTS - Revenue by Seller + Leads vs Closed */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Revenue by Seller Chart (Managers only) */}
-            {userRole !== 'vendedor' && dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
+            {isManager && dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
               <RevenueBySellerChart 
                 data={dashboardData.monthlyRevenueBySellerData}
                 sellers={dashboardData.sellers || []}
@@ -730,7 +626,6 @@ const Dashboard = () => {
               />
             )}
 
-            {/* Leads vs Closed + Conversion Chart */}
             {dashboardData?.monthlyLeadsConversion?.length > 0 && (
               <LeadsConversionMonthlyChart 
                 data={dashboardData.monthlyLeadsConversion}
@@ -739,27 +634,47 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Loss Analysis and Advanced Metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {processedLossData.length > 0 && (
-              <LossWaterfallChart
-                data={processedLossData}
-                title="Análise de Perdas"
-                totalLost={processedLossData.reduce((sum, item) => sum + item.value, 0)}
-              />
-            )}
+          {/* 12. ADVANCED METRICS - Collapsible */}
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="w-full justify-between border-border hover:bg-muted/50"
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <BarChart3 className="h-4 w-4" />
+                  Métricas Avançadas
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-6 mt-4">
+              {/* Quick Stats (moved from top) */}
+              <QuickStats stats={quickStatsData} />
 
-            <Suspense fallback={<ChartSkeleton />}>
-              <AdvancedMetricsCard
-                cac={stats?.cac ?? null}
-                ltv={stats?.ltv ?? null}
-                payback={stats?.payback ?? null}
-                avgTimeInFunnel={stats?.avgTimeInFunnel || 0}
-              />
-            </Suspense>
-          </div>
+              {/* Loss Analysis + Advanced Metrics */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {processedLossData.length > 0 && (
+                  <LossWaterfallChart
+                    data={processedLossData}
+                    title="Análise de Perdas"
+                    totalLost={processedLossData.reduce((sum, item) => sum + item.value, 0)}
+                  />
+                )}
 
-          {/* Goals Progress */}
+                <Suspense fallback={<ChartSkeleton />}>
+                  <AdvancedMetricsCard
+                    cac={stats?.cac ?? null}
+                    ltv={stats?.ltv ?? null}
+                    payback={stats?.payback ?? null}
+                    avgTimeInFunnel={stats?.avgTimeInFunnel || 0}
+                  />
+                </Suspense>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* 13. GOALS PROGRESS */}
           <Suspense fallback={<ChartSkeleton />}>
             <GoalsProgressCard />
           </Suspense>
