@@ -99,37 +99,50 @@ const Prospecting = () => {
 
       // Verificar se é erro do n8n
       const errorCheck = raw as N8nError;
-      if (errorCheck?.code !== undefined && errorCheck?.message) {
+      if (!Array.isArray(raw) && errorCheck?.code !== undefined && errorCheck?.message) {
         throw new Error(errorCheck.message || "Erro no workflow do n8n");
       }
 
-      // Se vier array, pega o primeiro elemento
-      const data: WebhookResponse = Array.isArray(raw) ? raw[0] : raw;
+      let results: any[] = [];
 
-      // Verificar novamente se é erro após extrair do array
-      const dataErrorCheck = data as unknown as N8nError;
-      if (dataErrorCheck?.code !== undefined && dataErrorCheck?.message) {
-        throw new Error(dataErrorCheck.message || "Erro no workflow do n8n");
+      if (Array.isArray(raw)) {
+        // Verifica se é um array de leads (resposta direta) ou um array contendo o objeto wrapper
+        const firstItem = raw[0];
+        // Se o primeiro item tiver "results" ou "ok", assumimos que é o wrapper antigo
+        if (firstItem && (firstItem.results || firstItem.ok !== undefined)) {
+          const data = firstItem;
+          if (data.ok === false) throw new Error("A busca não retornou resultados válidos");
+          results = data.results || [];
+        } else {
+          // Caso contrário, é a lista direta de leads
+          results = raw;
+        }
+      } else if (raw?.results) {
+        // Objeto direto
+        if (raw.ok === false) throw new Error("A busca não retornou resultados válidos");
+        results = raw.results;
       }
 
-      if (!data?.ok) {
-        throw new Error("A busca não retornou resultados válidos");
-      }
-
-      return data;
+      // Normaliza para o formato esperado pelo onSuccess
+      return {
+        ok: true,
+        termo: message,
+        count: results.length,
+        results: results
+      } as WebhookResponse;
     },
     onSuccess: (data: WebhookResponse) => {
       // Mapear resultados do webhook para o formato ProspectLead
       if (data?.results && Array.isArray(data.results)) {
         const mappedLeads: ProspectLead[] = data.results.map(
-          (result, index) => ({
+          (result: any, index) => ({
             id: `lead-${Date.now()}-${index}`,
-            nome: result.nome,
-            telefone: result.telefone,
-            cidade: result.cidade,
-            endereco: result.endereco,
-            avaliacoes: result.quantidade_avaliacoes,
-            website: result.site,
+            nome: result.Nome || result.nome || "Sem nome",
+            telefone: result.Telefone || result.telefone,
+            cidade: result.Cidade || result.cidade,
+            endereco: result.Endereco || result.endereco,
+            avaliacoes: result.Avaliacoes || result.quantidade_avaliacoes || 0,
+            website: result.Site || result.site,
           })
         );
         setLeads(mappedLeads);
