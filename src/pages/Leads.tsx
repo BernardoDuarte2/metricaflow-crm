@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,9 +34,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Plus, Eye, ChevronDown, Calendar } from "lucide-react";
+import { Plus, Eye, ChevronDown, Calendar, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -69,6 +69,28 @@ const Leads = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // URL filter params from dashboard alerts
+  const urlStatus = searchParams.get('status');
+  const urlStalledDays = searchParams.get('stalled_days');
+  const urlNoContactDays = searchParams.get('no_contact_days');
+  const urlNoTasks = searchParams.get('no_tasks');
+  const hasUrlFilter = !!(urlStatus || urlStalledDays || urlNoContactDays || urlNoTasks);
+
+  const getUrlFilterLabel = () => {
+    if (urlStalledDays && urlStatus === 'proposta') return `Propostas paradas há +${urlStalledDays} dias`;
+    if (urlStalledDays && urlStatus === 'negociacao') return `Negociações paradas há +${urlStalledDays} dias`;
+    if (urlNoContactDays) return `Leads sem contato há +${urlNoContactDays} dias`;
+    if (urlNoTasks === 'true' && urlStatus === 'qualificado') return 'SQL sem tarefa de follow-up';
+    if (urlStatus) return `Filtro: status ${urlStatus}`;
+    return 'Filtro aplicado do Dashboard';
+  };
+
+  const clearUrlFilter = () => {
+    setSearchParams({});
+  };
+
   const [open, setOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof LeadFormData, string>>>({});
   const [formData, setFormData] = useState<LeadFormData>({
@@ -84,9 +106,9 @@ const Leads = () => {
   // Estados para filtros e organização temporal
   const [period, setPeriod] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(urlStatus || "all");
   const [responsibleFilter, setResponsibleFilter] = useState("all");
-  const [isPeriodOpen, setIsPeriodOpen] = useState(true);
+  const [isPeriodOpen, setIsPeriodOpen] = useState(!hasUrlFilter);
   
   // Estados de paginação
   const [page, setPage] = useState(1);
@@ -201,7 +223,7 @@ const Leads = () => {
 
   // Query de leads com paginação
   const { data: leadsData, isLoading: isLoadingLeads } = useQuery({
-    queryKey: ["leads", page, period, debouncedSearchTerm, statusFilter, responsibleFilter],
+    queryKey: ["leads", page, period, debouncedSearchTerm, statusFilter, responsibleFilter, urlStalledDays, urlNoContactDays, urlNoTasks],
     queryFn: async () => {
       const { start, end } = getDateRange(period);
       
@@ -220,9 +242,27 @@ const Leads = () => {
         );
       }
 
-      // Filtro de status
+      // Filtro de status (from URL or manual)
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
+      }
+
+      // URL-based: stalled_days filter
+      if (urlStalledDays) {
+        const daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - parseInt(urlStalledDays));
+        query = query.lte("updated_at", daysAgo.toISOString());
+      }
+
+      // URL-based: no_contact_days filter
+      if (urlNoContactDays) {
+        const daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - parseInt(urlNoContactDays));
+        query = query.lte("updated_at", daysAgo.toISOString());
+        // Only active leads
+        if (!urlStatus) {
+          query = query.not("status", "in", '("ganho","perdido")');
+        }
       }
 
       // Filtro de responsável
@@ -244,14 +284,30 @@ const Leads = () => {
 
       const { data, error, count } = await query;
       if (error) throw error;
+
+      let filteredLeads = data || [];
+
+      // URL-based: no_tasks post-filter (check leads without future tasks)
+      if (urlNoTasks === 'true' && filteredLeads.length > 0) {
+        const leadIds = filteredLeads.map((l: any) => l.id);
+        const { data: tasksData } = await supabase
+          .from("tasks")
+          .select("lead_id")
+          .in("lead_id", leadIds)
+          .gte("due_date", new Date().toISOString())
+          .neq("status", "concluida");
+
+        const leadsWithTasks = new Set((tasksData || []).map((t: any) => t.lead_id));
+        filteredLeads = filteredLeads.filter((l: any) => !leadsWithTasks.has(l.id));
+      }
       
       return {
-        leads: data || [],
-        count: count || 0,
+        leads: filteredLeads,
+        count: urlNoTasks === 'true' ? filteredLeads.length : (count || 0),
       };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const leads = leadsData?.leads || [];
@@ -614,6 +670,22 @@ const Leads = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Banner de filtro ativo do Dashboard */}
+      {hasUrlFilter && (
+        <div className="flex items-center justify-between rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-4 w-4 text-orange-400" />
+            <span className="text-sm font-medium text-foreground">
+              Filtro aplicado: {getUrlFilterLabel()}
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={clearUrlFilter} className="gap-1 text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+            Limpar filtro
+          </Button>
+        </div>
+      )}
 
       {/* Filtros */}
       <LeadFilters
