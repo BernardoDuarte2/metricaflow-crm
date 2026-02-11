@@ -1,6 +1,16 @@
 import { Timer, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Blue gradient matching UnifiedFunnel — darkest first, lighter last
+const stageGradients = [
+  'linear-gradient(135deg, hsl(210, 80%, 28%), hsl(210, 80%, 38%))',
+  'linear-gradient(135deg, hsl(212, 75%, 34%), hsl(212, 75%, 44%))',
+  'linear-gradient(135deg, hsl(215, 70%, 40%), hsl(215, 70%, 50%))',
+  'linear-gradient(135deg, hsl(215, 65%, 48%), hsl(215, 65%, 56%))',
+  'linear-gradient(135deg, hsl(212, 60%, 55%), hsl(212, 60%, 63%))',
+  'linear-gradient(135deg, hsl(210, 55%, 62%), hsl(210, 55%, 70%))',
+];
+
 interface VelocityData {
   stage: string;
   avgDays: number;
@@ -117,12 +127,11 @@ export const VelocityMeter = ({
                 
                 {/* Progress */}
                 <div 
-                  className={cn(
-                    "h-full rounded-full transition-all duration-700",
-                    status.color,
-                    status.glow
-                  )}
-                  style={{ width: `${progressPercent}%` }}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ 
+                    width: `${progressPercent}%`,
+                    background: stageGradients[index % stageGradients.length],
+                  }}
                 />
               </div>
             </div>
