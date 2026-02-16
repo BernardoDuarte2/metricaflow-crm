@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { usePasswordValidation } from "@/hooks/usePasswordValidation";
 import { authSchema } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -28,13 +29,13 @@ const Auth = () => {
     email: "",
     password: "",
   });
-  
+
   const signupPasswordValidation = usePasswordValidation(signupData.password);
 
   // Forgot password state
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  
+
   // Password reset state
   const [resetPasswordMode, setResetPasswordMode] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -42,24 +43,24 @@ const Auth = () => {
 
   useEffect(() => {
     console.debug('[Auth] Current URL:', window.location.href);
-    
+
     // Check for password reset indicators in URL
     const urlParams = new URLSearchParams(window.location.search);
     const hash = window.location.hash;
     const isReset = urlParams.get('reset') === 'true';
     const hasCode = urlParams.has('code');
     const hasRecoveryInHash = hash.includes('type=recovery') || hash.includes('access_token');
-    
+
     console.debug('[Auth] Detection:', { isReset, hasCode, hasRecoveryInHash, hash });
-    
+
     // Detect if we're in any recovery flow
     const inRecoveryFlow = isReset || hasCode || hasRecoveryInHash;
-    
+
     if (inRecoveryFlow) {
       console.debug('[Auth] Recovery flow detected, setting reset mode');
       setResetPasswordMode(true);
     }
-    
+
     // If we have a code, exchange it for session
     if (hasCode) {
       console.debug('[Auth] Code detected, exchanging for session');
@@ -130,7 +131,7 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validação com Zod
     try {
       authSchema.parse(signupData);
@@ -142,7 +143,7 @@ const Auth = () => {
       });
       return;
     }
-    
+
     if (!signupPasswordValidation.isValid) {
       toast({
         title: "Senha inválida",
@@ -151,11 +152,11 @@ const Auth = () => {
       });
       return;
     }
-    
+
     setLoading(true);
 
     try {
-      console.log("Starting signup process...");
+      logger.info("Starting signup process...");
       // Create user with metadata - company will be created by trigger
       const { error: signupError } = await supabase.auth.signUp({
         email: signupData.email,
@@ -174,7 +175,7 @@ const Auth = () => {
         throw signupError;
       }
 
-      console.log("Signup successful!");
+      logger.info("Signup successful!");
 
       toast({
         title: "✅ Conta criada com sucesso!",
@@ -198,11 +199,11 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    console.log("Forgot password requested for:", resetEmail);
+    logger.info("Forgot password requested for:", resetEmail);
 
     try {
       const { data, error } = await supabase.functions.invoke("send-password-reset", {
-        body: { 
+        body: {
           email: resetEmail,
           redirectUrl: `${window.location.origin}/auth?mode=reset`
         },
@@ -215,7 +216,7 @@ const Auth = () => {
 
       if (data?.error) {
         console.error("Password reset data error:", data);
-        
+
         // Erro de configuração do Resend
         if (data.details) {
           toast({
@@ -225,11 +226,11 @@ const Auth = () => {
           });
           return;
         }
-        
+
         throw new Error(data.error);
       }
 
-      console.log("Password reset email sent successfully");
+      logger.info("Password reset email sent successfully");
 
       toast({
         title: "✅ Email enviado!",
@@ -252,7 +253,7 @@ const Auth = () => {
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Erro",
@@ -284,7 +285,7 @@ const Auth = () => {
         title: "✅ Senha atualizada!",
         description: "Sua senha foi redefinida com sucesso.",
       });
-      
+
       setResetPasswordMode(false);
       setNewPassword("");
       setConfirmPassword("");
@@ -321,7 +322,7 @@ const Auth = () => {
             <div className="relative backdrop-blur-xl bg-card/40 border border-primary/20 rounded-2xl p-8 shadow-2xl shadow-primary/10">
               {/* Glow Effect */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-              
+
               <div className="relative z-10">
                 <form onSubmit={handlePasswordReset} className="space-y-6">
                   <div className="space-y-2">
@@ -357,9 +358,9 @@ const Auth = () => {
                       className="h-12 bg-background/50 border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30 transition-all duration-300" 
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30 transition-all duration-300"
                     disabled={loading}
                     style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
                   >
@@ -378,48 +379,48 @@ const Auth = () => {
           </div>
         </div>
 
-      {/* Right Side - Decorative Planet */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end justify-center bg-gradient-to-br from-[#0F1624] via-[#0F1624] to-[#1a1f35]">
-        {/* Grid Pattern - Futuristic */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `linear-gradient(to right, #5D7BFF 1px, transparent 1px), linear-gradient(to bottom, #5D7BFF 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }} />
-        
-        {/* Cyber Lines */}
-        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
-        <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
-        
-        {/* Planet Circle - Half visible with futuristic glow */}
-        <div className="absolute -bottom-1/3 left-1/2 -translate-x-1/2 w-[650px] h-[650px]">
-          {/* Outer Glow - Blue Electric */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
-          
-          {/* Main Planet - Electric Blue Core */}
-          <div className="absolute inset-12 rounded-full bg-gradient-to-br from-primary/50 via-accent/40 to-primary/30 border-2 border-primary/40 shadow-2xl shadow-primary/20">
-            {/* Inner Gradient Layers */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-accent/30 to-transparent" />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-bl from-primary/20 via-transparent to-accent/20" />
-            
-            {/* Neon Shine Effect */}
-            <div className="absolute top-1/4 left-1/4 w-40 h-40 rounded-full bg-[#8FAEFF]/20 blur-3xl" />
-            <div className="absolute top-1/3 right-1/3 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
-          </div>
-          
-          {/* Animated Rings */}
-          <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse" style={{ animationDuration: '3s' }} />
-          <div className="absolute inset-6 rounded-full border border-accent/20 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-          
-          {/* Glow Ring */}
-          <div className="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(93,123,255,0.4)]" />
-        </div>
+        {/* Right Side - Decorative Planet */}
+        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end justify-center bg-gradient-to-br from-[#0F1624] via-[#0F1624] to-[#1a1f35]">
+          {/* Grid Pattern - Futuristic */}
+          <div className="absolute inset-0 opacity-10" style={{
+            backgroundImage: `linear-gradient(to right, #5D7BFF 1px, transparent 1px), linear-gradient(to bottom, #5D7BFF 1px, transparent 1px)`,
+            backgroundSize: '40px 40px'
+          }} />
 
-        {/* Floating Particles - Futuristic Colors */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)] animate-pulse" />
-        <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)] animate-pulse" style={{ animationDelay: '1.5s' }} />
-      </div>
+          {/* Cyber Lines */}
+          <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
+          <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
+
+          {/* Planet Circle - Half visible with futuristic glow */}
+          <div className="absolute -bottom-1/3 left-1/2 -translate-x-1/2 w-[650px] h-[650px]">
+            {/* Outer Glow - Blue Electric */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
+
+            {/* Main Planet - Electric Blue Core */}
+            <div className="absolute inset-12 rounded-full bg-gradient-to-br from-primary/50 via-accent/40 to-primary/30 border-2 border-primary/40 shadow-2xl shadow-primary/20">
+              {/* Inner Gradient Layers */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-accent/30 to-transparent" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-bl from-primary/20 via-transparent to-accent/20" />
+
+              {/* Neon Shine Effect */}
+              <div className="absolute top-1/4 left-1/4 w-40 h-40 rounded-full bg-[#8FAEFF]/20 blur-3xl" />
+              <div className="absolute top-1/3 right-1/3 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
+            </div>
+
+            {/* Animated Rings */}
+            <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse" style={{ animationDuration: '3s' }} />
+            <div className="absolute inset-6 rounded-full border border-accent/20 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+
+            {/* Glow Ring */}
+            <div className="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(93,123,255,0.4)]" />
+          </div>
+
+          {/* Floating Particles - Futuristic Colors */}
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)] animate-pulse" />
+          <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)] animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)] animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)] animate-pulse" style={{ animationDelay: '1.5s' }} />
+        </div>
       </div>
     );
   }
@@ -443,17 +444,17 @@ const Auth = () => {
           <div className="relative backdrop-blur-xl bg-card/40 border border-primary/20 rounded-2xl p-8 shadow-2xl shadow-primary/10">
             {/* Glow Effect */}
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-            
+
             <div className="relative z-10">
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-8 bg-background/50 p-1">
-                  <TabsTrigger 
-                    value="login" 
+                  <TabsTrigger
+                    value="login"
                     className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white"
                   >
                     Entrar
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="signup"
                     className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white"
                   >
@@ -492,9 +493,9 @@ const Auth = () => {
                           className="h-12 bg-background/50 border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg"
                         />
                       </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30 transition-all duration-300" 
+                      <Button
+                        type="submit"
+                        className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30 transition-all duration-300"
                         disabled={loading}
                         style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
                       >
@@ -544,9 +545,9 @@ const Auth = () => {
                           </p>
                         </div>
                       </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30" 
+                      <Button
+                        type="submit"
+                        className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30"
                         disabled={loading}
                       >
                         {loading ? (
@@ -567,7 +568,7 @@ const Auth = () => {
                       </button>
                     </form>
                   )}
-            </TabsContent>
+                </TabsContent>
 
                 <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-5">
@@ -630,14 +631,14 @@ const Auth = () => {
                         className="h-11 bg-background/50 border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg"
                       />
                       {signupData.password && (
-                        <PasswordStrength 
+                        <PasswordStrength
                           password={signupData.password}
                           requirements={signupPasswordValidation.requirements}
                         />
                       )}
                     </div>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-lg shadow-lg shadow-primary/30 transition-all duration-300 mt-2"
                       disabled={loading || !signupPasswordValidation.isValid}
                       style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
@@ -666,31 +667,31 @@ const Auth = () => {
           backgroundImage: `linear-gradient(to right, #5D7BFF 1px, transparent 1px), linear-gradient(to bottom, #5D7BFF 1px, transparent 1px)`,
           backgroundSize: '40px 40px'
         }} />
-        
+
         {/* Cyber Lines */}
         <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
         <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
-        
+
         {/* Planet Circle - Half visible with futuristic glow */}
         <div className="absolute -bottom-1/3 left-1/2 -translate-x-1/2 w-[650px] h-[650px]">
           {/* Outer Glow - Blue Electric */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
-          
+
           {/* Main Planet - Electric Blue Core */}
           <div className="absolute inset-12 rounded-full bg-gradient-to-br from-primary/50 via-accent/40 to-primary/30 border-2 border-primary/40 shadow-2xl shadow-primary/20">
             {/* Inner Gradient Layers */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-accent/30 to-transparent" />
             <div className="absolute inset-0 rounded-full bg-gradient-to-bl from-primary/20 via-transparent to-accent/20" />
-            
+
             {/* Neon Shine Effect */}
             <div className="absolute top-1/4 left-1/4 w-40 h-40 rounded-full bg-[#8FAEFF]/20 blur-3xl" />
             <div className="absolute top-1/3 right-1/3 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
           </div>
-          
+
           {/* Animated Rings */}
           <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse" style={{ animationDuration: '3s' }} />
           <div className="absolute inset-6 rounded-full border border-accent/20 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-          
+
           {/* Glow Ring */}
           <div className="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(93,123,255,0.4)]" />
         </div>

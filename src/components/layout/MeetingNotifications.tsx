@@ -13,14 +13,17 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+import { useUserSession } from "@/hooks/useUserSession";
+
 const MeetingNotifications = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: sessionData } = useUserSession();
+  const userId = sessionData?.session?.user?.id;
 
   const { data: notifications, refetch } = useQuery({
-    queryKey: ["meeting-notifications"],
+    queryKey: ["meeting-notifications", userId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!userId) return [];
 
       const { data, error } = await supabase
         .from("meeting_notifications")
@@ -34,7 +37,7 @@ const MeetingNotifications = () => {
             created_by_profile:profiles!meetings_created_by_fkey(name)
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("read", false)
         .order("created_at", { ascending: false })
         .limit(10);
@@ -42,10 +45,13 @@ const MeetingNotifications = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!userId,
   });
 
   // Realtime subscription para novas notificações
   useEffect(() => {
+    if (!userId) return;
+
     const channel = supabase
       .channel('meeting-notifications-changes')
       .on(
@@ -54,6 +60,7 @@ const MeetingNotifications = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'meeting_notifications',
+          filter: `user_id=eq.${userId}`
         },
         () => {
           refetch();
@@ -64,27 +71,26 @@ const MeetingNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetch]);
+  }, [refetch, userId]);
 
   const markAsRead = async (notificationId: string) => {
     await supabase
       .from("meeting_notifications")
       .update({ read: true })
       .eq("id", notificationId);
-    
+
     refetch();
   };
 
   const markAllAsRead = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!userId) return;
 
     await supabase
       .from("meeting_notifications")
       .update({ read: true })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("read", false);
-    
+
     refetch();
   };
 
@@ -96,8 +102,8 @@ const MeetingNotifications = () => {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -109,9 +115,9 @@ const MeetingNotifications = () => {
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Notificações de Reuniões</h3>
           {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
               onClick={markAllAsRead}
             >
@@ -119,7 +125,7 @@ const MeetingNotifications = () => {
             </Button>
           )}
         </div>
-        
+
         <ScrollArea className="h-[400px]">
           {!notifications || notifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
@@ -140,7 +146,7 @@ const MeetingNotifications = () => {
                     </p>
                     <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
                   </div>
-                  
+
                   <p className="text-xs text-muted-foreground mb-2">
                     Criado por: {notification.meeting?.created_by_profile?.name}
                   </p>

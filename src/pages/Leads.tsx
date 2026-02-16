@@ -68,9 +68,9 @@ const Leads = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  
+
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // URL filter params from dashboard alerts
   const urlStatus = searchParams.get('status');
   const urlStalledDays = searchParams.get('stalled_days');
@@ -104,19 +104,19 @@ const Leads = () => {
   });
 
   // Estados para filtros e organização temporal
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState("this-month");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState(urlStatus || "all");
   const [responsibleFilter, setResponsibleFilter] = useState("all");
   const [isPeriodOpen, setIsPeriodOpen] = useState(!hasUrlFilter);
-  
+
   // Estados de paginação
   const [page, setPage] = useState(1);
   const pageSize = 50;
-  
+
   // Debounce no searchTerm
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  
+
   // Hook centralizado de realtime com queryKey específico
   useRealtimeLeads(["leads", page, period, debouncedSearchTerm, statusFilter, responsibleFilter]);
 
@@ -176,9 +176,9 @@ const Leads = () => {
         .in("role", ["vendedor", "gestor", "gestor_owner"]);
 
       if (rolesError) throw rolesError;
-      
+
       const userIds = userRoles?.map(r => r.user_id) || [];
-      
+
       if (userIds.length === 0) return [];
 
       const { data, error } = await supabase
@@ -199,7 +199,7 @@ const Leads = () => {
   // Função para calcular intervalo de datas com base no período
   const getDateRange = (periodValue: string) => {
     const now = new Date();
-    
+
     switch (periodValue) {
       case "this-month":
         return {
@@ -226,7 +226,7 @@ const Leads = () => {
     queryKey: ["leads", page, period, debouncedSearchTerm, statusFilter, responsibleFilter, urlStalledDays, urlNoContactDays, urlNoTasks],
     queryFn: async () => {
       const { start, end } = getDateRange(period);
-      
+
       let query = supabase
         .from("leads")
         .select("*, profiles(name)", { count: "exact" });
@@ -277,7 +277,7 @@ const Leads = () => {
       // Paginação
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      
+
       query = query
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -300,7 +300,7 @@ const Leads = () => {
         const leadsWithTasks = new Set((tasksData || []).map((t: any) => t.lead_id));
         filteredLeads = filteredLeads.filter((l: any) => !leadsWithTasks.has(l.id));
       }
-      
+
       return {
         leads: filteredLeads,
         count: urlNoTasks === 'true' ? filteredLeads.length : (count || 0),
@@ -313,13 +313,13 @@ const Leads = () => {
   const leads = leadsData?.leads || [];
   const totalCount = leadsData?.count || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
-  
+
   // Query agregada para LeadStats
   const { data: leadStats, isLoading: isLoadingStats } = useQuery({
     queryKey: ["lead-stats", period, debouncedSearchTerm, statusFilter, responsibleFilter],
     queryFn: async () => {
       const { start, end } = getDateRange(period);
-      
+
       let query = supabase
         .from("leads")
         .select("status, estimated_value");
@@ -345,13 +345,13 @@ const Leads = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      
+
       return data || [];
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
-  
+
   // Reset page quando filtros mudarem
   const handleFilterChange = useCallback(() => {
     setPage(1);
@@ -382,7 +382,7 @@ const Leads = () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      
+
       if (!session?.user) {
         throw new Error("Sessão expirada. Por favor, faça login novamente.");
       }
@@ -392,7 +392,7 @@ const Leads = () => {
       }
 
       const normalizedPhone = normalizePhone(data.phone);
-      
+
       // Verificar se o lead já existe (por telefone ou email)
       const { data: existingLead } = await supabase
         .from("leads")
@@ -406,7 +406,7 @@ const Leads = () => {
         const vendorName = existingLead.profiles ? (existingLead.profiles as any).name : "Não atribuído";
         throw new Error(`Lead já cadastrado e vinculado ao vendedor: ${vendorName || "Não atribuído"}`);
       }
-      
+
       const { error } = await supabase.from("leads").insert({
         name: data.name,
         email: data.email || null,
@@ -455,7 +455,7 @@ const Leads = () => {
     mutationFn: async ({ leadId, assignedTo }: { leadId: string; assignedTo: string | null }) => {
       const { error } = await supabase
         .from("leads")
-        .update({ 
+        .update({
           assigned_to: assignedTo,
           updated_at: new Date().toISOString()
         })
@@ -487,44 +487,44 @@ const Leads = () => {
     }
 
     return (
-    <div className="bg-card rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Telefone</TableHead>
-            <TableHead>Empresa</TableHead>
-            <TableHead>Responsável</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {leads && leads.length > 0 ? (
-            leads.map((lead: any) => (
-              <LeadTableRow
-                key={lead.id}
-                lead={lead}
-                canEditAssignment={canEditAssignment}
-                users={users}
-                onAssignmentChange={(leadId, assignedTo) => {
-                  updateLeadAssignment.mutate({ leadId, assignedTo });
-                }}
-                isUpdating={updateLeadAssignment.isPending}
-                statusColors={statusColors}
-              />
-            ))
-          ) : (
+      <div className="bg-card rounded-lg border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                Nenhum lead encontrado
-              </TableCell>
+              <TableHead>Nome</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Telefone</TableHead>
+              <TableHead>Empresa</TableHead>
+              <TableHead>Responsável</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Ações</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {leads && leads.length > 0 ? (
+              leads.map((lead: any) => (
+                <LeadTableRow
+                  key={lead.id}
+                  lead={lead}
+                  canEditAssignment={canEditAssignment}
+                  users={users}
+                  onAssignmentChange={(leadId, assignedTo) => {
+                    updateLeadAssignment.mutate({ leadId, assignedTo });
+                  }}
+                  isUpdating={updateLeadAssignment.isPending}
+                  statusColors={statusColors}
+                />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  Nenhum lead encontrado
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     );
   };
 
@@ -652,8 +652,8 @@ const Leads = () => {
                   </Select>
                 </div>
               )}
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
                 disabled={createLeadMutation.isPending}
               >
@@ -719,9 +719,8 @@ const Leads = () => {
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm">
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform ${
-                    isPeriodOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 transition-transform ${isPeriodOpen ? "rotate-180" : ""
+                    }`}
                 />
               </Button>
             </CollapsibleTrigger>

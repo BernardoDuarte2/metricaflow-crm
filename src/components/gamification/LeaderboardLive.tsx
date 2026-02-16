@@ -31,39 +31,38 @@ export function LeaderboardLive() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000,
   });
 
   const leaderboard = events
     ? Object.entries(
-        events.reduce((acc: any, event: any) => {
-          const userId = event.profiles.id;
-          if (!acc[userId]) {
-            acc[userId] = {
-              userId,
-              userName: event.profiles.name,
-              avatar: event.profiles.avatar_url,
-              events: [],
-            };
-          }
-          acc[userId].events.push(event);
-          return acc;
-        }, {})
-      )
-        .map(([userId, data]: [string, any]) => {
-          const stats = calculateUserStats(data.events);
-          const badges = calculateBadges(stats);
-          return {
+      events.reduce((acc: any, event: any) => {
+        const userId = event.profiles.id;
+        if (!acc[userId]) {
+          acc[userId] = {
             userId,
-            userName: data.userName,
-            avatar: data.avatar,
-            stats,
-            badges,
-            totalPoints: stats.totalPoints,
+            userName: event.profiles.name,
+            avatar: event.profiles.avatar_url,
+            events: [],
           };
-        })
-        .sort((a, b) => b.totalPoints - a.totalPoints)
-        .slice(0, 20)
+        }
+        acc[userId].events.push(event);
+        return acc;
+      }, {})
+    )
+      .map(([userId, data]: [string, any]) => {
+        const stats = calculateUserStats(data.events);
+        const badges = calculateBadges(stats);
+        return {
+          userId,
+          userName: data.userName,
+          avatar: data.avatar,
+          stats,
+          badges,
+          totalPoints: stats.totalPoints,
+        };
+      })
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 20)
     : [];
 
   const rankingChanges = useRankingChanges(leaderboard);
@@ -123,29 +122,26 @@ export function LeaderboardLive() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
                 transition={{ type: "spring", duration: 0.6 }}
-                className={`${
-                  index === 0
+                className={`${index === 0
                     ? "col-start-2 row-start-1"
                     : index === 1
-                    ? "col-start-1 row-start-1"
-                    : "col-start-3 row-start-1"
-                }`}
+                      ? "col-start-1 row-start-1"
+                      : "col-start-3 row-start-1"
+                  }`}
               >
                 <Card
-                  className={`relative overflow-hidden ${
-                    index === 0 ? "transform scale-110" : ""
-                  }`}
+                  className={`relative overflow-hidden ${index === 0 ? "transform scale-110" : ""
+                    }`}
                 >
                   {change && (
                     <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0 }}
-                      className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
-                        change.direction === 'up' 
-                          ? 'bg-green-500/20 text-green-500' 
+                      className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${change.direction === 'up'
+                          ? 'bg-green-500/20 text-green-500'
                           : 'bg-red-500/20 text-red-500'
-                      }`}
+                        }`}
                     >
                       {change.direction === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                       {Math.abs(change.newPosition - change.oldPosition)}
@@ -239,9 +235,8 @@ export function LeaderboardLive() {
                     <motion.div
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: 1 }}
-                      className={`absolute left-0 top-0 bottom-0 w-2 ${
-                        change.direction === 'up' ? 'bg-green-500' : 'bg-red-500'
-                      }`}
+                      className={`absolute left-0 top-0 bottom-0 w-2 ${change.direction === 'up' ? 'bg-green-500' : 'bg-red-500'
+                        }`}
                     />
                   )}
                   <div className="p-6 flex items-center gap-6">

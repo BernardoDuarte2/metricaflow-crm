@@ -8,48 +8,38 @@ interface DateRange {
 
 export const useDetailedPerformanceData = (
   dateRange: DateRange,
-  profileRole?: string
+  profileRole?: string,
+  companyId?: string
 ) => {
   return useQuery({
-    queryKey: ["sales-performance-detailed", dateRange, profileRole],
+    queryKey: ["sales-performance-detailed", dateRange, profileRole, companyId],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error("Sessão expirada.");
+      // Se não tiver companyId, não faz fetch (deve estar em loading ainda ou erro)
+      if (!companyId) return [];
 
       if (profileRole === "vendedor") {
         return [];
-      }
-
-      // Buscar perfil para obter company_id
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("company_id")
-        .eq("id", session.user.id)
-        .single();
-
-      if (!profile?.company_id) {
-        throw new Error("Empresa não encontrada.");
       }
 
       // Buscar leads com informações do vendedor (limitando para evitar URLs longas)
       const { data: leads } = await supabase
         .from("leads")
         .select("id, assigned_to, status, profiles(name, avatar_url), created_at, updated_at")
-        .eq("company_id", profile.company_id)
+        .eq("company_id", companyId)
         .gte("created_at", dateRange.start)
         .lte("created_at", dateRange.end)
         .order("created_at", { ascending: false })
         .limit(100);
 
-      // Buscar observações usando company_id e date range em vez de lista de IDs
+      // Buscar observações usando company_id e date range
+      // Limitando observações (ex: últimas 500) para evitar pesar demais
       const { data: observations } = await supabase
         .from("lead_observations")
         .select("lead_id, user_id, leads!inner(company_id)")
-        .eq("leads.company_id", profile.company_id)
+        .eq("leads.company_id", companyId)
         .gte("created_at", dateRange.start)
-        .lte("created_at", dateRange.end);
+        .lte("created_at", dateRange.end)
+        .limit(500);
 
       const salesStats: Record<
         string,
@@ -119,7 +109,8 @@ export const useDetailedPerformanceData = (
             : 0,
       }));
     },
-    enabled: profileRole !== "vendedor",
+    // Executa apenas se for gestor E tiver companyId
+    enabled: !!companyId && profileRole !== "vendedor" && profileRole !== undefined,
     staleTime: 5 * 60 * 1000, // 5 minutos de cache
     gcTime: 10 * 60 * 1000,
   });

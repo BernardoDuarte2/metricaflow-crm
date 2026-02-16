@@ -4,14 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
+import { useUserSession } from "@/hooks/useUserSession"; // Import adicionado
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
-import { 
-  Users, 
-  CheckCircle, 
-  Clock, 
-  TrendingUp, 
-  DollarSign, 
-  Target, 
+import {
+  Users,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  DollarSign,
+  Target,
   FileDown,
   Zap,
   BarChart3,
@@ -78,7 +79,7 @@ const KPISkeleton = () => (
 
 const Dashboard = () => {
   const currentYear = new Date().getFullYear();
-  
+
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [compareMode, setCompareMode] = useState(false);
@@ -87,8 +88,13 @@ const Dashboard = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  // Hook centralizado de realtime
+  // Hook centralizado de realtime e sessão
   useRealtimeLeads();
+  const { data: sessionData, isLoading: isLoadingSession } = useUserSession();
+
+  const profile = sessionData?.profile;
+  const userRole = sessionData?.role;
+  const companyId = sessionData?.companyId;
 
   const getDateRange = () => {
     if (selectedMonth === "all") {
@@ -105,40 +111,9 @@ const Dashboard = () => {
     };
   };
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error("Sessão expirada.");
+  // Queries antigas removidas (profile e userRole) pois vêm do useUserSession
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*, companies(name)")
-        .eq("id", session.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role"],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return null;
-
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .order("role")
-        .limit(1)
-        .single();
-
-      return data?.role;
-    },
-  });
+  // Consolidar todas as queries principais do dashboard
 
   // Consolidar todas as queries principais do dashboard
   const { data: dashboardData, isLoading: isLoadingDashboard } = useQuery({
@@ -161,7 +136,7 @@ const Dashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!profile && !!userRole,
+    enabled: !!profile && !!userRole && !isLoadingSession,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -183,10 +158,10 @@ const Dashboard = () => {
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       const currentMonth = currentDate.getMonth();
-      
+
       const lastMonth = year === currentYear ? currentMonth : 11;
       const startDate = new Date(year, 0, 1).toISOString();
-      const endDate = year === currentYear 
+      const endDate = year === currentYear
         ? new Date(year, currentMonth + 1, 0, 23, 59, 59).toISOString()
         : new Date(year, 11, 31, 23, 59, 59).toISOString();
 
@@ -196,18 +171,18 @@ const Dashboard = () => {
         .in("status", ["ganho", "fechado"])
         .gte("created_at", startDate)
         .lte("created_at", endDate);
-      
+
       if (userRole === "vendedor") {
         query = query.eq("assigned_to", session.user.id);
       }
 
       const { data } = await query;
 
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
       const monthlyStats: Array<{ name: string; value: number }> = [];
-      
+
       for (let i = 0; i <= lastMonth; i++) {
         monthlyStats.push({ name: monthNames[i], value: 0 });
       }
@@ -215,7 +190,7 @@ const Dashboard = () => {
       data?.forEach((lead) => {
         const leadDate = new Date(lead.created_at);
         const monthIndex = leadDate.getMonth();
-        
+
         if (monthIndex <= lastMonth) {
           monthlyStats[monthIndex].value += Number(lead.estimated_value) || 0;
         }
@@ -223,7 +198,7 @@ const Dashboard = () => {
 
       return monthlyStats;
     },
-    enabled: !!profile,
+    enabled: !!companyId && !!userRole && !isLoadingSession,
     staleTime: 10 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   });
@@ -231,13 +206,14 @@ const Dashboard = () => {
   // Dados para performance detalhada (gestores)
   const { data: detailedPerformanceData } = useDetailedPerformanceData(
     getDateRange(),
-    userRole
+    userRole,
+    companyId // Passando companyId para evitar fetch redundante
   );
 
   // Processar dados de conversão por fonte
   const processedSourceData = useMemo(() => {
     if (!sourceData) return [];
-    
+
     return sourceData.map((item: any) => ({
       name: item.name,
       leads: item.total || item.value || 0,
@@ -249,9 +225,9 @@ const Dashboard = () => {
   // Processar dados de perda
   const processedLossData = useMemo(() => {
     if (!lossReasonsData) return [];
-    
+
     const total = lossReasonsData.reduce((sum: number, item: any) => sum + (item.value || item.count || 0), 0);
-    
+
     return lossReasonsData.map((item: any) => ({
       reason: item.name || item.reason,
       count: item.value || item.count || 0,
@@ -263,9 +239,9 @@ const Dashboard = () => {
   // Alerts for AlertPanel
   const alerts = useMemo(() => {
     if (!stats) return [];
-    
+
     const alertsList = [];
-    
+
     if (stats.pendingLeads > 10 && stats.totalEstimatedValue > 50000) {
       alertsList.push({
         id: 'money-stuck',
@@ -311,7 +287,7 @@ const Dashboard = () => {
   // Quick stats data (moved to advanced section)
   const quickStatsData = useMemo(() => {
     if (!stats) return [];
-    
+
     return [
       { label: "CAC", value: stats.cac || 0, icon: DollarSign, color: "primary" as const, prefix: "R$ " },
       { label: "LTV", value: stats.ltv || 0, icon: TrendingUp, color: "success" as const, prefix: "R$ " },
@@ -464,7 +440,7 @@ const Dashboard = () => {
             {profile?.companies && ` • ${profile.companies.name}`}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <DashboardFilters
             selectedMonth={selectedMonth}
@@ -478,7 +454,7 @@ const Dashboard = () => {
             onCompareMonthChange={setCompareMonth}
             onCompareYearChange={setCompareYear}
           />
-          
+
           <Button
             onClick={handleExportPDF}
             disabled={isExporting || !stats}
@@ -512,7 +488,7 @@ const Dashboard = () => {
           {(userRole === 'gestor' || userRole === 'gestor_owner') && (
             <OnboardingChecklist />
           )}
-          
+
           {/* 1. GOAL HERO CARD - Full width */}
           <GoalHeroCard
             goal={stats.monthlyGoal || 100000}
@@ -542,8 +518,8 @@ const Dashboard = () => {
           )}
 
           {/* 4. VELOCITY METER */}
-          <VelocityMeter 
-            data={velocityData} 
+          <VelocityMeter
+            data={velocityData}
             title="Velocidade do Funil"
           />
 
@@ -573,8 +549,8 @@ const Dashboard = () => {
 
           {/* 7. DETAILED TEAM PERFORMANCE (Managers) */}
           {isManager && teamRankingData.length > 0 && (
-            <SalesRepDetailedPanel 
-              data={teamRankingData} 
+            <SalesRepDetailedPanel
+              data={teamRankingData}
               title="Performance Detalhada do Time"
             />
           )}
@@ -588,9 +564,9 @@ const Dashboard = () => {
           )}
 
           {/* 9. TEAM PROGRESS */}
-          {profile?.company_id && (
-            <TeamProgressPanel 
-              companyId={profile.company_id}
+          {companyId && profile && (
+            <TeamProgressPanel
+              companyId={companyId}
               currentUserId={profile.id}
               isManager={isManager}
             />
@@ -619,7 +595,7 @@ const Dashboard = () => {
           {/* 11. MONTHLY CHARTS - Revenue by Seller + Leads vs Closed */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {isManager && dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
-              <RevenueBySellerChart 
+              <RevenueBySellerChart
                 data={dashboardData.monthlyRevenueBySellerData}
                 sellers={dashboardData.sellers || []}
                 title="Receita por Vendedor (Mês a Mês)"
@@ -627,7 +603,7 @@ const Dashboard = () => {
             )}
 
             {dashboardData?.monthlyLeadsConversion?.length > 0 && (
-              <LeadsConversionMonthlyChart 
+              <LeadsConversionMonthlyChart
                 data={dashboardData.monthlyLeadsConversion}
                 title="Leads vs Fechados + Conversão"
               />
@@ -637,8 +613,8 @@ const Dashboard = () => {
           {/* 12. ADVANCED METRICS - Collapsible */}
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <CollapsibleTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-between border-border hover:bg-muted/50"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">

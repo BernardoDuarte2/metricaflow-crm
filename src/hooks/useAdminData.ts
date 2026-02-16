@@ -114,7 +114,7 @@ const validateAdminTokenServerSide = async (): Promise<boolean> => {
     });
     
     if (error || !data?.valid) {
-      // Token is invalid, clear session storage
+      // Token is invalid, clear session storage securely
       sessionStorage.removeItem("adminToken");
       sessionStorage.removeItem("adminTokenExpiry");
       return false;
@@ -122,14 +122,14 @@ const validateAdminTokenServerSide = async (): Promise<boolean> => {
     
     return true;
   } catch {
-    // On network error, clear tokens for safety
+    // On network error or other issues, fail closed (deny access)
     sessionStorage.removeItem("adminToken");
     sessionStorage.removeItem("adminTokenExpiry");
     return false;
   }
 };
 
-// Legacy check for client-side expiry (used as quick pre-check)
+// Internal helper for quick pre-check (NOT exported for security)
 const hasValidLocalToken = (): boolean => {
   if (typeof window === "undefined") return false;
   
@@ -146,16 +146,16 @@ export const useIsSuperAdmin = () => {
   return useQuery({
     queryKey: ["is-super-admin"],
     queryFn: async () => {
-      // Quick pre-check: if no local token, skip server validation
+      // First check: Strong server-side validation for OTP token
       if (hasValidLocalToken()) {
-        // CRITICAL: Validate token server-side to prevent manipulation
         const isValidServerSide = await validateAdminTokenServerSide();
         if (isValidServerSide) {
           return true;
         }
       }
 
-      // Fallback: Check via Supabase Auth
+      // Fallback: Check via Supabase Auth Profile
+      // This is the standard way for authenticated users
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
@@ -168,12 +168,13 @@ export const useIsSuperAdmin = () => {
       return (profile as { is_super_admin?: boolean })?.is_super_admin ?? false;
     },
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 };
 
-export { hasValidLocalToken as isOTPTokenValid };
-
 export const useAdminCompanies = () => {
+  const { data: isSuperAdmin } = useIsSuperAdmin();
+
   return useQuery<CompanyData[]>({
     queryKey: ["admin-companies"],
     queryFn: async () => {
@@ -227,11 +228,14 @@ export const useAdminCompanies = () => {
 
       return result;
     },
+    enabled: !!isSuperAdmin,
     staleTime: 1000 * 60 * 2,
   });
 };
 
 export const useAdminUsers = () => {
+  const { data: isSuperAdmin } = useIsSuperAdmin();
+
   return useQuery<UserData[]>({
     queryKey: ["admin-users"],
     queryFn: async () => {
@@ -272,11 +276,14 @@ export const useAdminUsers = () => {
 
       return result;
     },
+    enabled: !!isSuperAdmin,
     staleTime: 1000 * 60 * 2,
   });
 };
 
 export const useAdminStripeData = () => {
+  const { data: isSuperAdmin } = useIsSuperAdmin();
+
   return useQuery<StripeData>({
     queryKey: ["admin-stripe-data"],
     queryFn: async () => {
@@ -284,6 +291,8 @@ export const useAdminStripeData = () => {
       if (error) throw error;
       return data;
     },
+    // Only run if user is confirmed admin
+    enabled: !!isSuperAdmin,
     staleTime: 1000 * 60 * 5,
   });
 };

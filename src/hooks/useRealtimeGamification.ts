@@ -1,54 +1,14 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 
+/**
+ * Hook de compatibilidade para useRealtimeGamification.
+ * A funcionalidade realtime foi movida para src/providers/RealtimeProvider.tsx
+ * Mantido apenas para evitar quebras em imports existentes.
+ */
 export function useRealtimeGamification() {
-  const queryClient = useQueryClient();
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-
-  useEffect(() => {
-    console.log('Setting up realtime gamification listener');
-
-    const channel = supabase
-      .channel('gamification-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'leads'
-        },
-        (payload) => {
-          console.log('Lead change detected for gamification:', payload.eventType);
-          setLastUpdate(new Date());
-          
-          // Invalidar queries relacionadas
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['gamification-leaderboard'] });
-          }, 100);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'lead_observations'
-        },
-        () => {
-          console.log('Observation change detected');
-          setLastUpdate(new Date());
-          queryClient.invalidateQueries({ queryKey: ['gamification-leaderboard'] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up gamification realtime listener');
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
+  // Retorna uma data fixa ou atualizada periodicamente se necessário,
+  // mas sem abrir conexão WebSocket duplicada.
+  const [lastUpdate] = useState<Date>(new Date());
+  
   return { lastUpdate };
 }

@@ -41,7 +41,6 @@ export function PointsBreakdown() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000,
   });
 
   const { data: allEvents, isLoading: loadingAllEvents } = useQuery({
@@ -75,7 +74,6 @@ export function PointsBreakdown() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000,
   });
 
   if (loadingMyEvents || loadingAllEvents) {
@@ -233,15 +231,15 @@ export function PointsBreakdown() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={comparisonData}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="name" 
+                <XAxis
+                  dataKey="name"
                   tick={{ fontSize: 12 }}
                   angle={-45}
                   textAnchor="end"
                   height={100}
                 />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
@@ -283,7 +281,7 @@ export function PointsBreakdown() {
                     <Cell key={`cell-${index}`} fill={EVENT_COLORS[Object.keys(myStatsByType)[index]] || "hsl(var(--primary))"} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
@@ -311,7 +309,7 @@ export function PointsBreakdown() {
             {Object.entries(myStatsByType).map(([type, stats], index) => {
               const teamAvg = teamAverages[type] || 0;
               const percentDiff = teamAvg > 0 ? ((stats.points - teamAvg) / teamAvg) * 100 : 0;
-              
+
               return (
                 <motion.div
                   key={type}
@@ -321,7 +319,7 @@ export function PointsBreakdown() {
                   className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div 
+                    <div
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: EVENT_COLORS[type] }}
                     />

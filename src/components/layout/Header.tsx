@@ -10,31 +10,16 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MeetingNotifications from "./MeetingNotifications";
 
+import { useUserSession } from "@/hooks/useUserSession";
+
 const Header = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: session } = useQuery({
-    queryKey: ["session"],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getSession();
-      return data.session;
-    },
-  });
+  const { data: sessionData } = useUserSession();
+  const session = sessionData?.session;
+  const profile = sessionData?.profile;
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile", session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*, companies(*)")
-        .eq("id", session.user.id)
-        .single();
-      return data;
-    },
-    enabled: !!session?.user?.id,
-  });
 
   const { data: userCount } = useQuery({
     queryKey: ["user-count", profile?.company_id],

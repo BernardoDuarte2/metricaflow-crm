@@ -39,6 +39,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import { sanitizeInput } from "@/lib/sanitize";
+
 const NOTE_TYPES = [
   "Contato feito",
   "Cliente não responde",
@@ -115,13 +117,13 @@ const LeadDetail = () => {
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return null;
-      
+
       const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", session.user.id)
         .single();
-      
+
       return data?.role;
     },
   });
@@ -130,14 +132,14 @@ const LeadDetail = () => {
     queryKey: ["team-members", lead?.company_id],
     queryFn: async () => {
       if (!lead?.company_id) return [];
-      
+
       const { data } = await supabase
         .from("profiles")
         .select("id, name")
         .eq("company_id", lead.company_id)
         .eq("active", true)
         .order("name");
-      
+
       return data || [];
     },
     enabled: !!lead?.company_id && isEditing,
@@ -210,6 +212,8 @@ const LeadDetail = () => {
     });
   };
 
+
+
   const handleSaveEdit = () => {
     if (!editFormData.name.trim()) {
       toast({
@@ -218,7 +222,15 @@ const LeadDetail = () => {
       });
       return;
     }
-    updateLeadMutation.mutate(editFormData);
+
+    const sanitizedData = {
+      ...editFormData,
+      name: sanitizeInput(editFormData.name) as string,
+      company: sanitizeInput(editFormData.company) as string,
+      source: sanitizeInput(editFormData.source) as string,
+    };
+
+    updateLeadMutation.mutate(sanitizedData);
   };
 
   const addNoteMutation = useMutation({
@@ -318,10 +330,10 @@ const LeadDetail = () => {
       });
       return;
     }
-    addNoteMutation.mutate({ 
-      content: noteContent, 
+    addNoteMutation.mutate({
+      content: noteContent,
       note_type: finalNoteType,
-      return_date: returnDate 
+      return_date: returnDate
     });
   };
 
@@ -401,7 +413,7 @@ const LeadDetail = () => {
 
     // Salvar PDF
     doc.save(`lead-${lead.name.replace(/\s+/g, "-")}-${Date.now()}.pdf`);
-    
+
     toast({
       title: "PDF exportado com sucesso!",
       description: "O arquivo foi baixado para seu dispositivo",
@@ -616,8 +628,8 @@ const LeadDetail = () => {
 
         <TabsContent value="notes" className="space-y-4">
           <div className="flex gap-3 mb-4">
-            <Button 
-              onClick={handleExportPDF} 
+            <Button
+              onClick={handleExportPDF}
               variant="outline"
               disabled={!notes || notes.length === 0}
             >
@@ -711,8 +723,8 @@ const LeadDetail = () => {
                   )}
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full"
                   disabled={addNoteMutation.isPending}
                 >

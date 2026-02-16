@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { taskSchema } from "@/lib/validation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +32,8 @@ interface TaskDialogProps {
 export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, setValue, watch } = useForm({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
+    resolver: zodResolver(taskSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -103,7 +106,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
   const createTaskMutation = useMutation({
     mutationFn: async (data: any) => {
       const { data: session } = await supabase.auth.getSession();
-      
+
       if (!session?.session?.user.id) {
         throw new Error("Usuário não autenticado");
       }
@@ -184,10 +187,10 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
       // Add note to lead if linked
       if (data.lead_id) {
         const assignedUser = companyUsers?.find(u => u.id === data.assigned_to);
-        const noteContent = data.assignment_type === "todos" 
+        const noteContent = data.assignment_type === "todos"
           ? `Tarefa criada: ${data.title} - Atribuída para TODOS os vendedores - Prazo: ${data.due_date ? new Date(data.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}`
           : `Tarefa criada: ${data.title} - Atribuída para ${assignedUser?.name || "vendedor"} - Prazo: ${data.due_date ? new Date(data.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}`;
-        
+
         await supabase.from("lead_observations").insert({
           lead_id: data.lead_id,
           user_id: session.session?.user.id,
@@ -289,9 +292,12 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
             <Label htmlFor="title">Título *</Label>
             <Input
               id="title"
-              {...register("title", { required: true })}
+              {...register("title")}
               placeholder="Ex: Enviar proposta comercial"
             />
+            {errors.title && (
+              <p className="text-sm text-red-500">{errors.title.message as string}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -302,6 +308,9 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
               placeholder="Detalhes da tarefa..."
               rows={3}
             />
+            {errors.description && (
+              <p className="text-sm text-red-500">{errors.description.message as string}</p>
+            )}
           </div>
 
           {/* Only show assignment options for gestores */}

@@ -1,48 +1,30 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useUserSession } from './useUserSession'; // New hook import
 import { getTheme, type ThemeName } from '@/lib/themes';
 
 const THEME_CACHE_KEY = 'app-theme';
 
 export const useTheme = () => {
-  // Fetch user's company theme
-  const { data: themeData, isLoading } = useQuery({
-    queryKey: ['company-theme'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.company_id) return null;
-
-      const { data: company } = await supabase
-        .from('companies')
-        .select('theme')
-        .eq('id', profile.company_id)
-        .single();
-
-      return company?.theme as ThemeName || 'futurista';
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  // Use unified session hook which provides theme
+  const { data: sessionData, isLoading } = useUserSession();
+  
+  const themeData = sessionData?.theme as ThemeName || 'futurista';
 
   // Apply theme
   useEffect(() => {
-    if (!themeData) {
-      // Apply default futurista theme while loading
-      applyTheme('futurista');
+    if (isLoading && !sessionData) {
+      // Possibly apply optimistic theme from localStorage or default
+      const cached = localStorage.getItem(THEME_CACHE_KEY) as ThemeName;
+      if (cached) applyTheme(cached);
+      else applyTheme('futurista');
       return;
     }
 
-    applyTheme('futurista');
-    localStorage.setItem(THEME_CACHE_KEY, 'futurista');
-  }, [themeData]);
+    if (sessionData?.theme) {
+      applyTheme(sessionData.theme as ThemeName);
+      localStorage.setItem(THEME_CACHE_KEY, sessionData.theme);
+    }
+  }, [sessionData?.theme, isLoading]);
 
   return { theme: themeData, isLoading };
 };

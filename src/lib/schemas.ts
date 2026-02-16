@@ -1,11 +1,13 @@
 import { z } from "zod";
+import { sanitizeString } from "./sanitize";
 
 // Schema para criação de Lead
 export const leadFormSchema = z.object({
   name: z.string()
     .trim()
     .min(1, { message: "Nome é obrigatório" })
-    .max(100, { message: "Nome deve ter no máximo 100 caracteres" }),
+    .max(100, { message: "Nome deve ter no máximo 100 caracteres" })
+    .transform(sanitizeString),
   email: z.string()
     .trim()
     .email({ message: "Email inválido" })
@@ -20,11 +22,13 @@ export const leadFormSchema = z.object({
   company: z.string()
     .trim()
     .max(100, { message: "Empresa deve ter no máximo 100 caracteres" })
+    .transform(sanitizeString)
     .optional()
     .or(z.literal("")),
   source: z.string()
     .trim()
     .max(100, { message: "Origem deve ter no máximo 100 caracteres" })
+    .transform(sanitizeString)
     .optional()
     .or(z.literal("")),
   estimated_value: z.string()
@@ -44,11 +48,13 @@ export const noteFormSchema = z.object({
   content: z.string()
     .trim()
     .min(1, { message: "Conteúdo da nota é obrigatório" })
-    .max(1000, { message: "Nota deve ter no máximo 1000 caracteres" }),
+    .max(1000, { message: "Nota deve ter no máximo 1000 caracteres" })
+    .transform(sanitizeString),
   note_type: z.string()
     .trim()
     .min(1, { message: "Tipo da nota é obrigatório" })
-    .max(100, { message: "Tipo da nota deve ter no máximo 100 caracteres" }),
+    .max(100, { message: "Tipo da nota deve ter no máximo 100 caracteres" })
+    .transform(sanitizeString),
   return_date: z.date().optional(),
 });
 

@@ -19,9 +19,9 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useUserSession } from "@/hooks/useUserSession";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -31,51 +31,11 @@ const Sidebar = () => {
     return saved === "true";
   });
 
-  const { data: session } = useQuery({
-    queryKey: ["session"],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getSession();
-      return data.session;
-    },
-  });
+  const { data: sessionData } = useUserSession();
+  const session = sessionData?.session;
+  const profile = sessionData?.profile;
+  const userRole = sessionData?.role;
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile", session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*, company:companies(*), is_super_admin")
-        .eq("id", session.user.id)
-        .single();
-      return data;
-    },
-    enabled: !!session?.user?.id,
-  });
-
-  /**
-   * UI-ONLY CHECK - Does not provide security!
-   * This role check is for UX optimization only.
-   * Actual security is enforced by:
-   * - Backend RLS policies
-   * - Edge Function authentication
-   * - Database SECURITY DEFINER functions
-   */
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role", session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .order("role")
-        .limit(1)
-        .single();
-      return data?.role;
-    },
-    enabled: !!session?.user?.id,
-  });
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", isCollapsed.toString());
@@ -228,10 +188,9 @@ const Sidebar = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${isActive
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`
               }
             >

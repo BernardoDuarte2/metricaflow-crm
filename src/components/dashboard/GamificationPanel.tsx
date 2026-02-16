@@ -46,9 +46,9 @@ export function GamificationPanel() {
         const userLeads = leads.filter(l => l.assigned_to === profile.id);
         const convertedLeads = userLeads.filter(l => l.status === 'ganho');
         const userObservations = observations.filter(o => o.user_id === profile.id);
-        
-        const conversionRate = userLeads.length > 0 
-          ? (convertedLeads.length / userLeads.length) * 100 
+
+        const conversionRate = userLeads.length > 0
+          ? (convertedLeads.length / userLeads.length) * 100
           : 0;
 
         // Sistema de pontuação
@@ -84,7 +84,6 @@ export function GamificationPanel() {
         .filter(s => s.leadsCreated > 0 || s.observations > 0)
         .sort((a, b) => b.points - a.points);
     },
-    refetchInterval: 30000 // Atualizar a cada 30 segundos
   });
 
   if (isLoading) {
@@ -111,7 +110,7 @@ export function GamificationPanel() {
   const others = leaderboard?.slice(3) || [];
 
   const getMedalIcon = (position: number) => {
-    switch(position) {
+    switch (position) {
       case 1: return <Crown className="h-6 w-6 text-yellow-500" />;
       case 2: return <Medal className="h-6 w-6 text-gray-400" />;
       case 3: return <Award className="h-6 w-6 text-amber-600" />;
