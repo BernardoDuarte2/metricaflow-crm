@@ -90,7 +90,7 @@ const Sidebar = () => {
     { to: "/goals", icon: Target, label: "Metas", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
     { to: "/users", icon: Settings, label: "Usuários", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
     { to: "/integrations", icon: Plug, label: "Integrações", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
-    { to: "/gamification", icon: Trophy, label: "🎮 Gamificação Live", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
+    { to: "/gamification", icon: Trophy, label: "Ao Vivo", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
     { to: "/settings", icon: Settings, label: "Configurações", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
     { to: "/help", icon: HelpCircle, label: "Ajuda", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
     { to: "/admin", icon: Shield, label: "Administração", requiresOwnerOrGestor: false, requiresSuperAdmin: true },
