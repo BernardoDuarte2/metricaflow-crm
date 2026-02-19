@@ -86,7 +86,7 @@ const Sidebar = () => {
     { to: "/kanban", icon: KanbanSquare, label: "Kanban", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
     { to: "/agenda", icon: Calendar, label: "Agenda", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
     { to: "/tasks", icon: ListTodo, label: "Tarefas", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/kpi", icon: BarChart3, label: "Desempenho & KPI", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
+    { to: "/kpi", icon: BarChart3, label: "KPI", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
     { to: "/goals", icon: Target, label: "Metas", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
     { to: "/users", icon: Settings, label: "Usuários", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
     { to: "/integrations", icon: Plug, label: "Integrações", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
