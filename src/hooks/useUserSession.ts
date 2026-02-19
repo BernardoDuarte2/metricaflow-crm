@@ -34,7 +34,8 @@ export const useUserSession = () => {
           *,
           companies (
             id,
-            theme
+            theme,
+            name
           )
         `)
         .eq("id", session.user.id)
