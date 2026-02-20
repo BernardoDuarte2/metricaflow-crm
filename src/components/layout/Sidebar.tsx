@@ -88,13 +88,13 @@ const Sidebar = () => {
     { to: "/tasks", icon: ListTodo, label: "Tarefas" },
     { to: "/kpi", icon: BarChart3, label: "KPI" },
     { to: "/goals", icon: Target, label: "Metas" },
+    ...(isOwnerOrGestor ? [{ to: "/gamification", icon: Trophy, label: "Ao Vivo" }] : []),
     ...(isSuperAdmin ? [{ to: "/admin", icon: Shield, label: "Administração" }] : []),
   ];
 
   const dropdownManagementItems = isOwnerOrGestor ? [
     { to: "/users", icon: Settings, label: "Usuários" },
     { to: "/integrations", icon: Plug, label: "Integrações" },
-    { to: "/gamification", icon: Trophy, label: "Ao Vivo" },
     { to: "/settings", icon: Settings, label: "Configurações" },
   ] : [];
 
