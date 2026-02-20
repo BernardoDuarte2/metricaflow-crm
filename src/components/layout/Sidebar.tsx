@@ -79,28 +79,24 @@ const Sidebar = () => {
     .join("")
     .toUpperCase();
 
-  const allNavItems = [
-    { to: "/", icon: LayoutDashboard, label: "Dashboard", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/leads", icon: Users, label: "Leads", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/prospecting", icon: Search, label: "Prospecção", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/kanban", icon: KanbanSquare, label: "Kanban", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/agenda", icon: Calendar, label: "Agenda", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/tasks", icon: ListTodo, label: "Tarefas", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/kpi", icon: BarChart3, label: "KPI", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/goals", icon: Target, label: "Metas", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/users", icon: Settings, label: "Usuários", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
-    { to: "/integrations", icon: Plug, label: "Integrações", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
-    { to: "/gamification", icon: Trophy, label: "Ao Vivo", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
-    { to: "/settings", icon: Settings, label: "Configurações", requiresOwnerOrGestor: true, requiresSuperAdmin: false },
-    { to: "/help", icon: HelpCircle, label: "Ajuda", requiresOwnerOrGestor: false, requiresSuperAdmin: false },
-    { to: "/admin", icon: Shield, label: "Administração", requiresOwnerOrGestor: false, requiresSuperAdmin: true },
+  const mainNavItems = [
+    { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/leads", icon: Users, label: "Leads" },
+    { to: "/prospecting", icon: Search, label: "Prospecção" },
+    { to: "/kanban", icon: KanbanSquare, label: "Kanban" },
+    { to: "/agenda", icon: Calendar, label: "Agenda" },
+    { to: "/tasks", icon: ListTodo, label: "Tarefas" },
+    { to: "/kpi", icon: BarChart3, label: "KPI" },
+    { to: "/goals", icon: Target, label: "Metas" },
+    ...(isSuperAdmin ? [{ to: "/admin", icon: Shield, label: "Administração" }] : []),
   ];
 
-  const navItems = allNavItems.filter((item) => {
-    if (item.requiresSuperAdmin) return isSuperAdmin;
-    if (item.requiresOwnerOrGestor) return isOwnerOrGestor;
-    return true;
-  });
+  const dropdownManagementItems = isOwnerOrGestor ? [
+    { to: "/users", icon: Settings, label: "Usuários" },
+    { to: "/integrations", icon: Plug, label: "Integrações" },
+    { to: "/gamification", icon: Trophy, label: "Ao Vivo" },
+    { to: "/settings", icon: Settings, label: "Configurações" },
+  ] : [];
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center px-6 z-50 gap-4">
@@ -120,7 +116,7 @@ const Sidebar = () => {
 
       <div className="flex-1 min-w-0 overflow-x-auto nav-scrollbar">
         <div className="flex items-center gap-1 w-max">
-          {navItems.map((item) => (
+          {mainNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -159,6 +155,22 @@ const Sidebar = () => {
               </p>
             </div>
           </DropdownMenuLabel>
+          {dropdownManagementItems.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              {dropdownManagementItems.map((item) => (
+                <DropdownMenuItem key={item.to} onClick={() => navigate(item.to)} className="cursor-pointer">
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate("/help")} className="cursor-pointer">
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Ajuda
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs text-muted-foreground font-normal py-1">
             {APP_VERSION}
