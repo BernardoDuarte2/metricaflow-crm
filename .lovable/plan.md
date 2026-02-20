@@ -1,32 +1,73 @@
 
-# Barra de Rolagem Horizontal na Navegacao
+
+# Mover Itens de Configuracao para o Dropdown do Avatar
 
 ## Problema
-Quando a tela esta com zoom ou em resolucao menor, as abas de navegacao empurram o avatar para fora da tela, tornando impossivel ver a foto ou acessar o dropdown do usuario.
+As abas de Usuarios, Integracoes, Configuracoes, Ajuda e Ao Vivo ficam misturadas com as abas principais do sistema (Dashboard, Leads, Kanban, etc.), poluindo a navegacao e ocupando espaco.
 
 ## Solucao
-Tornar a area das abas de navegacao com scroll horizontal, mantendo o logo (esquerda) e o avatar (direita) sempre visiveis.
+Mover esses itens para dentro do dropdown que abre ao clicar na foto/avatar do usuario, separando visualmente a navegacao principal das opcoes administrativas.
+
+## O que muda
+
+### Abas que PERMANECEM na barra de navegacao:
+- Dashboard
+- Leads
+- Prospeccao
+- Kanban
+- Agenda
+- Tarefas
+- KPI
+- Metas
+- Administracao (super admin)
+
+### Itens que VÃO para o dropdown do avatar:
+- Usuarios (gestor/owner)
+- Integracoes (gestor/owner)
+- Ao Vivo (gestor/owner)
+- Configuracoes (gestor/owner)
+- Ajuda (todos)
+
+### Estrutura do dropdown apos a mudanca:
+
+```text
++--------------------------+
+| Nome do Usuario          |
+| Nome da Empresa          |
+| Funcao (ex: Gestor)      |
++--------------------------+
+| Usuarios        (icone)  |  <- apenas gestor/owner
+| Integracoes      (icone) |  <- apenas gestor/owner
+| Ao Vivo          (icone) |  <- apenas gestor/owner
+| Configuracoes    (icone) |  <- apenas gestor/owner
++--------------------------+
+| Ajuda            (icone) |  <- todos
++--------------------------+
+| v1.0.0                   |
++--------------------------+
+| Sair do sistema  (verm.) |
++--------------------------+
+```
 
 ## Detalhes Tecnicos
 
 ### Arquivo alterado
 `src/components/layout/Sidebar.tsx`
 
-### Mudanca
-A `div` que contem os links de navegacao (linha 122) recebera:
-- `overflow-x-auto` para permitir scroll horizontal
-- `scrollbar-thin` ou estilo customizado para uma barra de rolagem fina e discreta
-- `flex-shrink` adequado para que o logo e o avatar nunca sejam comprimidos
+### Mudancas
+1. Separar o array `allNavItems` em dois grupos:
+   - `mainNavItems`: itens que ficam na barra horizontal (Dashboard ate Metas + Admin)
+   - `dropdownNavItems`: itens que vao para o dropdown (Usuarios, Integracoes, Ao Vivo, Configuracoes, Ajuda)
 
-Estrutura resultante:
-```text
-[Logo (fixo)] [===== Abas com scroll horizontal =====] [Avatar (fixo)]
-```
+2. Renderizar apenas `mainNavItems` na barra de navegacao horizontal
 
-### CSS adicional
-Adicionar no `src/index.css` uma classe para estilizar a scrollbar da navegacao de forma discreta (fina, com cores do tema).
+3. No `DropdownMenuContent`, adicionar os `dropdownNavItems` como `DropdownMenuItem` com seus icones, usando `useNavigate` para navegar ao clicar. Respeitar as mesmas regras de permissao (requiresOwnerOrGestor, requiresSuperAdmin)
+
+4. Adicionar separadores visuais (`DropdownMenuSeparator`) entre os grupos
 
 ### O que NAO sera alterado
-- Nenhuma outra pagina ou componente
-- Nenhuma logica de navegacao
-- Nenhuma tabela do banco
+- Nenhuma tabela do banco de dados
+- Nenhuma rota
+- Nenhum outro componente
+- As permissoes de acesso continuam identicas
+
