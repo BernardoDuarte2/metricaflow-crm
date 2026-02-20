@@ -1,73 +1,28 @@
 
 
-# Mover Itens de Configuracao para o Dropdown do Avatar
+# Corrigir Drop no Kanban - Permitir Soltar em Qualquer Posicao da Coluna
 
 ## Problema
-As abas de Usuarios, Integracoes, Configuracoes, Ajuda e Ao Vivo ficam misturadas com as abas principais do sistema (Dashboard, Leads, Kanban, etc.), poluindo a navegacao e ocupando espaco.
+Quando uma coluna do Kanban tem muitos leads, o usuario precisa rolar ate o final da coluna para conseguir soltar o card. Isso acontece porque a area de drop (`droppable`) cresce junto com o conteudo, forcando o usuario a ir ate o fim.
 
 ## Solucao
-Mover esses itens para dentro do dropdown que abre ao clicar na foto/avatar do usuario, separando visualmente a navegacao principal das opcoes administrativas.
-
-## O que muda
-
-### Abas que PERMANECEM na barra de navegacao:
-- Dashboard
-- Leads
-- Prospeccao
-- Kanban
-- Agenda
-- Tarefas
-- KPI
-- Metas
-- Administracao (super admin)
-
-### Itens que VÃO para o dropdown do avatar:
-- Usuarios (gestor/owner)
-- Integracoes (gestor/owner)
-- Ao Vivo (gestor/owner)
-- Configuracoes (gestor/owner)
-- Ajuda (todos)
-
-### Estrutura do dropdown apos a mudanca:
-
-```text
-+--------------------------+
-| Nome do Usuario          |
-| Nome da Empresa          |
-| Funcao (ex: Gestor)      |
-+--------------------------+
-| Usuarios        (icone)  |  <- apenas gestor/owner
-| Integracoes      (icone) |  <- apenas gestor/owner
-| Ao Vivo          (icone) |  <- apenas gestor/owner
-| Configuracoes    (icone) |  <- apenas gestor/owner
-+--------------------------+
-| Ajuda            (icone) |  <- todos
-+--------------------------+
-| v1.0.0                   |
-+--------------------------+
-| Sair do sistema  (verm.) |
-+--------------------------+
-```
+Limitar a altura das colunas com scroll interno (`max-height` + `overflow-y: auto`). Assim, a area de drop fica sempre visivel na tela e o usuario pode soltar o card em qualquer ponto da coluna sem precisar rolar a pagina inteira.
 
 ## Detalhes Tecnicos
 
 ### Arquivo alterado
-`src/components/layout/Sidebar.tsx`
+`src/components/leads/KanbanColumn.tsx`
 
-### Mudancas
-1. Separar o array `allNavItems` em dois grupos:
-   - `mainNavItems`: itens que ficam na barra horizontal (Dashboard ate Metas + Admin)
-   - `dropdownNavItems`: itens que vao para o dropdown (Usuarios, Integracoes, Ao Vivo, Configuracoes, Ajuda)
+### Mudanca
+Na `div` que recebe o `ref={setNodeRef}` (linha 74-81):
+- Adicionar `max-h-[70vh]` para limitar a altura da coluna
+- Adicionar `overflow-y-auto` para scroll interno dos cards
+- Manter o `min-h-[400px]` existente
 
-2. Renderizar apenas `mainNavItems` na barra de navegacao horizontal
-
-3. No `DropdownMenuContent`, adicionar os `dropdownNavItems` como `DropdownMenuItem` com seus icones, usando `useNavigate` para navegar ao clicar. Respeitar as mesmas regras de permissao (requiresOwnerOrGestor, requiresSuperAdmin)
-
-4. Adicionar separadores visuais (`DropdownMenuSeparator`) entre os grupos
+A area de drop passa a ter tamanho fixo na tela, entao o usuario consegue arrastar e soltar em qualquer parte visivel da coluna. Os cards que excedem a altura ficam acessiveis via scroll interno.
 
 ### O que NAO sera alterado
-- Nenhuma tabela do banco de dados
-- Nenhuma rota
+- Nenhuma logica de drag-and-drop
+- Nenhuma rota ou banco de dados
 - Nenhum outro componente
-- As permissoes de acesso continuam identicas
 
