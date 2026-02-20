@@ -125,6 +125,8 @@ export function ClosedLeadDialog({
 
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-leads"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       queryClient.invalidateQueries({ queryKey: ["lead", leadId] });
       queryClient.invalidateQueries({ queryKey: ["lead-observations", leadId] });
 
@@ -144,7 +146,7 @@ export function ClosedLeadDialog({
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Não autenticado");
 
-    const amount = parseFloat(valueData.amount.replace(/[^\d,.-]/g, '').replace(',', '.'));
+    const amount = parseFloat(valueData.amount.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
 
     if (editingValue) {
       const { error } = await supabase

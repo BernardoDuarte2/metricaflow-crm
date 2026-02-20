@@ -239,8 +239,6 @@ const Kanban = () => {
     if (viewMode === 'yearly') {
       // Visualização anual - mostrar todos os leads do ano
       return allLeads.filter((lead: any) => {
-        // Excluir perdidos do kanban principal
-        if (lead.status === 'perdido') return false;
         const canonicalStatus = resolveColumnId(lead.status);
         
         // Lead criado/atualizado no ano
@@ -250,8 +248,8 @@ const Kanban = () => {
         const wasUpdatedThisYear = updatedDate.getFullYear() === year;
         const wasCreatedThisYear = createdDate.getFullYear() === year;
         
-        // Incluir leads fechados do ano
-        if (canonicalStatus === 'fechado') {
+        // Incluir leads fechados ou perdidos do ano
+        if (canonicalStatus === 'fechado' || canonicalStatus === 'perdido') {
           return wasUpdatedThisYear;
         }
         
@@ -276,8 +274,6 @@ const Kanban = () => {
       const monthEnd = new Date(year, month, 0, 23, 59, 59);
 
       return allLeads.filter((lead: any) => {
-        // Excluir perdidos do kanban principal
-        if (lead.status === 'perdido') return false;
         const canonicalStatus = resolveColumnId(lead.status);
         // Lead criado/atualizado no mês
         const updatedDate = new Date(lead.updated_at);
@@ -286,8 +282,8 @@ const Kanban = () => {
         const wasUpdatedThisMonth = updatedDate >= monthStart && updatedDate <= monthEnd;
         const wasCreatedThisMonth = createdDate >= monthStart && createdDate <= monthEnd;
         
-        // Incluir leads fechados do mês
-        if (canonicalStatus === 'fechado') {
+        // Incluir leads fechados ou perdidos do mês
+        if (canonicalStatus === 'fechado' || canonicalStatus === 'perdido') {
           return wasUpdatedThisMonth;
         }
         
@@ -451,6 +447,8 @@ const Kanban = () => {
             companyId={leadToClose.company_id}
             onConfirm={() => {
               queryClient.invalidateQueries({ queryKey: ["leads"] });
+              queryClient.invalidateQueries({ queryKey: ["kanban-leads"] });
+              queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
             }}
           />
         )}
