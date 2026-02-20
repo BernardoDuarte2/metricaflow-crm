@@ -74,7 +74,7 @@ export function KanbanColumn({
         <div
           ref={setNodeRef}
           className={cn(
-            "min-h-[400px] rounded-lg border-2 border-dashed transition-all p-3 space-y-3 w-full",
+            "min-h-[400px] max-h-[70vh] overflow-y-auto rounded-lg border-2 border-dashed transition-all p-3 space-y-3 w-full",
             isOver
               ? "border-primary bg-primary/5 scale-[1.02]"
               : "border-border bg-muted/30"
