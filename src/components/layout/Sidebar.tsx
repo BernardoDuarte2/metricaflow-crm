@@ -103,29 +103,29 @@ const Sidebar = () => {
   });
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center justify-between px-6 z-50">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3">
-          {profile?.company?.logo_url ? (
-            <img
-              src={profile.company.logo_url}
-              alt={profile.company.name || "Logo"}
-              className="h-8 w-auto object-contain"
-            />
-          ) : (
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              {profile?.company?.system_name || "Pro"}
-            </h1>
-          )}
-        </div>
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center px-6 z-50 gap-4">
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {profile?.company?.logo_url ? (
+          <img
+            src={profile.company.logo_url}
+            alt={profile.company.name || "Logo"}
+            className="h-8 w-auto object-contain"
+          />
+        ) : (
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            {profile?.company?.system_name || "Pro"}
+          </h1>
+        )}
+      </div>
 
-        <div className="flex items-center gap-1">
+      <div className="flex-1 min-w-0 overflow-x-auto nav-scrollbar">
+        <div className="flex items-center gap-1 w-max">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${isActive
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${isActive
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`
