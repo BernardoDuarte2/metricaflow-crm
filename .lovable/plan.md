@@ -1,28 +1,61 @@
 
 
-# Corrigir Drop no Kanban - Permitir Soltar em Qualquer Posicao da Coluna
+# Correcoes no Kanban: Fechado, Perdido e Valores
 
-## Problema
-Quando uma coluna do Kanban tem muitos leads, o usuario precisa rolar ate o final da coluna para conseguir soltar o card. Isso acontece porque a area de drop (`droppable`) cresce junto com o conteudo, forcando o usuario a ir ate o fim.
+## Bugs Identificados
 
-## Solucao
-Limitar a altura das colunas com scroll interno (`max-height` + `overflow-y: auto`). Assim, a area de drop fica sempre visivel na tela e o usuario pode soltar o card em qualquer ponto da coluna sem precisar rolar a pagina inteira.
+### Bug 1: Valor "comendo zeros"
+**Causa raiz:** No arquivo `ClosedLeadDialog.tsx` (linha 147), o parsing do valor faz:
+```
+"1.500,00" → remove caracteres → "1.500,00" → troca virgula por ponto → "1.500.00" → parseFloat → 1.5
+```
+O ponto usado como separador de milhar no formato brasileiro e interpretado como ponto decimal pelo `parseFloat`, transformando R$ 1.500,00 em R$ 1,50.
 
-## Detalhes Tecnicos
+**Correcao:** Remover os pontos de milhar ANTES de trocar a virgula por ponto:
+```
+"1.500,00" → remove pontos → "1500,00" → troca virgula → "1500.00" → parseFloat → 1500
+```
 
-### Arquivo alterado
-`src/components/leads/KanbanColumn.tsx`
+O mesmo bug existe no `LeadValuesList.tsx` (se houver parsing similar).
 
-### Mudanca
-Na `div` que recebe o `ref={setNodeRef}` (linha 74-81):
-- Adicionar `max-h-[70vh]` para limitar a altura da coluna
-- Adicionar `overflow-y-auto` para scroll interno dos cards
-- Manter o `min-h-[400px]` existente
+### Bug 2: Cards somem ao mover para "Fechado"
+**Causa raiz:** Dois problemas combinados:
+1. O `ClosedLeadDialog` invalida apenas `["leads"]`, mas NAO invalida `["kanban-leads"]` - entao o Kanban nao recarrega os dados atualizados
+2. O filtro `monthLeads` exclui leads fechados que nao foram atualizados no mes/ano selecionado, podendo causar desaparecimento
 
-A area de drop passa a ter tamanho fixo na tela, entao o usuario consegue arrastar e soltar em qualquer parte visivel da coluna. Os cards que excedem a altura ficam acessiveis via scroll interno.
+**Correcao:** Adicionar invalidacao de `["kanban-leads"]` e `["dashboard-stats"]` no `ClosedLeadDialog` apos confirmar o fechamento.
 
-### O que NAO sera alterado
-- Nenhuma logica de drag-and-drop
-- Nenhuma rota ou banco de dados
-- Nenhum outro componente
+### Bug 3: Cards somem ao ir para "Perdido"
+**Causa raiz:** Na linha 280 do `Kanban.tsx`, existe um filtro explicito:
+```
+if (lead.status === 'perdido') return false;
+```
+Isso remove TODOS os leads perdidos do Kanban principal, embora a coluna "Perdido" exista. Os leads perdidos so aparecem na secao separada de "inativos" abaixo.
+
+**Correcao:** Remover esse filtro para que leads com status "perdido" aparecam normalmente na coluna "Perdido" do Kanban.
+
+---
+
+## Arquivos Alterados
+
+### 1. `src/components/leads/ClosedLeadDialog.tsx`
+- Linha 147: Corrigir parsing do valor - remover pontos de milhar antes de converter
+- Linhas 127-129: Adicionar invalidacao de `["kanban-leads"]` e `["dashboard-stats"]`
+
+### 2. `src/pages/Kanban.tsx`
+- Linha 280 (monthLeads mensal): Remover `if (lead.status === 'perdido') return false`
+- Linha 243 (monthLeads anual): Remover `if (lead.status === 'perdido') return false`
+- Linha 452 (onConfirm): Adicionar invalidacao de `["kanban-leads"]`
+
+### 3. `src/components/leads/LeadValuesList.tsx`
+- Verificar e corrigir o mesmo bug de parsing de valor, se existir
+
+---
+
+## O que NAO sera alterado
+- Nenhuma tabela do banco de dados
+- Nenhuma rota
+- O fluxo do modal de fechamento (ja funciona corretamente)
+- A logica de observacoes e notas (ja esta correta)
+- O dashboard (ja recebe os dados corretos, so precisa ser invalidado)
 
