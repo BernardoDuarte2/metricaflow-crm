@@ -474,4 +474,27 @@ All colors MUST be HSL.
       0 6px 20px hsl(229 92% 62% / 0.5),
       inset 0 -2px 10px rgba(0, 0, 0, 0.2);
   }
+
+  /* Nav horizontal scrollbar */
+  .nav-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .nav-scrollbar::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .nav-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .nav-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  .nav-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
 }
