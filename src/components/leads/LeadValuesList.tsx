@@ -59,7 +59,7 @@ export function LeadValuesList({ leadId, companyId }: LeadValuesListProps) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      const amount = parseFloat(data.amount.replace(/[^\d,.-]/g, '').replace(',', '.'));
+      const amount = parseFloat(data.amount.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
 
       const { error } = await supabase
         .from("lead_values")
@@ -91,7 +91,7 @@ export function LeadValuesList({ leadId, companyId }: LeadValuesListProps) {
 
   const updateValueMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const amount = parseFloat(data.amount.replace(/[^\d,.-]/g, '').replace(',', '.'));
+      const amount = parseFloat(data.amount.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
 
       const { error } = await supabase
         .from("lead_values")
