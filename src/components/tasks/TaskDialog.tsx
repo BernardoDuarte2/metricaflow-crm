@@ -154,7 +154,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
         throw new Error("Selecione um vendedor");
       }
 
-      const { data: newTask, error } = await supabase
+      const { data: newTaskArr, error } = await supabase
         .from("tasks")
         .insert({
           title: title.trim(),
@@ -166,8 +166,9 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
           due_date: dueDate || null,
           status: "aberta",
         })
-        .select()
-        .single();
+        .select();
+
+      const newTask = newTaskArr?.[0];
 
       if (error) throw error;
 
