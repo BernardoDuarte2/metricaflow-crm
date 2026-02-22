@@ -114,7 +114,9 @@ const Tasks = () => {
         <TaskKanban tasks={filteredTasks} onEditTask={handleEditTask} isGestor={isGestor} />
       )}
 
-      <TaskDialog open={isDialogOpen} onOpenChange={handleCloseDialog} task={selectedTask} />
+      {isDialogOpen && (
+        <TaskDialog open={isDialogOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }} task={selectedTask} />
+      )}
     </div>
   );
 };

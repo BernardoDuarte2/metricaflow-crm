@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -12,13 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
 const TASK_SUGGESTIONS = [
@@ -120,7 +114,6 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 
       if (error) throw error;
 
-      // Create task_assignments
       if (assignmentType === "todos") {
         const { data: users } = await supabase
           .from("profiles")
@@ -143,7 +136,6 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
             .eq("id", newTask.id);
         }
       }
-      // Individual assignment is handled by the trigger
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -199,10 +191,12 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{task ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
+          <DialogDescription>
+            {task ? "Edite os detalhes da tarefa." : "Crie uma nova tarefa para a equipe."}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Sugestões pré-cadastradas */}
           {!task && (
             <div className="space-y-2">
               <Label>Sugestões rápidas</Label>
@@ -245,33 +239,34 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
           {!task && (
             <>
               <div className="space-y-2">
-                <Label>Atribuir para *</Label>
-                <Select value={assignmentType} onValueChange={setAssignmentType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="individual">Vendedor específico</SelectItem>
-                    <SelectItem value="todos">Todos os vendedores</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="assignmentType">Atribuir para *</Label>
+                <select
+                  id="assignmentType"
+                  value={assignmentType}
+                  onChange={(e) => setAssignmentType(e.target.value)}
+                  className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <option value="individual">Vendedor específico</option>
+                  <option value="todos">Todos os vendedores</option>
+                </select>
               </div>
 
               {assignmentType === "individual" && (
                 <div className="space-y-2">
-                  <Label>Vendedor *</Label>
-                  <Select value={assignedTo} onValueChange={setAssignedTo}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {companyUsers?.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="assignedTo">Vendedor *</Label>
+                  <select
+                    id="assignedTo"
+                    value={assignedTo}
+                    onChange={(e) => setAssignedTo(e.target.value)}
+                    className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="">Selecione...</option>
+                    {companyUsers?.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
             </>
