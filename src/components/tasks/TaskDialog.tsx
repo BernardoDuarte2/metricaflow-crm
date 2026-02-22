@@ -154,25 +154,36 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
         throw new Error("Selecione um vendedor");
       }
 
-      const { data: newTaskArr, error } = await supabase
-        .from("tasks")
-        .insert({
-          title: title.trim(),
-          description: description.trim() || null,
-          assigned_to: finalAssignedTo,
-          assignment_type: assignmentType,
-          company_id: profile.company_id,
-          created_by: session.user.id,
-          due_date: dueDate || null,
-          status: "aberta",
-        })
-        .select();
+      const taskPayload = {
+        title: title.trim(),
+        description: description.trim() || null,
+        assigned_to: finalAssignedTo,
+        assignment_type: assignmentType,
+        company_id: profile.company_id,
+        created_by: session.user.id,
+        due_date: dueDate || null,
+        status: "aberta",
+      };
 
-      const newTask = newTaskArr?.[0];
-
+      const { error } = await supabase.from("tasks").insert(taskPayload);
       if (error) throw error;
 
+      // Fetch the just-created task (AFTER trigger may prevent .select() from returning data)
+      let newTaskId: string | null = null;
       if (assignmentType === "todos") {
+        const { data: recentTask } = await supabase
+          .from("tasks")
+          .select("id")
+          .eq("company_id", profile.company_id)
+          .eq("created_by", session.user.id)
+          .eq("title", title.trim())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        newTaskId = recentTask?.id ?? null;
+      }
+
+      if (assignmentType === "todos" && newTaskId) {
         const { data: users } = await supabase
           .from("profiles")
           .select("id")
@@ -182,7 +193,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
         if (users && users.length > 0) {
           await supabase.from("task_assignments").insert(
             users.map((u) => ({
-              task_id: newTask.id,
+              task_id: newTaskId,
               user_id: u.id,
               company_id: profile.company_id,
               status: "pendente",
@@ -191,7 +202,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
           await supabase
             .from("tasks")
             .update({ total_assigned: users.length })
-            .eq("id", newTask.id);
+            .eq("id", newTaskId);
         }
       }
     },
