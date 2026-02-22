@@ -37,33 +37,9 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignmentType, setAssignmentType] = useState("individual");
-  const [assignedTo, setAssignedTo] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [newSuggestion, setNewSuggestion] = useState("");
   const [showAddSuggestion, setShowAddSuggestion] = useState(false);
-
-  const { data: companyUsers } = useQuery({
-    queryKey: ["company-users"],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("company_id")
-        .eq("id", session.session?.user.id!)
-        .single();
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .eq("company_id", profile?.company_id!)
-        .eq("active", true);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: open,
-  });
 
   const { data: customSuggestions } = useQuery({
     queryKey: ["task-suggestions"],
@@ -121,14 +97,10 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
     if (task) {
       setTitle(task.title || "");
       setDescription(task.description || "");
-      setAssignmentType(task.assignment_type || "individual");
-      setAssignedTo(task.assigned_to || "");
       setDueDate(task.due_date ? task.due_date.split("T")[0] : "");
     } else {
       setTitle("");
       setDescription("");
-      setAssignmentType("individual");
-      setAssignedTo("");
       setDueDate("");
     }
     setShowAddSuggestion(false);
@@ -148,17 +120,11 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 
       if (!profile?.company_id) throw new Error("Perfil não encontrado");
 
-      const finalAssignedTo = assignmentType === "individual" ? assignedTo : session.user.id;
-
-      if (assignmentType === "individual" && !assignedTo) {
-        throw new Error("Selecione um vendedor");
-      }
-
       const taskPayload = {
         title: title.trim(),
         description: description.trim() || null,
-        assigned_to: finalAssignedTo,
-        assignment_type: assignmentType,
+        assigned_to: session.user.id,
+        assignment_type: "todos",
         company_id: profile.company_id,
         created_by: session.user.id,
         due_date: dueDate || null,
@@ -168,22 +134,20 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
       const { error } = await supabase.from("tasks").insert(taskPayload);
       if (error) throw error;
 
-      // Fetch the just-created task (AFTER trigger may prevent .select() from returning data)
-      let newTaskId: string | null = null;
-      if (assignmentType === "todos") {
-        const { data: recentTask } = await supabase
-          .from("tasks")
-          .select("id")
-          .eq("company_id", profile.company_id)
-          .eq("created_by", session.user.id)
-          .eq("title", title.trim())
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
-        newTaskId = recentTask?.id ?? null;
-      }
+      // Buscar ID da tarefa recém-criada
+      const { data: recentTask } = await supabase
+        .from("tasks")
+        .select("id")
+        .eq("company_id", profile.company_id)
+        .eq("created_by", session.user.id)
+        .eq("title", title.trim())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
 
-      if (assignmentType === "todos" && newTaskId) {
+      const newTaskId = recentTask?.id ?? null;
+
+      if (newTaskId) {
         const { data: users } = await supabase
           .from("profiles")
           .select("id")
@@ -374,41 +338,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
             />
           </div>
 
-          {!task && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="assignmentType">Atribuir para *</Label>
-                <select
-                  id="assignmentType"
-                  value={assignmentType}
-                  onChange={(e) => setAssignmentType(e.target.value)}
-                  className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <option value="individual">Vendedor específico</option>
-                  <option value="todos">Todos os vendedores</option>
-                </select>
-              </div>
-
-              {assignmentType === "individual" && (
-                <div className="space-y-2">
-                  <Label htmlFor="assignedTo">Vendedor *</Label>
-                  <select
-                    id="assignedTo"
-                    value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
-                    className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="">Selecione...</option>
-                    {companyUsers?.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </>
-          )}
+          
 
           <div className="space-y-2">
             <Label htmlFor="due_date">Prazo (opcional)</Label>

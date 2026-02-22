@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.create_task_assignment_on_insert() CASCADE;
