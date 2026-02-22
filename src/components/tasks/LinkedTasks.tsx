@@ -97,7 +97,7 @@ export function LinkedTasks({ leadId }: LinkedTasksProps) {
       <TaskDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        task={{ lead_id: leadId }}
+        defaultLeadId={leadId}
       />
     </>
   );
