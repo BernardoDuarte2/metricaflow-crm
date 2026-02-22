@@ -125,7 +125,7 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
       const taskData = {
         title: data.title,
         description: data.description,
-        assigned_to: data.assignment_type === "individual" ? data.assigned_to : null,
+        assigned_to: data.assignment_type === "individual" ? data.assigned_to : session.session.user.id,
         assignment_type: data.assignment_type,
         company_id: profile.company_id,
         created_by: session.session.user.id,
@@ -270,7 +270,7 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
       ...finalData,
       lead_id: finalData.lead_id || null,
       due_date: finalData.due_date || null,
-      assigned_to: finalData.assigned_to || null,
+      assigned_to: finalData.assigned_to || currentUserId,
     };
 
     if (task) {
