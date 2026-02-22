@@ -1,7 +1,4 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { taskSchema } from "@/lib/validation";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,51 +19,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+const TASK_SUGGESTIONS = [
+  "Verificar leads em aberto",
+  "Atualizar status dos leads",
+  "Conferir cartão ponto",
+  "Focar em vendas em aberto",
+  "Fazer follow-up com clientes",
+  "Atualizar planilha de vendas",
+];
 
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: any;
-  defaultLeadId?: string;
 }
 
-export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDialogProps) {
+export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
-    resolver: zodResolver(taskSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      assigned_to: "",
-      assignment_type: "individual",
-      lead_id: "",
-      due_date: "",
-    },
-  });
 
-  // Fetch current user role
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role"],
-    queryFn: async () => {
-      const { data } = await supabase.rpc("get_user_role");
-      return data;
-    },
-    enabled: open,
-  });
-
-  // Fetch current user ID
-  const { data: currentUserId } = useQuery({
-    queryKey: ["current-user-id"],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      return session.session?.user.id;
-    },
-    enabled: open,
-  });
-
-  const isGestor = userRole === "gestor" || userRole === "gestor_owner";
-  const isVendedor = userRole === "vendedor";
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [assignmentType, setAssignmentType] = useState("individual");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [dueDate, setDueDate] = useState("");
 
   const { data: companyUsers } = useQuery({
     queryKey: ["company-users"],
@@ -75,13 +53,13 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
       const { data: profile } = await supabase
         .from("profiles")
         .select("company_id")
-        .eq("id", session.session?.user.id)
+        .eq("id", session.session?.user.id!)
         .single();
 
       const { data, error } = await supabase
         .from("profiles")
         .select("id, name")
-        .eq("company_id", profile?.company_id)
+        .eq("company_id", profile?.company_id!)
         .eq("active", true);
 
       if (error) throw error;
@@ -90,63 +68,60 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
     enabled: open,
   });
 
-  const { data: leads } = useQuery({
-    queryKey: ["leads-select"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("id, name")
-        .order("name");
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: open,
-  });
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title || "");
+      setDescription(task.description || "");
+      setAssignmentType(task.assignment_type || "individual");
+      setAssignedTo(task.assigned_to || "");
+      setDueDate(task.due_date ? task.due_date.split("T")[0] : "");
+    } else {
+      setTitle("");
+      setDescription("");
+      setAssignmentType("individual");
+      setAssignedTo("");
+      setDueDate("");
+    }
+  }, [task, open]);
 
   const createTaskMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { data: session } = await supabase.auth.getSession();
-
-      if (!session?.session?.user.id) {
-        throw new Error("Usuário não autenticado");
-      }
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) throw new Error("Usuário não autenticado");
 
       const { data: profile } = await supabase
         .from("profiles")
         .select("company_id")
-        .eq("id", session.session.user.id)
+        .eq("id", session.user.id)
         .single();
 
-      if (!profile?.company_id) {
-        throw new Error("Perfil do usuário não encontrado");
-      }
+      if (!profile?.company_id) throw new Error("Perfil não encontrado");
 
-      const taskData = {
-        title: data.title,
-        description: data.description,
-        assigned_to: data.assignment_type === "individual" ? data.assigned_to : session.session.user.id,
-        assignment_type: data.assignment_type,
-        company_id: profile.company_id,
-        created_by: session.session.user.id,
-        lead_id: data.lead_id || null,
-        due_date: data.due_date || null,
-        status: 'aberta',
-      };
+      const finalAssignedTo = assignmentType === "individual" ? assignedTo : session.user.id;
+
+      if (assignmentType === "individual" && !assignedTo) {
+        throw new Error("Selecione um vendedor");
+      }
 
       const { data: newTask, error } = await supabase
         .from("tasks")
-        .insert(taskData)
+        .insert({
+          title: title.trim(),
+          description: description.trim() || null,
+          assigned_to: finalAssignedTo,
+          assignment_type: assignmentType,
+          company_id: profile.company_id,
+          created_by: session.user.id,
+          due_date: dueDate || null,
+          status: "aberta",
+        })
         .select()
         .single();
 
-      if (error) {
-        console.error("Erro ao criar tarefa:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // If assignment_type is "todos", create task_assignments for all active users
-      if (data.assignment_type === "todos") {
+      // Create task_assignments
+      if (assignmentType === "todos") {
         const { data: users } = await supabase
           .from("profiles")
           .select("id")
@@ -154,187 +129,126 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
           .eq("active", true);
 
         if (users && users.length > 0) {
-          const assignments = users.map((user) => ({
-            task_id: newTask.id,
-            user_id: user.id,
-            company_id: profile.company_id,
-            status: "pendente",
-          }));
-
-          const { error: assignError } = await supabase
-            .from("task_assignments")
-            .insert(assignments);
-
-          if (assignError) throw assignError;
-
-          // Update total_assigned count
+          await supabase.from("task_assignments").insert(
+            users.map((u) => ({
+              task_id: newTask.id,
+              user_id: u.id,
+              company_id: profile.company_id,
+              status: "pendente",
+            }))
+          );
           await supabase
             .from("tasks")
             .update({ total_assigned: users.length })
             .eq("id", newTask.id);
         }
-      } else {
-        // For individual assignment, create a single task_assignment
-        await supabase
-          .from("task_assignments")
-          .insert({
-            task_id: newTask.id,
-            user_id: data.assigned_to,
-            company_id: profile.company_id,
-            status: "pendente",
-          });
       }
-
-      // Add note to lead if linked
-      if (data.lead_id) {
-        const assignedUser = companyUsers?.find(u => u.id === data.assigned_to);
-        const noteContent = data.assignment_type === "todos"
-          ? `Tarefa criada: ${data.title} - Atribuída para TODOS os vendedores - Prazo: ${data.due_date ? new Date(data.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}`
-          : `Tarefa criada: ${data.title} - Atribuída para ${assignedUser?.name || "vendedor"} - Prazo: ${data.due_date ? new Date(data.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}`;
-
-        await supabase.from("lead_observations").insert({
-          lead_id: data.lead_id,
-          user_id: session.session?.user.id,
-          content: noteContent,
-          note_type: "Tarefa criada",
-        });
-      }
+      // Individual assignment is handled by the trigger
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["lead-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-task-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["created-tasks-progress"] });
       toast({ title: "Tarefa criada com sucesso!" });
       onOpenChange(false);
-      reset();
     },
     onError: (error: any) => {
-      toast({
-        title: "Erro ao criar tarefa",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao criar tarefa", description: error.message, variant: "destructive" });
     },
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async () => {
       const { error } = await supabase
         .from("tasks")
-        .update(data)
+        .update({
+          title: title.trim(),
+          description: description.trim() || null,
+          due_date: dueDate || null,
+        })
         .eq("id", task.id);
-
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["lead-tasks"] });
-      toast({ title: "Tarefa atualizada com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["pending-task-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["created-tasks-progress"] });
+      toast({ title: "Tarefa atualizada!" });
       onOpenChange(false);
-      reset();
     },
     onError: (error: any) => {
-      toast({
-        title: "Erro ao atualizar tarefa",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
     },
   });
 
-  useEffect(() => {
-    if (task) {
-      setValue("title", task.title);
-      setValue("description", task.description || "");
-      setValue("assigned_to", task.assigned_to || "");
-      setValue("assignment_type", task.assignment_type || "individual");
-      setValue("lead_id", task.lead_id || "");
-      setValue("due_date", task.due_date ? task.due_date.split("T")[0] : "");
-    } else {
-      reset();
-      if (defaultLeadId) {
-        setValue("lead_id", defaultLeadId);
-      }
-      if (isVendedor && currentUserId) {
-        setValue("assigned_to", currentUserId);
-        setValue("assignment_type", "individual");
-      }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      toast({ title: "Título é obrigatório", variant: "destructive" });
+      return;
     }
-  }, [task, setValue, reset, isVendedor, currentUserId, defaultLeadId]);
-
-  const onSubmit = (data: any) => {
-    const finalData = isVendedor && !task
-      ? { ...data, assigned_to: currentUserId, assignment_type: "individual" }
-      : data;
-
-    const cleanData = {
-      ...finalData,
-      lead_id: finalData.lead_id || null,
-      due_date: finalData.due_date || null,
-      assigned_to: finalData.assigned_to || currentUserId,
-    };
-
     if (task) {
-      const updateData: any = {
-        title: cleanData.title,
-        description: cleanData.description || null,
-        due_date: cleanData.due_date,
-        lead_id: cleanData.lead_id,
-      };
-      if (cleanData.assigned_to) {
-        updateData.assigned_to = cleanData.assigned_to;
-      }
-      updateTaskMutation.mutate(updateData);
+      updateTaskMutation.mutate();
     } else {
-      createTaskMutation.mutate(cleanData);
+      createTaskMutation.mutate();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {task ? "Editar Tarefa" : "Nova Tarefa"}
-          </DialogTitle>
+          <DialogTitle>{task ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Sugestões pré-cadastradas */}
+          {!task && (
+            <div className="space-y-2">
+              <Label>Sugestões rápidas</Label>
+              <div className="flex flex-wrap gap-2">
+                {TASK_SUGGESTIONS.map((suggestion) => (
+                  <Badge
+                    key={suggestion}
+                    variant={title === suggestion ? "default" : "outline"}
+                    className="cursor-pointer hover:bg-primary/20 transition-colors"
+                    onClick={() => setTitle(suggestion)}
+                  >
+                    {suggestion}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="title">Título *</Label>
             <Input
               id="title"
-              {...register("title")}
-              placeholder="Ex: Enviar proposta comercial"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Digite o título da tarefa..."
             />
-            {errors.title && (
-              <p className="text-sm text-red-500">{errors.title.message as string}</p>
-            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição (opcional)</Label>
             <Textarea
               id="description"
-              {...register("description")}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalhes da tarefa..."
-              rows={3}
+              rows={2}
             />
-            {errors.description && (
-              <p className="text-sm text-red-500">{errors.description.message as string}</p>
-            )}
           </div>
 
-          {/* Only show assignment options for gestores */}
-          {isGestor && (
+          {!task && (
             <>
               <div className="space-y-2">
-                <Label>Tipo de Atribuição *</Label>
-                <Select
-                  value={watch("assignment_type")}
-                  onValueChange={(value) => setValue("assignment_type", value)}
-                >
+                <Label>Atribuir para *</Label>
+                <Select value={assignmentType} onValueChange={setAssignmentType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Vendedor específico</SelectItem>
@@ -343,15 +257,12 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
                 </Select>
               </div>
 
-              {watch("assignment_type") === "individual" && (
+              {assignmentType === "individual" && (
                 <div className="space-y-2">
-                  <Label htmlFor="assigned_to">Atribuir para *</Label>
-                  <Select
-                    value={watch("assigned_to")}
-                    onValueChange={(value) => setValue("assigned_to", value)}
-                  >
+                  <Label>Vendedor *</Label>
+                  <Select value={assignedTo} onValueChange={setAssignedTo}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um usuário" />
+                      <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
                       {companyUsers?.map((user) => (
@@ -366,53 +277,22 @@ export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDial
             </>
           )}
 
-          {/* For vendedores, show info that task will be self-assigned */}
-          {isVendedor && !task && (
-            <div className="p-3 rounded-lg bg-muted">
-              <p className="text-sm text-muted-foreground">
-                Esta tarefa será atribuída para você
-              </p>
-            </div>
-          )}
-
           <div className="space-y-2">
-            <Label htmlFor="due_date">Prazo</Label>
+            <Label htmlFor="due_date">Prazo (opcional)</Label>
             <Input
               id="due_date"
               type="date"
-              {...register("due_date")}
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="lead_id">Lead Vinculado (opcional)</Label>
-            <Select
-              value={watch("lead_id") || undefined}
-              onValueChange={(value) => setValue("lead_id", value || "")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Nenhum lead vinculado" />
-              </SelectTrigger>
-              <SelectContent>
-                {leads?.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    {lead.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">
-              {task ? "Salvar Alterações" : "Criar Tarefa"}
+            <Button type="submit" disabled={createTaskMutation.isPending || updateTaskMutation.isPending}>
+              {task ? "Salvar" : "Criar Tarefa"}
             </Button>
           </div>
         </form>

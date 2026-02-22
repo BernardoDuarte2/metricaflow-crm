@@ -26,9 +26,7 @@ export const authSchema = z.object({
 export const taskSchema = z.object({
   title: z.string().trim().min(1, "Título é obrigatório").max(100, "Título deve ter no máximo 100 caracteres").transform(sanitizeString),
   description: z.string().trim().max(500, "Descrição deve ter no máximo 500 caracteres").transform(sanitizeString).optional(),
-  lead_id: z.string().optional().or(z.literal("")),
   assigned_to: z.string().optional().or(z.literal("")),
-  status: z.enum(["aberta", "encerrada", "pendente", "cancelada"]).optional().or(z.string()),
   due_date: z.string().optional().or(z.literal(""))
 });
 
