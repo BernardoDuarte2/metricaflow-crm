@@ -27,9 +27,10 @@ interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: any;
+  defaultLeadId?: string;
 }
 
-export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
+export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
@@ -250,29 +251,39 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
       setValue("due_date", task.due_date ? task.due_date.split("T")[0] : "");
     } else {
       reset();
-      // For vendedores, auto-set assignment to themselves
+      if (defaultLeadId) {
+        setValue("lead_id", defaultLeadId);
+      }
       if (isVendedor && currentUserId) {
         setValue("assigned_to", currentUserId);
         setValue("assignment_type", "individual");
       }
     }
-  }, [task, setValue, reset, isVendedor, currentUserId]);
+  }, [task, setValue, reset, isVendedor, currentUserId, defaultLeadId]);
 
   const onSubmit = (data: any) => {
-    // For vendedores, force self-assignment
     const finalData = isVendedor && !task
       ? { ...data, assigned_to: currentUserId, assignment_type: "individual" }
       : data;
 
-    // Clean up data before submitting
     const cleanData = {
       ...finalData,
       lead_id: finalData.lead_id || null,
       due_date: finalData.due_date || null,
+      assigned_to: finalData.assigned_to || null,
     };
 
     if (task) {
-      updateTaskMutation.mutate(cleanData);
+      const updateData: any = {
+        title: cleanData.title,
+        description: cleanData.description || null,
+        due_date: cleanData.due_date,
+        lead_id: cleanData.lead_id,
+      };
+      if (cleanData.assigned_to) {
+        updateData.assigned_to = cleanData.assigned_to;
+      }
+      updateTaskMutation.mutate(updateData);
     } else {
       createTaskMutation.mutate(cleanData);
     }
