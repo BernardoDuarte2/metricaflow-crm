@@ -187,7 +187,7 @@ const Prospecting = () => {
         className="space-y-2"
       >
         <div className="flex items-start sm:items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-accent shrink-0">
+          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-[hsl(210_85%_65%)] shrink-0">
             <Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
           </div>
           <div className="min-w-0">
@@ -237,7 +237,7 @@ const Prospecting = () => {
                 type="submit"
                 size="lg"
                 disabled={isProspecting}
-                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground h-11 sm:h-12 px-4 sm:px-8 w-full sm:w-auto"
+                className="bg-gradient-to-r from-primary to-[hsl(210_85%_65%)] hover:opacity-90 text-white h-11 sm:h-12 px-4 sm:px-8 w-full sm:w-auto shadow-lg shadow-primary/20"
               >
                 {isProspecting ? (
                   <>
