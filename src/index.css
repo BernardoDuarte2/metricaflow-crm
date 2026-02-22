@@ -34,8 +34,8 @@ All colors MUST be HSL.
     --muted: 220 30% 94%;
     --muted-foreground: 221 20% 40%;
 
-    /* Lilac Accent */
-    --accent: 270 70% 68%;
+    /* Light Blue Accent */
+    --accent: 210 85% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 75% 55%;
@@ -65,7 +65,7 @@ All colors MUST be HSL.
     --cockpit-foreground: 221 50% 12%;
     --cockpit-glow: 229 92% 62%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(229 92% 62%), hsl(270 70% 68%));
+    --gradient-primary: linear-gradient(135deg, hsl(229 92% 62%), hsl(210 85% 55%));
     --gradient-success: linear-gradient(135deg, hsl(142 70% 50%), hsl(158 100% 65%));
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -80,15 +80,15 @@ All colors MUST be HSL.
     --sidebar-border: 220 30% 92%;
     --sidebar-ring: 229 92% 62%;
 
-    /* Chart colors - Futuristic aligned */
+    /* Chart colors - All blue tones for professional look */
     --chart-1: 229 92% 62%;
-    --chart-2: 270 70% 68%;
-    --chart-3: 142 70% 45%;
-    --chart-4: 38 90% 50%;
+    --chart-2: 210 85% 55%;
+    --chart-3: 200 80% 50%;
+    --chart-4: 215 75% 70%;
     --chart-5: 217 85% 68%;
-    --chart-6: 221 20% 40%;
-    --chart-7: 229 70% 75%;
-    --chart-8: 270 50% 75%;
+    --chart-6: 225 60% 45%;
+    --chart-7: 205 70% 75%;
+    --chart-8: 220 65% 80%;
   }
 
   .dark {
@@ -110,7 +110,7 @@ All colors MUST be HSL.
     --muted: 221 35% 16%;
     --muted-foreground: 220 20% 65%;
 
-    --accent: 270 70% 68%;
+    --accent: 210 85% 60%;
     --accent-foreground: 220 50% 10%;
 
     --destructive: 0 72% 55%;
@@ -147,15 +147,15 @@ All colors MUST be HSL.
     --sidebar-border: 221 35% 15%;
     --sidebar-ring: 229 92% 62%;
 
-    /* Chart colors dark */
+    /* Chart colors dark - All blue tones */
     --chart-1: 229 92% 65%;
-    --chart-2: 270 70% 72%;
-    --chart-3: 142 75% 50%;
-    --chart-4: 38 95% 55%;
+    --chart-2: 210 85% 60%;
+    --chart-3: 200 80% 55%;
+    --chart-4: 215 75% 72%;
     --chart-5: 217 80% 72%;
-    --chart-6: 220 20% 50%;
-    --chart-7: 229 75% 78%;
-    --chart-8: 270 55% 78%;
+    --chart-6: 225 60% 55%;
+    --chart-7: 205 70% 78%;
+    --chart-8: 220 65% 82%;
   }
 }
 

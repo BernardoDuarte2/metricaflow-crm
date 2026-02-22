@@ -53,7 +53,7 @@ export const TeamPerformancePanel = ({
       <div className="rounded-xl bg-white dark:bg-[hsl(0_0%_8%)] border border-[hsl(0_0%_90%)] dark:border-[hsl(0_0%_18%)] overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_15%)]">
           <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-[hsl(330_100%_62%)]" />
+            <Trophy className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-[hsl(0_0%_8%)] dark:text-[hsl(0_0%_95%)]">
               {title}
             </h3>
@@ -71,8 +71,8 @@ export const TeamPerformancePanel = ({
       {/* Header */}
       <div className="px-5 py-4 border-b border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_15%)] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-[hsl(330_100%_62%/0.1)]">
-            <Trophy className="h-4 w-4 text-[hsl(330_100%_62%)]" />
+          <div className="p-1.5 rounded-md bg-primary/10">
+            <Trophy className="h-4 w-4 text-primary" />
           </div>
           <h3 className="text-sm font-semibold text-[hsl(0_0%_8%)] dark:text-[hsl(0_0%_95%)] tracking-wide">
             {title}
@@ -120,7 +120,7 @@ export const TeamPerformancePanel = ({
                 <div className="col-span-4 flex items-center gap-3">
                   <Avatar className="h-9 w-9 border-2 border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_20%)]">
                     <AvatarImage src={member.avatar} alt={member.name} />
-                    <AvatarFallback className="bg-[hsl(330_100%_62%/0.1)] text-[hsl(330_100%_62%)] text-xs font-semibold">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                       {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
@@ -159,7 +159,7 @@ export const TeamPerformancePanel = ({
                     </span>
                     <div className="w-full h-1.5 bg-[hsl(0_0%_92%)] dark:bg-[hsl(0_0%_15%)] rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-[hsl(330_100%_62%)] to-[hsl(330_80%_50%)] rounded-full transition-all duration-700"
+                        className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700"
                         style={{ width: `${progressWidth}%` }}
                       />
                     </div>
