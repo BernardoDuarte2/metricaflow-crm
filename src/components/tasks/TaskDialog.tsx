@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Plus, X } from "lucide-react";
 
-const TASK_SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   "Verificar leads em aberto",
   "Atualizar status dos leads",
   "Conferir cartão ponto",
@@ -39,6 +40,8 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
   const [assignmentType, setAssignmentType] = useState("individual");
   const [assignedTo, setAssignedTo] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [newSuggestion, setNewSuggestion] = useState("");
+  const [showAddSuggestion, setShowAddSuggestion] = useState(false);
 
   const { data: companyUsers } = useQuery({
     queryKey: ["company-users"],
@@ -62,6 +65,58 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
     enabled: open,
   });
 
+  const { data: customSuggestions } = useQuery({
+    queryKey: ["task-suggestions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_suggestions")
+        .select("id, title")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
+  const addSuggestionMutation = useMutation({
+    mutationFn: async (suggestionTitle: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", session.user.id)
+        .single();
+      if (!profile) throw new Error("Perfil não encontrado");
+
+      const { error } = await supabase.from("task_suggestions").insert({
+        title: suggestionTitle.trim(),
+        company_id: profile.company_id,
+        created_by: session.user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-suggestions"] });
+      setNewSuggestion("");
+      setShowAddSuggestion(false);
+      toast({ title: "Sugestão adicionada!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao adicionar sugestão", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteSuggestionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("task_suggestions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-suggestions"] });
+    },
+  });
+
   useEffect(() => {
     if (task) {
       setTitle(task.title || "");
@@ -76,6 +131,8 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
       setAssignedTo("");
       setDueDate("");
     }
+    setShowAddSuggestion(false);
+    setNewSuggestion("");
   }, [task, open]);
 
   const createTaskMutation = useMutation({
@@ -186,6 +243,16 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
     }
   };
 
+  const handleAddSuggestion = () => {
+    if (!newSuggestion.trim()) return;
+    addSuggestionMutation.mutate(newSuggestion);
+  };
+
+  const allSuggestions = [
+    ...DEFAULT_SUGGESTIONS,
+    ...(customSuggestions?.map((s) => s.title) || []),
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -201,7 +268,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
             <div className="space-y-2">
               <Label>Sugestões rápidas</Label>
               <div className="flex flex-wrap gap-2">
-                {TASK_SUGGESTIONS.map((suggestion) => (
+                {DEFAULT_SUGGESTIONS.map((suggestion) => (
                   <Badge
                     key={suggestion}
                     variant={title === suggestion ? "default" : "outline"}
@@ -211,7 +278,66 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
                     {suggestion}
                   </Badge>
                 ))}
+                {customSuggestions?.map((suggestion) => (
+                  <Badge
+                    key={suggestion.id}
+                    variant={title === suggestion.title ? "default" : "secondary"}
+                    className="cursor-pointer hover:bg-primary/20 transition-colors group gap-1"
+                    onClick={() => setTitle(suggestion.title)}
+                  >
+                    {suggestion.title}
+                    <X
+                      className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSuggestionMutation.mutate(suggestion.id);
+                      }}
+                    />
+                  </Badge>
+                ))}
+                {!showAddSuggestion && (
+                  <Badge
+                    variant="outline"
+                    className="cursor-pointer hover:bg-primary/20 transition-colors border-dashed"
+                    onClick={() => setShowAddSuggestion(true)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Adicionar
+                  </Badge>
+                )}
               </div>
+              {showAddSuggestion && (
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    value={newSuggestion}
+                    onChange={(e) => setNewSuggestion(e.target.value)}
+                    placeholder="Nova sugestão..."
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSuggestion();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleAddSuggestion}
+                    disabled={addSuggestionMutation.isPending || !newSuggestion.trim()}
+                  >
+                    Salvar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setShowAddSuggestion(false); setNewSuggestion(""); }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
