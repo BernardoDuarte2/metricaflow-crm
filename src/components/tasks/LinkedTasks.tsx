@@ -1,19 +1,13 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { TaskCard } from "./TaskCard";
-import { TaskDialog } from "./TaskDialog";
 
 interface LinkedTasksProps {
   leadId: string;
 }
 
 export function LinkedTasks({ leadId }: LinkedTasksProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   const { data: userRole } = useQuery({
     queryKey: ["user-role"],
     queryFn: async () => {
@@ -41,7 +35,6 @@ export function LinkedTasks({ leadId }: LinkedTasksProps) {
 
       if (error) throw error;
 
-      // For vendedores, filter by their assignments
       if (userRole === "vendedor" && currentUserId) {
         const { data: myAssignments } = await supabase
           .from("task_assignments")
@@ -59,45 +52,32 @@ export function LinkedTasks({ leadId }: LinkedTasksProps) {
   const isGestor = userRole === "gestor" || userRole === "gestor_owner";
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Tarefas Vinculadas</CardTitle>
-            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Tarefa
-            </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Tarefas Vinculadas</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-center text-muted-foreground py-8">
+            Carregando tarefas...
+          </p>
+        ) : tasks && tasks.length > 0 ? (
+          <div className="space-y-3">
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={() => {}}
+                isGestor={isGestor}
+              />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-center text-muted-foreground py-8">
-              Carregando tarefas...
-            </p>
-          ) : tasks && tasks.length > 0 ? (
-            <div className="space-y-3">
-              {tasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onEdit={() => {}}
-                  isGestor={isGestor}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
-              Nenhuma tarefa vinculada a este lead
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <TaskDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-      />
-    </>
+        ) : (
+          <p className="text-center text-muted-foreground py-8">
+            Nenhuma tarefa vinculada a este lead
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
