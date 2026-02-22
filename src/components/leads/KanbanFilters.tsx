@@ -34,8 +34,10 @@ export const KanbanFilters = ({
   onViewModeChange,
 }: KanbanFiltersProps) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const currentDate = new Date(selectedMonth + '-01');
-  const currentYear = currentDate.getFullYear();
+  const [currentYearStr, currentMonthStr] = selectedMonth.split('-');
+  const currentYear = parseInt(currentYearStr, 10);
+  const currentMonth = parseInt(currentMonthStr, 10) - 1;
+  const currentDate = new Date(currentYear, currentMonth, 1);
   
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
