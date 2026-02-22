@@ -55,6 +55,19 @@ Deno.serve(async (req) => {
       return query;
     };
 
+    // Query builder for won/revenue metrics - uses updated_at (closing date)
+    const buildWonQuery = (baseQuery: any) => {
+      let query = baseQuery
+        .gte('updated_at', start_date)
+        .lte('updated_at', end_date);
+      
+      if (user_role === 'vendedor' && user_id) {
+        query = query.eq('assigned_to', user_id);
+      }
+      
+      return query;
+    };
+
     // Calculate dates for inactive leads
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -102,16 +115,16 @@ Deno.serve(async (req) => {
       monthlyRevenueBySellerResult,
     ] = await Promise.all([
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true })),
-      buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', WON_STATUSES)),
+      buildWonQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', ACTIVE_PIPELINE_STATUSES)),
       buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`)),
-      buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).in('leads.status', WON_STATUSES)),
+      buildWonQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at, updated_at)`).in('leads.status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('status')),
       buildQuery(supabaseClient.from('leads').select('source')),
       buildQuery(supabaseClient.from('leads').select('status, updated_at')),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('qualificado', true)),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', OPPORTUNITY_STATUSES)),
-      buildQuery(supabaseClient.from('leads').select('created_at, updated_at').in('status', WON_STATUSES)),
+      buildWonQuery(supabaseClient.from('leads').select('created_at, updated_at').in('status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('motivo_perda').eq('status', 'perdido')),
       buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`).in('leads.status', ACTIVE_PIPELINE_STATUSES)),
       buildQuery(supabaseClient.from('meetings').select('*', { count: 'exact', head: true }).neq('status', 'cancelada')),
@@ -133,7 +146,7 @@ Deno.serve(async (req) => {
       // Monthly leads data for charts
       supabaseClient.from('leads').select('id, status, assigned_to, created_at').gte('created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('created_at', end_date),
       // Monthly revenue by seller (won leads with values)
-      supabaseClient.from('lead_values').select('amount, lead_id, leads!inner(id, assigned_to, status, created_at)').in('leads.status', WON_STATUSES).gte('leads.created_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('leads.created_at', end_date),
+      supabaseClient.from('lead_values').select('amount, lead_id, leads!inner(id, assigned_to, status, created_at, updated_at)').in('leads.status', WON_STATUSES).gte('leads.updated_at', new Date(new Date(start_date).getFullYear(), 0, 1).toISOString()).lte('leads.updated_at', end_date),
     ]);
 
     // Calculate metrics
@@ -451,7 +464,7 @@ Deno.serve(async (req) => {
     const sellerNames = new Set<string>();
     
     monthlyRevenueData.forEach((item: any) => {
-      const leadMonth = new Date(item.leads.created_at).getMonth();
+      const leadMonth = new Date(item.leads.updated_at).getMonth();
       const monthName = monthNames[leadMonth];
       const sellerId = item.leads.assigned_to;
       
