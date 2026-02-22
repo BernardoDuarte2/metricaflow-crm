@@ -1,121 +1,47 @@
 
 
-# Correcao do Sistema de Tarefas (sem quebrar nada)
+# Correcao: "null value in column assigned_to violates not-null constraint"
 
-## Bugs identificados
+## Problema
+A coluna `assigned_to` na tabela `tasks` tem constraint `NOT NULL`. Quando o tipo de atribuicao e "Todos os vendedores", o codigo define `assigned_to: null` (linha 128 do TaskDialog), causando o erro.
 
-### Bug 1 (Critico - erro da screenshot)
-**Arquivo:** `LinkedTasks.tsx` linha 100
-**Problema:** Passa `task={{ lead_id: leadId }}` para o TaskDialog. Como `task` e truthy, o dialog entra em modo "editar", mas `task.id` e `undefined`. Ao salvar, executa `.eq("id", undefined)` causando "invalid input syntax for type uuid".
-**Correcao:** Adicionar prop `defaultLeadId` ao TaskDialog e parar de passar `task` falso.
+Este bug ja existia antes da minha correcao anterior. A correcao anterior apenas tornou o caminho mais visivel ao normalizar strings vazias para `null`.
 
-### Bug 2 (UUID vazio)
-**Arquivo:** `TaskDialog.tsx` linhas 268-272
-**Problema:** `assigned_to` nao e normalizado para `null` quando vazio. String vazia `""` nao e UUID valido.
-**Correcao:** Adicionar `assigned_to: finalData.assigned_to || null` na limpeza.
+## Causa Raiz
+- O `createTaskMutation` (linha 128) faz: `assigned_to: data.assignment_type === "individual" ? data.assigned_to : null`
+- Quando "Todos os vendedores" e selecionado, `assigned_to` vira `null`
+- Mas a coluna `assigned_to` no banco e `NOT NULL`
 
-### Bug 3 (Update envia campos extras)
-**Arquivo:** `TaskDialog.tsx` linhas 274-275
-**Problema:** O update envia todos os campos do formulario (incluindo `assignment_type`, `assigned_to` vazio) direto ao Supabase, podendo causar conflitos.
-**Correcao:** Filtrar apenas campos editaveis no update.
+## Solucao
+Quando `assignment_type === "todos"`, usar o ID do usuario criador como `assigned_to` (ja que a tarefa pertence a todos, o criador e o "dono" principal). Isso respeita a constraint NOT NULL sem mudar o schema.
 
----
+### Arquivo: `src/components/tasks/TaskDialog.tsx`
 
-## Alteracoes (2 arquivos, mudancas cirurgicas)
-
-### Arquivo 1: `src/components/tasks/TaskDialog.tsx`
-
-**a) Interface (linhas 26-30)** - Adicionar prop opcional:
+**Linha 128** - Mudar de:
 ```typescript
-interface TaskDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  task?: any;
-  defaultLeadId?: string;  // NOVO
-}
+assigned_to: data.assignment_type === "individual" ? data.assigned_to : null,
 ```
 
-**b) Destructuring (linha 32)** - Receber nova prop:
+**Para:**
 ```typescript
-export function TaskDialog({ open, onOpenChange, task, defaultLeadId }: TaskDialogProps)
+assigned_to: data.assignment_type === "individual" ? data.assigned_to : session.session.user.id,
 ```
 
-**c) useEffect (linhas 243-259)** - Usar defaultLeadId para criacao:
+**Linha 273 (onSubmit)** - Garantir que `assigned_to` nunca e null na criacao:
 ```typescript
-useEffect(() => {
-  if (task) {
-    setValue("title", task.title);
-    setValue("description", task.description || "");
-    setValue("assigned_to", task.assigned_to || "");
-    setValue("assignment_type", task.assignment_type || "individual");
-    setValue("lead_id", task.lead_id || "");
-    setValue("due_date", task.due_date ? task.due_date.split("T")[0] : "");
-  } else {
-    reset();
-    if (defaultLeadId) {
-      setValue("lead_id", defaultLeadId);
-    }
-    if (isVendedor && currentUserId) {
-      setValue("assigned_to", currentUserId);
-      setValue("assignment_type", "individual");
-    }
-  }
-}, [task, setValue, reset, isVendedor, currentUserId, defaultLeadId]);
-```
-
-**d) onSubmit (linhas 261-278)** - Normalizar assigned_to e filtrar update:
-```typescript
-const onSubmit = (data: any) => {
-  const finalData = isVendedor && !task
-    ? { ...data, assigned_to: currentUserId, assignment_type: "individual" }
-    : data;
-
-  const cleanData = {
-    ...finalData,
-    lead_id: finalData.lead_id || null,
-    due_date: finalData.due_date || null,
-    assigned_to: finalData.assigned_to || null,
-  };
-
-  if (task) {
-    const updateData: any = {
-      title: cleanData.title,
-      description: cleanData.description || null,
-      due_date: cleanData.due_date,
-      lead_id: cleanData.lead_id,
-    };
-    if (cleanData.assigned_to) {
-      updateData.assigned_to = cleanData.assigned_to;
-    }
-    updateTaskMutation.mutate(updateData);
-  } else {
-    createTaskMutation.mutate(cleanData);
-  }
+const cleanData = {
+  ...finalData,
+  lead_id: finalData.lead_id || null,
+  due_date: finalData.due_date || null,
+  assigned_to: finalData.assigned_to || currentUserId,
 };
 ```
 
-### Arquivo 2: `src/components/tasks/LinkedTasks.tsx`
+Isso garante que `assigned_to` sempre tem um UUID valido, usando o usuario atual como fallback.
 
-**Linha 97-101** - Usar defaultLeadId em vez de task falso:
-```tsx
-<TaskDialog
-  open={isDialogOpen}
-  onOpenChange={setIsDialogOpen}
-  defaultLeadId={leadId}
-/>
-```
-
----
-
-## O que NAO muda (garantia de nao quebrar)
-
-- **`Tasks.tsx`** (linha 164-168): Continua passando `task={selectedTask}` normalmente. A nova prop `defaultLeadId` e opcional e nao afeta esse uso.
-- **`TaskCard.tsx`**: Nenhuma alteracao.
-- **`TaskKanban.tsx`**: Nenhuma alteracao.
-- **`TaskLeadNotesDrawer.tsx`**: Cria tarefas direto no Supabase, sem usar TaskDialog. Nao e afetado.
-- **`LeadDetail.tsx`**: Cria tarefas direto no Supabase. Nao e afetado.
-- **Criacao de tarefas**: O `createTaskMutation` nao muda, apenas recebe `assigned_to: null` em vez de `""`.
-- **Edicao de tarefas**: Agora envia apenas campos relevantes, evitando conflitos.
-
-## Resumo: 2 arquivos, 4 pontos de mudanca, zero impacto nos fluxos existentes.
+## O que nao muda
+- Fluxo de edicao de tarefas (update) - nao e afetado
+- LinkedTasks - correcao anterior continua funcionando
+- TaskLeadNotesDrawer - nao usa TaskDialog
+- Comportamento do tipo "Todos os vendedores" - continua criando `task_assignments` para todos
 
