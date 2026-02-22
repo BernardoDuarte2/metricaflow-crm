@@ -34,7 +34,7 @@ import {
   CockpitLayout,
   AlertPanel,
   VelocityMeter,
-  TeamProgressPanel,
+  
   TrendChart,
   LossWaterfallChart,
   SourceConversionChart,
@@ -563,14 +563,6 @@ const Dashboard = () => {
             />
           )}
 
-          {/* 9. TEAM PROGRESS */}
-          {companyId && profile && (
-            <TeamProgressPanel
-              companyId={companyId}
-              currentUserId={profile.id}
-              isManager={isManager}
-            />
-          )}
 
           {/* 10. CHARTS GRID - Revenue Trend + Source Conversion */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
