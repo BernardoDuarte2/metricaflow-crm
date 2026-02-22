@@ -1,64 +1,64 @@
 
+# Verificacao: Fechar lead no Kanban e nas notas computa no dashboard
 
-# Corrigir: Vendas fechadas de leads antigos nao aparecem no dashboard
+## Resultado da analise
 
-## Problema
-O dashboard usa `created_at` para filtrar **todos** os leads. Quando um lead foi criado em um mes/ano anterior mas fechado agora, ele nao aparece nas metricas do periodo atual porque o `created_at` esta fora do intervalo.
+### 1. Fechar pelo Kanban (ClosedLeadDialog) -- Funciona parcialmente
 
-## Causa raiz
-A funcao `buildQuery` aplica `.gte('created_at', start_date).lte('created_at', end_date)` em todas as queries sem distincao. Queries de leads ganhos/receita precisam usar `updated_at` (data do fechamento).
+- O status e atualizado para `"fechado"` e o dashboard reconhece esse status corretamente (`WON_STATUSES = ['ganho', 'fechado']`).
+- Os valores do negocio (`lead_values`) sao exigidos antes de confirmar o fechamento, entao eles existem.
+- O `buildWonQuery` filtra por `updated_at`, entao a venda aparece no periodo correto.
+- **Problema encontrado**: O trigger de banco de dados `update_kpi_on_sale` so dispara quando o status muda para `'ganho'`, mas o Kanban seta `'fechado'`. Isso significa que a tabela `seller_kpi_monthly` (usada no painel de metas/KPIs) **nao e atualizada** quando se fecha pelo Kanban.
 
-## Solucao
-Criar uma segunda funcao `buildWonQuery` que filtra por `updated_at` em vez de `created_at`, e usar essa funcao apenas nas queries relacionadas a vendas concretizadas. As demais queries continuam inalteradas.
+### 2. Fechar pela pagina de detalhe do lead (LeadDetail) -- Funciona parcialmente
 
-## Alteracoes no arquivo `supabase/functions/get-dashboard-stats/index.ts`
+- O usuario pode manualmente alterar o status para qualquer valor, incluindo `'fechado'` ou `'ganho'`.
+- Se colocar como `'ganho'`, o trigger de KPI dispara. Se colocar como `'fechado'`, nao dispara (mesmo problema).
+- Os graficos do dashboard funcionam para ambos os status.
 
-### 1. Nova funcao auxiliar
-Adicionar `buildWonQuery` ao lado de `buildQuery`:
+### 3. Fechar pelas notas (TaskLeadNotesDrawer) -- NAO fecha o lead
+
+- O drawer de notas apenas adiciona uma observacao e marca a tarefa como concluida.
+- **Ele NAO altera o status do lead**. Entao, adicionar uma nota nunca vai fazer o lead aparecer como "fechado" no dashboard.
+
+## Correcoes necessarias
+
+### Correcao 1: Trigger `update_kpi_on_sale` deve aceitar `'fechado'`
+
+Atualizar o trigger no banco de dados para tambem disparar quando o status mudar para `'fechado'`:
 
 ```text
-const buildWonQuery = (baseQuery) => {
-  let query = baseQuery
-    .gte('updated_at', start_date)
-    .lte('updated_at', end_date);
-  if (user_role === 'vendedor' && user_id) {
-    query = query.eq('assigned_to', user_id);
-  }
-  return query;
-};
+ANTES:
+  IF NEW.status = 'ganho' AND (OLD.status IS NULL OR OLD.status != 'ganho') THEN
+
+DEPOIS:
+  IF (NEW.status = 'ganho' OR NEW.status = 'fechado') 
+     AND (OLD.status IS NULL OR (OLD.status != 'ganho' AND OLD.status != 'fechado')) THEN
 ```
 
-### 2. Queries que mudam para `buildWonQuery`
-Apenas as que medem vendas concretizadas no periodo:
+Isso garante que os KPIs mensais do vendedor sejam atualizados independente de o status final ser `'ganho'` ou `'fechado'`.
 
-| Query | Motivo |
+### Correcao 2: Trigger `log_gamification_event` deve aceitar `'fechado'`
+
+O mesmo problema existe na gamificacao. O trigger `log_gamification_event` so da pontos de `sale_closed` quando o status muda para `'ganho'`:
+
+```text
+ANTES:
+  IF NEW.status = 'ganho' AND OLD.status != 'ganho' THEN
+
+DEPOIS:
+  IF (NEW.status IN ('ganho', 'fechado')) 
+     AND (OLD.status NOT IN ('ganho', 'fechado')) THEN
+```
+
+### Sem alteracao no frontend
+
+O `TaskLeadNotesDrawer` **nao precisa** fechar o lead -- esse nao e o proposito dele. Para fechar um lead, o caminho correto e pelo Kanban (drag & drop) ou pela edicao de status na pagina de detalhe.
+
+## Resumo das alteracoes
+
+| Arquivo/Local | Alteracao |
 |---|---|
-| `wonLeadsResult` (linha 105) | Conta leads ganhos no periodo |
-| `wonLeadValuesResult` (linha 108) | Soma valores de vendas do periodo |
-| `closedLeadsWithTimeResult` (linha 114) | Calcula tempo medio de fechamento |
-
-### 3. Queries de receita mensal por vendedor (linhas 134-136)
-- `monthlyLeadsDataResult`: continua com `created_at` (mostra leads criados por mes)
-- `monthlyRevenueBySellerResult`: muda para usar `updated_at` nos leads, para capturar receita pelo mes de fechamento
-
-### 4. Ajuste no processamento mensal (linha 454)
-No loop de `monthlyRevenueData`, usar `updated_at` em vez de `created_at` para determinar o mes da receita.
-
-### 5. Queries que NAO mudam (continuam com `buildQuery` / `created_at`)
-Todas as demais, incluindo:
-- `totalLeadsResult` - total de leads criados
-- `pendingLeadsResult` - pipeline ativo
-- `statusDataResult`, `sourceDataResult`, `funnelDataResult` - distribuicoes
-- `qualifiedLeadsResult`, `opportunitiesResult` - qualificacao
-- `lostLeadsResult` - perdas
-- `scheduledMeetingsResult`, `tasksResult`, `observationsResult` - atividades
-- `allLeadsWithAssignedResult` - performance do time
-- `previousPeriodLeadsResult`, `previousPeriodWonResult` - comparacao
-
-## Resumo
-- 1 arquivo editado: `supabase/functions/get-dashboard-stats/index.ts`
-- Adiciona `buildWonQuery` (filtro por `updated_at`)
-- Altera 3-4 queries especificas de vendas
-- Nenhuma query de pipeline/atividade e alterada
-- Nenhuma alteracao no frontend
-
+| Migration SQL (trigger `update_kpi_on_sale`) | Aceitar status `'fechado'` alem de `'ganho'` |
+| Migration SQL (trigger `log_gamification_event`) | Aceitar status `'fechado'` alem de `'ganho'` |
+| Frontend | Nenhuma alteracao necessaria |
