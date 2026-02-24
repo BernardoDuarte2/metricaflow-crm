@@ -4,6 +4,14 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
 
+// Initialize dark mode before render to prevent flash
+const savedMode = localStorage.getItem('color-mode');
+if (!savedMode || savedMode === 'dark') {
+  document.documentElement.classList.add('dark');
+} else {
+  document.documentElement.classList.remove('dark');
+}
+
 // Configuração otimizada do React Query
 const queryClient = new QueryClient({
   defaultOptions: {
