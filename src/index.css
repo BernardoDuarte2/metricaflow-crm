@@ -4,46 +4,41 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ORKA Design System - All colors in HSL */
 
 @layer base {
   :root {
-    --font-sans: 'Inter', 'Poppins', sans-serif;
+    --font-sans: 'Inter', 'Plus Jakarta Sans', sans-serif;
     
-    /* Futuristic Premium Theme - Light Mode */
-    /* Primary: Electric Blue #5D7BFF = hsl(229 92% 62%) */
-    /* Accent: Lilac #A78BFA = hsl(270 70% 68%) */
-    --background: 220 40% 98%;
-    --foreground: 221 50% 12%;
+    /* ORKA Light Mode - Clean & Professional */
+    --background: 0 0% 100%;
+    --foreground: 215 28% 17%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 221 50% 12%;
+    --card: 210 40% 98%;
+    --card-foreground: 215 28% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 221 50% 12%;
+    --popover-foreground: 215 28% 17%;
 
-    /* Electric Blue Primary */
-    --primary: 229 92% 62%;
+    /* ORKA Blue Primary #0057FF */
+    --primary: 220 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 30% 94%;
-    --secondary-foreground: 221 50% 12%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 28% 17%;
 
-    --muted: 220 30% 94%;
-    --muted-foreground: 221 20% 40%;
+    --muted: 210 40% 98%;
+    --muted-foreground: 215 16% 47%;
 
-    /* Light Blue Accent */
-    --accent: 210 85% 55%;
+    --accent: 220 100% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 30% 90%;
-    --input: 220 30% 92%;
-    --ring: 229 92% 62%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 220 100% 50%;
 
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
@@ -53,35 +48,35 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
     
-    /* Cockpit specific variables - Futuristic Aligned */
-    --cockpit-bg: 220 40% 98%;
-    --cockpit-card: 0 0% 100%;
-    --cockpit-border: 220 30% 88%;
-    --cockpit-accent: 229 92% 62%;
+    /* Cockpit variables - Light */
+    --cockpit-bg: 0 0% 100%;
+    --cockpit-card: 210 40% 98%;
+    --cockpit-border: 214 32% 91%;
+    --cockpit-accent: 220 100% 50%;
     --cockpit-success: 142 70% 45%;
     --cockpit-danger: 0 75% 55%;
     --cockpit-warning: 38 90% 50%;
-    --cockpit-muted: 221 20% 45%;
-    --cockpit-foreground: 221 50% 12%;
-    --cockpit-glow: 229 92% 62%;
+    --cockpit-muted: 215 16% 47%;
+    --cockpit-foreground: 215 28% 17%;
+    --cockpit-glow: 220 100% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(229 92% 62%), hsl(210 85% 55%));
+    --gradient-primary: linear-gradient(135deg, hsl(220 100% 50%), hsl(220 100% 30%));
     --gradient-success: linear-gradient(135deg, hsl(142 70% 50%), hsl(158 100% 65%));
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 221 50% 15%;
-    --sidebar-primary: 229 92% 62%;
+    --sidebar-foreground: 215 28% 17%;
+    --sidebar-primary: 220 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 96%;
-    --sidebar-accent-foreground: 221 50% 15%;
-    --sidebar-border: 220 30% 92%;
-    --sidebar-ring: 229 92% 62%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 215 28% 17%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 220 100% 50%;
 
-    /* Chart colors - All blue tones for professional look */
-    --chart-1: 229 92% 62%;
+    /* Chart colors - Blue tones */
+    --chart-1: 220 100% 50%;
     --chart-2: 210 85% 55%;
     --chart-3: 200 80% 50%;
     --chart-4: 215 75% 70%;
@@ -92,33 +87,34 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 221 44% 9%;
-    --foreground: 220 30% 96%;
+    /* ORKA Dark Mode - Inspired by Gene Digital */
+    --background: 220 16% 4%;
+    --foreground: 0 0% 100%;
 
-    --card: 221 42% 12%;
-    --card-foreground: 220 30% 96%;
+    --card: 220 14% 8%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 221 42% 12%;
-    --popover-foreground: 220 30% 96%;
+    --popover: 220 14% 8%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 229 92% 62%;
-    --primary-foreground: 220 50% 10%;
+    --primary: 220 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 221 35% 16%;
-    --secondary-foreground: 220 30% 90%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 215 20% 65%;
 
-    --muted: 221 35% 16%;
-    --muted-foreground: 220 20% 65%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 210 85% 60%;
-    --accent-foreground: 220 50% 10%;
+    --accent: 220 100% 50%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 221 35% 22%;
-    --input: 221 35% 20%;
-    --ring: 229 92% 62%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 220 100% 50%;
 
     --success: 142 75% 50%;
     --success-foreground: 0 0% 100%;
@@ -126,29 +122,29 @@ All colors MUST be HSL.
     --warning: 38 95% 55%;
     --warning-foreground: 0 0% 10%;
     
-    /* Cockpit specific variables - Dark */
-    --cockpit-bg: 221 44% 9%;
-    --cockpit-card: 221 42% 12%;
-    --cockpit-border: 221 35% 22%;
-    --cockpit-accent: 229 92% 62%;
+    /* Cockpit variables - Dark */
+    --cockpit-bg: 220 16% 4%;
+    --cockpit-card: 220 14% 8%;
+    --cockpit-border: 217 33% 17%;
+    --cockpit-accent: 220 100% 50%;
     --cockpit-success: 142 75% 50%;
     --cockpit-danger: 0 72% 55%;
     --cockpit-warning: 38 95% 55%;
-    --cockpit-muted: 220 20% 55%;
-    --cockpit-foreground: 220 30% 96%;
-    --cockpit-glow: 229 92% 62%;
+    --cockpit-muted: 215 20% 65%;
+    --cockpit-foreground: 0 0% 100%;
+    --cockpit-glow: 220 100% 50%;
 
-    --sidebar-background: 221 44% 6%;
-    --sidebar-foreground: 220 30% 90%;
-    --sidebar-primary: 229 92% 62%;
-    --sidebar-primary-foreground: 220 50% 10%;
-    --sidebar-accent: 221 35% 12%;
-    --sidebar-accent-foreground: 220 30% 90%;
-    --sidebar-border: 221 35% 15%;
-    --sidebar-ring: 229 92% 62%;
+    --sidebar-background: 220 16% 3%;
+    --sidebar-foreground: 215 20% 90%;
+    --sidebar-primary: 220 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 215 20% 90%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-ring: 220 100% 50%;
 
-    /* Chart colors dark - All blue tones */
-    --chart-1: 229 92% 65%;
+    /* Chart colors dark - Blue tones */
+    --chart-1: 220 100% 55%;
     --chart-2: 210 85% 60%;
     --chart-3: 200 80% 55%;
     --chart-4: 215 75% 72%;
@@ -169,100 +165,91 @@ All colors MUST be HSL.
     font-family: var(--font-sans);
   }
   
-  /* Futurista grid background */
+  /* ORKA theme styles */
   body.theme-futurista {
-    background-image: 
-      linear-gradient(hsl(var(--border) / 0.4) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.4) 1px, transparent 1px);
-    background-size: var(--grid-size) var(--grid-size);
-    background-position: -1px -1px;
     letter-spacing: 0.015em;
   }
   
-  body.theme-futurista::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at 50% 0%, hsl(229 92% 62% / 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 0% 50%, hsl(270 70% 68% / 0.04) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-  
-  body.theme-futurista.dark::before {
-    background: radial-gradient(circle at 50% 0%, hsl(229 92% 62% / 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, hsl(270 70% 68% / 0.06) 0%, transparent 50%);
-  }
-  
-  /* Futurista card styles */
+  /* ORKA card styles */
   body.theme-futurista .card,
   body.theme-futurista [class*="Card"] {
-    border-radius: 1rem;
+    border-radius: 12px;
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
-    box-shadow: 
-      0 4px 16px 0 rgba(31, 38, 135, 0.1),
-      0 0 15px hsl(229 92% 62% / 0.08);
   }
   
+  /* Dark mode: subtle glow on cards */
+  .dark body.theme-futurista .card:hover,
+  .dark body.theme-futurista [class*="Card"]:hover,
+  body.theme-futurista.dark .card:hover,
+  body.theme-futurista.dark [class*="Card"]:hover {
+    border-color: hsl(220 100% 50% / 0.2);
+    box-shadow: 0 0 15px hsl(220 100% 50% / 0.08);
+  }
+  
+  /* Light mode: clean shadow on cards */
   body.theme-futurista .card:hover,
   body.theme-futurista [class*="Card"]:hover {
-    border-color: hsl(229 92% 62% / 0.25);
-    box-shadow: 
-      0 4px 20px 0 rgba(31, 38, 135, 0.15),
-      0 0 20px hsl(229 92% 62% / 0.15);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
   }
-  
-  /* Futurista button styles */
+
+  /* ORKA button styles - primary */
   body.theme-futurista button[class*="bg-primary"],
   body.theme-futurista .btn-primary,
   body.theme-futurista [data-variant="default"] {
-    background: linear-gradient(135deg, hsl(229 92% 62%), hsl(270 70% 68%)) !important;
-    color: hsl(220 50% 10%) !important;
+    background: hsl(220 100% 50%) !important;
+    color: hsl(0 0% 100%) !important;
     font-weight: 600;
-    box-shadow: 
-      0 4px 12px hsl(229 92% 62% / 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border: none !important;
+    border-radius: 8px;
     position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
   }
-  
+
+  /* Dark mode: glow on primary button hover */
+  .dark body.theme-futurista button[class*="bg-primary"]:hover,
+  .dark body.theme-futurista .btn-primary:hover,
+  .dark body.theme-futurista [data-variant="default"]:hover {
+    box-shadow: 0 0 15px rgba(0, 87, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  /* Light mode: subtle shadow on primary button hover */
   body.theme-futurista button[class*="bg-primary"]:hover,
   body.theme-futurista .btn-primary:hover,
   body.theme-futurista [data-variant="default"]:hover {
-    box-shadow: 
-      0 6px 18px hsl(229 92% 62% / 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 87, 255, 0.2);
     transform: translateY(-1px);
   }
   
-  /* Futurista secondary buttons */
+  /* ORKA secondary buttons */
   body.theme-futurista button[class*="bg-secondary"],
   body.theme-futurista [data-variant="secondary"] {
     background: hsl(var(--secondary)) !important;
-    color: hsl(220 50% 10%) !important;
+    color: hsl(var(--foreground)) !important;
     font-weight: 500;
-    border: 1px solid hsl(217 80% 72% / 0.3) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 8px;
   }
   
-  /* Futurista outline buttons */
+  /* ORKA outline buttons */
   body.theme-futurista button[class*="border"],
   body.theme-futurista [data-variant="outline"] {
     background: hsl(var(--background)) !important;
     color: hsl(var(--foreground)) !important;
-    border: 1.5px solid hsl(229 92% 62% / 0.4) !important;
+    border: 1.5px solid hsl(220 100% 50% / 0.3) !important;
     font-weight: 500;
+    border-radius: 8px;
   }
   
   body.theme-futurista button[class*="border"]:hover,
   body.theme-futurista [data-variant="outline"]:hover {
-    background: hsl(229 92% 62% / 0.1) !important;
-    border-color: hsl(229 92% 62% / 0.6) !important;
+    background: hsl(220 100% 50% / 0.1) !important;
+    border-color: hsl(220 100% 50% / 0.5) !important;
   }
   
-  /* Futurista títulos */
+  /* ORKA headings */
   body.theme-futurista h1,
   body.theme-futurista h2,
   body.theme-futurista h3,
@@ -274,62 +261,44 @@ All colors MUST be HSL.
     letter-spacing: -0.02em;
   }
   
-  /* Futurista badges */
+  /* ORKA badges */
   body.theme-futurista [class*="badge"],
   body.theme-futurista [class*="Badge"] {
-    background: linear-gradient(135deg, hsl(229 92% 62% / 0.15), hsl(270 70% 68% / 0.15));
-    color: hsl(229 92% 48%);
-    border: 1px solid hsl(229 92% 62% / 0.3);
+    background: hsl(220 100% 50% / 0.12);
+    color: hsl(220 100% 50%);
+    border: 1px solid hsl(220 100% 50% / 0.25);
     font-weight: 500;
   }
 }
 
-/* Keyframes for modern animations */
+/* Keyframes */
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px hsl(229 92% 62% / 0.4), 0 0 40px hsl(229 92% 62% / 0.2);
+    box-shadow: 0 0 15px hsl(220 100% 50% / 0.3), 0 0 30px hsl(220 100% 50% / 0.15);
   }
   50% {
-    box-shadow: 0 0 30px hsl(229 92% 62% / 0.6), 0 0 60px hsl(229 92% 62% / 0.3);
+    box-shadow: 0 0 25px hsl(220 100% 50% / 0.5), 0 0 50px hsl(220 100% 50% / 0.25);
   }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
 }
 
 @keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
 @keyframes counter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Utility classes */
@@ -370,7 +339,7 @@ All colors MUST be HSL.
   }
   
   .gradient-bg-animated {
-    background: linear-gradient(135deg, hsl(229 92% 62%), hsl(270 70% 68%), hsl(217 85% 68%), hsl(229 92% 62%));
+    background: linear-gradient(135deg, hsl(220 100% 50%), hsl(220 100% 30%), hsl(210 85% 55%), hsl(220 100% 50%));
     background-size: 300% 300%;
     animation: gradient-shift 10s ease infinite;
   }
@@ -383,30 +352,18 @@ All colors MUST be HSL.
   }
   
   .shimmer-effect {
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.1),
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
     background-size: 1000px 100%;
     animation: shimmer 3s infinite;
   }
   
-  /* Futurista Premium Utilities */
+  /* ORKA Premium Utilities */
   .cyber-glow {
-    box-shadow: 
-      0 0 10px hsl(229 92% 62% / 0.3),
-      0 0 20px hsl(229 92% 62% / 0.2),
-      0 0 30px hsl(229 92% 62% / 0.1);
+    box-shadow: 0 0 10px hsl(220 100% 50% / 0.2), 0 0 20px hsl(220 100% 50% / 0.1);
   }
   
   .cyber-glow-intense {
-    box-shadow: 
-      0 0 20px hsl(229 92% 62% / 0.5),
-      0 0 40px hsl(229 92% 62% / 0.3),
-      0 0 60px hsl(229 92% 62% / 0.2),
-      inset 0 0 20px hsl(229 92% 62% / 0.1);
+    box-shadow: 0 0 15px hsl(220 100% 50% / 0.4), 0 0 30px hsl(220 100% 50% / 0.2), 0 0 45px hsl(220 100% 50% / 0.1);
   }
   
   .premium-card {
@@ -414,16 +371,12 @@ All colors MUST be HSL.
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid hsl(var(--border));
-    box-shadow: 
-      0 8px 32px 0 rgba(31, 38, 135, 0.12),
-      0 0 20px hsl(229 92% 62% / 0.08);
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
   }
   
   .premium-card:hover {
-    border-color: hsl(229 92% 62% / 0.3);
-    box-shadow: 
-      0 8px 32px 0 rgba(31, 38, 135, 0.18),
-      0 0 30px hsl(229 92% 62% / 0.15);
+    border-color: hsl(220 100% 50% / 0.2);
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
   }
   
   .cyber-line-vertical {
@@ -437,30 +390,24 @@ All colors MUST be HSL.
     top: 0;
     bottom: 0;
     width: 1px;
-    background: linear-gradient(
-      180deg,
-      transparent,
-      hsl(229 92% 62% / 0.3),
-      transparent
-    );
+    background: linear-gradient(180deg, transparent, hsl(220 100% 50% / 0.3), transparent);
   }
   
   .futurista-button {
-    background: linear-gradient(135deg, hsl(229 92% 62%), hsl(270 70% 68%));
-    color: hsl(220 50% 10%);
+    background: hsl(220 100% 50%);
+    color: hsl(0 0% 100%);
     font-weight: 600;
-    box-shadow: 
-      0 4px 15px hsl(229 92% 62% / 0.3),
-      inset 0 -2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
     position: relative;
     overflow: hidden;
+    transition: all 0.3s ease;
   }
   
   .futurista-button::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.15), transparent);
     transform: translateX(-100%);
     transition: transform 0.6s;
   }
@@ -470,9 +417,7 @@ All colors MUST be HSL.
   }
   
   .futurista-button:hover {
-    box-shadow: 
-      0 6px 20px hsl(229 92% 62% / 0.5),
-      inset 0 -2px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 15px rgba(0, 87, 255, 0.3);
   }
 
   /* Nav horizontal scrollbar */

@@ -13,6 +13,8 @@ import {
   BarChart3,
   Search,
   Target,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSession } from "@/hooks/useUserSession";
+import { useTheme } from "@/hooks/useTheme";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -47,6 +50,7 @@ const Sidebar = () => {
   });
 
   const { data: sessionData } = useUserSession();
+  const { isDark, toggleDarkMode } = useTheme();
   const session = sessionData?.session;
   const profile = sessionData?.profile;
   const userRole = sessionData?.role;
@@ -133,6 +137,10 @@ const Sidebar = () => {
           ))}
         </div>
       </div>
+
+      <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="flex-shrink-0">
+        {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
