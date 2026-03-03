@@ -110,7 +110,7 @@ const Prospecting = () => {
   // Função para formatar número para WhatsApp
   const formatWhatsAppNumber = (phone: string) => {
     // Remove todos os caracteres não numéricos
-    const cleaned = phone.replace(/\D/g, '');
+    const cleaned = phone.replace(/\D/g, "");
     return cleaned;
   };
 
@@ -118,7 +118,7 @@ const Prospecting = () => {
   const openWhatsApp = (phone: string) => {
     const formattedNumber = formatWhatsAppNumber(phone);
     const whatsappUrl = `https://wa.me/${formattedNumber}`;
-    window.open(whatsappUrl, '_blank');
+    window.open(whatsappUrl, "_blank");
   };
 
   // Query para buscar histórico de leads
@@ -648,12 +648,14 @@ const Prospecting = () => {
                           <div className="pt-3 border-t mt-auto">
                             <Button
                               size="sm"
-                              onClick={() => lead.Telefone && openWhatsApp(lead.Telefone)}
+                              onClick={() =>
+                                lead.Telefone && openWhatsApp(lead.Telefone)
+                              }
                               disabled={!lead.Telefone}
                               className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:opacity-90 disabled:opacity-50"
                             >
                               <MessageCircle className="mr-2 h-4 w-4" />
-                              {lead.Telefone ? 'WhatsApp' : 'Sem telefone'}
+                              {lead.Telefone ? "WhatsApp" : "Sem telefone"}
                             </Button>
                           </div>
                         </CardContent>
