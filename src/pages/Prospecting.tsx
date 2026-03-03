@@ -16,6 +16,7 @@ import {
   History,
   ChevronLeft,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,20 @@ const Prospecting = () => {
   // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  // Função para formatar número para WhatsApp
+  const formatWhatsAppNumber = (phone: string) => {
+    // Remove todos os caracteres não numéricos
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned;
+  };
+
+  // Função para abrir WhatsApp
+  const openWhatsApp = (phone: string) => {
+    const formattedNumber = formatWhatsAppNumber(phone);
+    const whatsappUrl = `https://wa.me/${formattedNumber}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   // Query para buscar histórico de leads
   const {
@@ -633,10 +648,12 @@ const Prospecting = () => {
                           <div className="pt-3 border-t mt-auto">
                             <Button
                               size="sm"
-                              className="w-full bg-gradient-to-r from-primary to-[hsl(210_85%_65%)] hover:opacity-90"
+                              onClick={() => lead.Telefone && openWhatsApp(lead.Telefone)}
+                              disabled={!lead.Telefone}
+                              className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:opacity-90 disabled:opacity-50"
                             >
-                              <Send className="mr-2 h-4 w-4" />
-                              Contactar
+                              <MessageCircle className="mr-2 h-4 w-4" />
+                              {lead.Telefone ? 'WhatsApp' : 'Sem telefone'}
                             </Button>
                           </div>
                         </CardContent>
