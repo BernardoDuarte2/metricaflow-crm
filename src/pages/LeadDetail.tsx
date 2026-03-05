@@ -337,86 +337,117 @@ const LeadDetail = () => {
     });
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!lead || !notes) return;
 
+    const { drawHeader, drawSection, drawTable, drawKeyValuePairs, addFooterToAllPages, checkPageBreak, COLORS, PAGE_MARGIN, formatCurrency } = await import("@/lib/pdf-helpers");
+
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let yPosition = 20;
+    const statusLabels: Record<string, string> = {
+      novo: "Novo",
+      contato_feito: "Contato Feito",
+      proposta: "Proposta",
+      negociacao: "Negociação",
+      ganho: "Ganho",
+      perdido: "Perdido",
+    };
 
-    // Título
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("Histórico de Conversas - CRM", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
+    // === HEADER ===
+    let y = drawHeader(doc, `Ficha do Lead: ${lead.name}`, `Status: ${statusLabels[lead.status] || lead.status} • Gerado em ${new Date().toLocaleDateString("pt-BR")}`);
 
-    // Informações do Lead
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Informações do Lead:", 20, yPosition);
-    yPosition += 8;
+    // === DADOS CADASTRAIS ===
+    y = drawSection(doc, "Dados Cadastrais", y);
+    const pairs = [
+      { label: "Nome", value: lead.name },
+      { label: "Empresa", value: lead.company || "-" },
+      { label: "Email", value: lead.email || "-" },
+      { label: "Telefone", value: lead.phone || "-" },
+      { label: "Origem", value: lead.source || "-" },
+      { label: "Vendedor", value: lead.profiles?.name || "-" },
+    ];
+    y = drawKeyValuePairs(doc, pairs, y, 2);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Nome: ${lead.name}`, 20, yPosition);
-    yPosition += 6;
-    if (lead.company) {
-      doc.text(`Empresa: ${lead.company}`, 20, yPosition);
-      yPosition += 6;
-    }
-    if (lead.email) {
-      doc.text(`Email: ${lead.email}`, 20, yPosition);
-      yPosition += 6;
-    }
-    if (lead.phone) {
-      doc.text(`Telefone: ${lead.phone}`, 20, yPosition);
-      yPosition += 6;
-    }
-    doc.text(`Status: ${lead.status}`, 20, yPosition);
-    yPosition += 6;
-    if (lead.profiles?.name) {
-      doc.text(`Vendedor: ${lead.profiles.name}`, 20, yPosition);
-      yPosition += 10;
-    }
+    // === DADOS COMERCIAIS ===
+    y = drawSection(doc, "Dados Comerciais", y);
+    const commercialPairs = [
+      { label: "Valor Estimado", value: formatCurrency(lead.estimated_value || 0) },
+      { label: "Qualificado", value: lead.qualificado ? "Sim" : "Não" },
+      { label: "Criado em", value: format(new Date(lead.created_at), "dd/MM/yyyy") },
+      { label: "Atualizado em", value: format(new Date(lead.updated_at), "dd/MM/yyyy") },
+    ];
+    y = drawKeyValuePairs(doc, commercialPairs, y, 2);
 
-    // Notas
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Histórico de Interações:", 20, yPosition);
-    yPosition += 10;
-
-    notes.forEach((note: any, index) => {
-      // Verificar se precisa de nova página
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 20;
-      }
-
+    if (lead.motivo_perda) {
+      y = checkPageBreak(doc, y, 10);
       doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      const dateStr = format(new Date(note.created_at), "dd/MM/yyyy HH:mm");
-      doc.text(`[${dateStr}] ${note.profiles?.name || "Usuário"} - ${note.note_type}`, 20, yPosition);
-      yPosition += 6;
-
       doc.setFont("helvetica", "normal");
-      const splitContent = doc.splitTextToSize(note.content, pageWidth - 40);
-      splitContent.forEach((line: string) => {
-        if (yPosition > 280) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        doc.text(line, 20, yPosition);
-        yPosition += 5;
-      });
-      yPosition += 8;
-    });
+      doc.setTextColor(...COLORS.muted);
+      doc.text("Motivo da Perda", PAGE_MARGIN, y);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.danger);
+      doc.text(lead.motivo_perda, PAGE_MARGIN, y + 5);
+      y += 14;
+    }
 
-    // Salvar PDF
-    doc.save(`lead-${lead.name.replace(/\s+/g, "-")}-${Date.now()}.pdf`);
+    // === HISTÓRICO DE INTERAÇÕES ===
+    if (notes && notes.length > 0) {
+      y = drawSection(doc, `Histórico de Interações (${notes.length})`, y);
+      const noteRows = notes.map((note: any) => [
+        format(new Date(note.created_at), "dd/MM/yy HH:mm"),
+        note.profiles?.name || "Usuário",
+        note.note_type || "-",
+        (() => {
+          const maxLen = 80;
+          const content = note.content || "";
+          return content.length > maxLen ? content.substring(0, maxLen) + "..." : content;
+        })(),
+      ]);
+      y = drawTable(doc, ["Data", "Autor", "Tipo", "Conteúdo"], noteRows, y, [28, 30, 35, 87]);
+
+      // Detailed notes (full content)
+      y = checkPageBreak(doc, y, 20);
+      y = drawSection(doc, "Detalhamento das Notas", y);
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      notes.forEach((note: any) => {
+        y = checkPageBreak(doc, y, 25);
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...COLORS.sectionTitle);
+        const dateStr = format(new Date(note.created_at), "dd/MM/yyyy HH:mm");
+        doc.text(`[${dateStr}] ${note.profiles?.name || "Usuário"} — ${note.note_type}`, PAGE_MARGIN, y);
+        y += 5;
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...COLORS.text);
+        doc.setFontSize(8);
+        const lines = doc.splitTextToSize(note.content, pageWidth - PAGE_MARGIN * 2);
+        lines.forEach((line: string) => {
+          y = checkPageBreak(doc, y, 5);
+          doc.text(line, PAGE_MARGIN, y);
+          y += 4;
+        });
+
+        if (note.return_scheduled_date) {
+          doc.setTextColor(...COLORS.warning);
+          doc.setFont("helvetica", "italic");
+          doc.text(`↳ Retorno agendado: ${format(new Date(note.return_scheduled_date), "dd/MM/yyyy")}`, PAGE_MARGIN + 4, y);
+          y += 5;
+        }
+
+        y += 4;
+      });
+    }
+
+    // === FOOTER ===
+    addFooterToAllPages(doc, lead.company || "CRM");
+
+    doc.save(`lead-${lead.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`);
 
     toast({
       title: "PDF exportado com sucesso!",
-      description: "O arquivo foi baixado para seu dispositivo",
+      description: "Ficha completa do lead com histórico detalhado",
     });
   };
 

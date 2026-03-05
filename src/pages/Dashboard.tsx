@@ -56,12 +56,9 @@ const GoalsProgressCard = lazy(() => import("@/components/dashboard/GoalsProgres
 const AdvancedMetricsCard = lazy(() => import("@/components/dashboard/AdvancedMetricsCard").then(m => ({ default: m.AdvancedMetricsCard })));
 
 // Lazy load de bibliotecas pesadas (somente quando necessário)
-const generatePDF = async () => {
-  const [jsPDF, html2canvas] = await Promise.all([
-    import("jspdf").then(m => m.default),
-    import("html2canvas").then(m => m.default)
-  ]);
-  return { jsPDF, html2canvas };
+const loadJsPDF = async () => {
+  const jsPDF = await import("jspdf").then(m => m.default);
+  return jsPDF;
 };
 
 // Componente de fallback para Suspense
@@ -369,52 +366,105 @@ const Dashboard = () => {
     }
 
     setIsExporting(true);
-    const loadingToast = toast.loading("Gerando PDF...");
+    const loadingToast = toast.loading("Gerando relatório PDF completo...");
 
     try {
-      const { jsPDF, html2canvas: html2canvasModule } = await generatePDF();
+      const { drawHeader, drawSection, drawTable, drawKeyValuePairs, addFooterToAllPages, checkPageBreak, formatCurrency, formatPercent } = await import("@/lib/pdf-helpers");
+      const jsPDF = await loadJsPDF();
       const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.width;
-      let yPosition = 20;
+      const companyName = profile?.companies?.name || "CRM";
+      const periodLabel = selectedMonth === "all" ? `Ano ${selectedYear}` : `${selectedMonth}/${selectedYear}`;
 
-      doc.setFillColor(59, 130, 246);
-      doc.rect(0, 0, pageWidth, 35, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(20);
-      doc.setFont("helvetica", "bold");
-      doc.text("Dashboard Analítico", pageWidth / 2, 18, { align: "center" });
-      doc.setFontSize(10);
-      doc.text(`${new Date().toLocaleDateString('pt-BR')} - ${profile?.companies?.name || 'Workflow360'}`, pageWidth / 2, 28, { align: "center" });
+      // === HEADER ===
+      let y = drawHeader(doc, "Relatório Comercial", `${companyName} • Período: ${periodLabel} • ${new Date().toLocaleDateString("pt-BR")}`);
 
-      yPosition = 50;
+      // === KPIs PRINCIPAIS ===
+      y = drawSection(doc, "Indicadores Principais", y);
+      y = drawKeyValuePairs(doc, [
+        { label: "Total de Leads", value: String(stats.totalLeads || 0) },
+        { label: "Vendas Fechadas", value: String(stats.wonLeads || 0) },
+        { label: "Taxa de Conversão", value: formatPercent(parseFloat(stats.conversionRate) || 0) },
+        { label: "Receita Total", value: formatCurrency(stats.totalConvertedValue || 0) },
+        { label: "Ticket Médio", value: formatCurrency(stats.averageTicket || 0) },
+        { label: "Leads Pendentes", value: String(stats.pendingLeads || 0) },
+      ], y, 3);
 
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Métricas Principais", 20, yPosition);
-      yPosition += 10;
+      // === MÉTRICAS AVANÇADAS ===
+      y = drawSection(doc, "Métricas Avançadas", y);
+      y = drawKeyValuePairs(doc, [
+        { label: "CAC", value: formatCurrency(stats.cac || 0) },
+        { label: "LTV", value: formatCurrency(stats.ltv || 0) },
+        { label: "Payback", value: `${stats.payback || 0} meses` },
+        { label: "Follow-up Rate", value: formatPercent(parseFloat(stats.followUpRate) || 0) },
+        { label: "Taxa de Perda", value: formatPercent(parseFloat(stats.lossRate) || 0) },
+        { label: "Ciclo Médio", value: `${stats.avgTimeInFunnel || 0} dias` },
+      ], y, 3);
 
-      const metrics = [
-        `Total de Leads: ${stats.totalLeads || 0}`,
-        `Vendas Fechadas: ${stats.wonLeads || 0}`,
-        `Taxa de Conversão: ${stats.conversionRate || 0}%`,
-        `Receita Total: R$ ${(stats.totalConvertedValue || 0).toLocaleString('pt-BR')}`,
-        `Ticket Médio: R$ ${(stats.averageTicket || 0).toLocaleString('pt-BR')}`
-      ];
+      // === FUNIL DE CONVERSÃO ===
+      if (unifiedFunnelData && unifiedFunnelData.length > 0) {
+        y = drawSection(doc, "Funil de Conversão", y);
+        const funnelRows = unifiedFunnelData.map((item: any, i: number) => {
+          const prev = i > 0 ? unifiedFunnelData[i - 1].value : item.value;
+          const rate = prev > 0 ? ((item.value / prev) * 100) : 100;
+          return [item.name, String(item.value), i > 0 ? formatPercent(rate) : "-"];
+        });
+        y = drawTable(doc, ["Etapa", "Quantidade", "Taxa Conversão"], funnelRows, y, [70, 50, 60]);
+      }
 
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      metrics.forEach((metric) => {
-        doc.text(`• ${metric}`, 25, yPosition);
-        yPosition += 7;
-      });
+      // === FONTES DE LEADS ===
+      if (processedSourceData && processedSourceData.length > 0) {
+        y = drawSection(doc, "Fontes de Leads", y);
+        const sourceRows = processedSourceData.map((item: any) => [
+          item.name,
+          String(item.leads),
+          String(item.converted),
+          formatPercent(item.conversionRate || 0),
+        ]);
+        y = drawTable(doc, ["Fonte", "Leads", "Conversões", "Taxa"], sourceRows, y, [55, 35, 40, 50]);
+      }
 
-      doc.save(`dashboard-${new Date().toISOString().split('T')[0]}.pdf`);
+      // === MOTIVOS DE PERDA ===
+      if (processedLossData && processedLossData.length > 0) {
+        y = drawSection(doc, "Motivos de Perda", y);
+        const lossRows = processedLossData.map((item: any) => [
+          item.reason,
+          String(item.count),
+          formatPercent(item.percentage),
+          formatCurrency(item.value),
+        ]);
+        y = drawTable(doc, ["Motivo", "Qtd", "%", "Valor Perdido"], lossRows, y, [55, 30, 30, 65]);
+      }
+
+      // === RANKING DA EQUIPE (se gestor) ===
+      if (teamRankingData && teamRankingData.length > 0) {
+        y = drawSection(doc, "Ranking da Equipe", y);
+        const teamRows = teamRankingData.map((t: any) => [
+          t.name,
+          String(t.leads || 0),
+          String(t.conversions || 0),
+          formatCurrency(t.revenue || 0),
+          formatCurrency(t.revenue && t.conversions ? t.revenue / t.conversions : 0),
+        ]);
+        y = drawTable(doc, ["Vendedor", "Leads", "Conversões", "Receita", "Ticket Médio"], teamRows, y, [45, 25, 30, 40, 40]);
+      }
+
+      // === ALERTAS ===
+      if (alerts && alerts.length > 0) {
+        y = drawSection(doc, "Alertas Ativos", y);
+        const alertRows = alerts.map((a: any) => [a.title, a.message]);
+        y = drawTable(doc, ["Alerta", "Descrição"], alertRows, y, [60, 120]);
+      }
+
+      // === FOOTER EM TODAS AS PÁGINAS ===
+      addFooterToAllPages(doc, companyName);
+
+      doc.save(`relatorio-comercial-${selectedYear}-${selectedMonth}-${new Date().toISOString().split("T")[0]}.pdf`);
       toast.dismiss(loadingToast);
-      toast.success('Relatório exportado!');
+      toast.success("Relatório completo exportado!");
     } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
       toast.dismiss(loadingToast);
-      toast.error('Erro ao gerar PDF');
+      toast.error("Erro ao gerar PDF");
     } finally {
       setIsExporting(false);
     }
