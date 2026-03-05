@@ -56,12 +56,9 @@ const GoalsProgressCard = lazy(() => import("@/components/dashboard/GoalsProgres
 const AdvancedMetricsCard = lazy(() => import("@/components/dashboard/AdvancedMetricsCard").then(m => ({ default: m.AdvancedMetricsCard })));
 
 // Lazy load de bibliotecas pesadas (somente quando necessário)
-const generatePDF = async () => {
-  const [jsPDF, html2canvas] = await Promise.all([
-    import("jspdf").then(m => m.default),
-    import("html2canvas").then(m => m.default)
-  ]);
-  return { jsPDF, html2canvas };
+const loadJsPDF = async () => {
+  const jsPDF = await import("jspdf").then(m => m.default);
+  return jsPDF;
 };
 
 // Componente de fallback para Suspense
