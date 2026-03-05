@@ -1,107 +1,61 @@
 
 
-# Tema ORKA: Dark/Light Mode com Botao de Alternancia
+# Melhorar Exportação de Relatórios em PDF
 
-## Resumo
-Substituir a identidade visual atual "Futurista Premium" pelo tema ORKA, com modo noturno como padrao e um botao sol/lua no header para alternar. As cores serao baseadas na paleta fornecida (inspirada na Gene Digital). A mudanca e segura pois o sistema de variaveis CSS ja existe -- estamos apenas trocando os valores.
+## Problemas atuais
 
-## Arquivos a alterar
+**Dashboard PDF**: Exporta apenas 5 linhas de texto simples (total leads, vendas, conversão, receita, ticket médio). Não inclui funil, fontes, perdas, ranking de equipe, metas, nem gráficos.
 
-### 1. `src/index.css` - Paleta ORKA
-Substituir todos os valores das variaveis CSS em `:root` (light) e `.dark` (dark) pelos valores ORKA:
+**Lead Detail PDF**: Exporta histórico de notas em texto puro sem formatação visual. Não inclui valores do negócio, tarefas vinculadas, nem linha do tempo visual.
 
-**Modo Diurno (`:root`)**
-- `--background`: branco `#FFFFFF` -> `0 0% 100%`
-- `--foreground`: `#1E293B` -> `215 28% 17%`
-- `--card`: `#F8FAFC` -> `210 40% 98%`
-- `--primary`: `#0057FF` -> `220 100% 50%`
-- `--border`: `#E2E8F0` -> `214 32% 91%`
-- `--muted`: `#F8FAFC` -> `210 40% 98%`
-- `--muted-foreground`: `#64748B` -> `215 16% 47%`
-- Gradientes: `#0057FF` -> `#003599`
-- Remover/suavizar efeitos de glow no modo light
+## Solução proposta
 
-**Modo Noturno (`.dark`) - PADRAO**
-- `--background`: `#08090B` -> `220 16% 4%`
-- `--foreground`: `#FFFFFF` -> `0 0% 100%`
-- `--card`: `#111317` -> `220 14% 8%`
-- `--primary`: `#0057FF` -> `220 100% 50%`
-- `--border`: `#1E293B` -> `217 33% 17%`
-- `--muted-foreground`: `#94A3B8` -> `215 20% 65%`
-- Gradientes: `#0057FF` -> `#003599`
-- Manter efeitos de glow azul sutis
+### 1. Dashboard PDF — Relatório completo e bem formatado
 
-Atualizar tambem: sidebar, cockpit, chart colors, e utility classes para usar azul puro (sem purple/lilac).
+Reescrever `handleExportPDF` em `src/pages/Dashboard.tsx` para incluir:
 
-Remover referencias a `hsl(270 70% 68%)` (lilac) em todo o arquivo -- substituir por tons de azul.
+- **Cabeçalho**: Logo/nome da empresa, período filtrado, data de geração
+- **KPIs principais**: Tabela formatada com Total Leads, Vendas, Conversão, Receita, Ticket Médio, Forecast
+- **Funil de conversão**: Tabela com cada etapa, quantidade e taxa de conversão entre etapas
+- **Fontes de leads**: Tabela com fonte, quantidade, conversões e taxa
+- **Motivos de perda**: Tabela com motivo, quantidade e percentual
+- **Ranking da equipe** (se gestor): Tabela com vendedor, leads, conversões, receita, ticket médio
+- **Metas vs realizado**: Tabela com vendedor, meta, realizado, % atingido
+- **Alertas ativos**: Lista de alertas críticos do período
 
-Atualizar `body.theme-futurista` para remover gradientes purple nos botoes e badges.
+Usar `jsPDF` com tabelas manuais (retângulos + texto) para layout profissional, sem depender de html2canvas (que gera imagens borradas).
 
-### 2. `src/lib/themes.ts` - Valores ORKA
-Atualizar os valores de cores light e dark do tema `futurista` para corresponder a paleta ORKA.
+### 2. Lead Detail PDF — Ficha completa do lead
 
-### 3. `src/hooks/useTheme.ts` - Suporte a Dark Mode Toggle
-- Adicionar funcao `toggleDarkMode()` que alterna a classe `dark` no `<html>`
-- Persistir preferencia em `localStorage` (chave `color-mode`)
-- Inicializar como dark por padrao
-- Exportar `isDark` e `toggleDarkMode`
+Reescrever `handleExportPDF` em `src/pages/LeadDetail.tsx` para incluir:
 
-### 4. `src/components/layout/Sidebar.tsx` - Botao Sol/Lua
-Adicionar um botao de toggle antes do avatar dropdown:
-- Icone `Sun` quando em dark mode (clica para ir ao light)
-- Icone `Moon` quando em light mode (clica para ir ao dark)
-- Estilo sutil, ghost button, tamanho icon
+- **Cabeçalho**: Nome do lead com badge de status colorido
+- **Dados cadastrais**: Tabela com nome, empresa, email, telefone, origem, vendedor responsável
+- **Dados comerciais**: Valor estimado, valores cadastrados (da tabela `lead_values`), probabilidade
+- **Linha do tempo**: Notas formatadas com ícones de tipo, data, autor e conteúdo
+- **Rodapé**: Data de criação, última atualização, empresa
 
-### 5. `src/pages/ProtectedRoute.tsx` - Inicializar dark mode
-Garantir que o dark mode e aplicado no mount (classe `dark` no `<html>` baseado no localStorage).
+### 3. Criar helper reutilizável
 
-### 6. `src/components/ui/sonner.tsx` - Manter compativel
-Ja usa `next-themes` mas apenas para ler o tema. Verificar compatibilidade.
+Novo arquivo `src/lib/pdf-helpers.ts` com funções utilitárias:
 
-## O que NAO muda
-- Estrutura de componentes (cards, buttons, tables)
-- Logica de negocios (dashboard, leads, kanban)
-- Layout do sidebar (continua horizontal no topo)
-- Funcionalidade de nenhuma feature
+- `drawHeader(doc, title, subtitle)` — cabeçalho azul padronizado
+- `drawTable(doc, headers, rows, y)` — renderiza tabela com cabeçalho colorido, linhas alternadas, retorna novo Y
+- `drawSection(doc, title, y)` — título de seção com linha divisória
+- `checkPageBreak(doc, y, needed)` — adiciona página se necessário
+- `drawFooter(doc, companyName)` — rodapé com nome e número da página
 
-## Detalhes tecnicos
+### Arquivos alterados
 
-### Conversao de cores hex -> HSL
-| Hex | HSL |
+| Arquivo | Alteração |
 |---|---|
-| `#08090B` | `220 16% 4%` |
-| `#111317` | `220 14% 8%` |
-| `#0057FF` | `220 100% 50%` |
-| `#003599` | `220 100% 30%` |
-| `#1E293B` | `217 33% 17%` |
-| `#94A3B8` | `215 20% 65%` |
-| `#F8FAFC` | `210 40% 98%` |
-| `#E2E8F0` | `214 32% 91%` |
-| `#64748B` | `215 16% 47%` |
-| `#1E293B` (text) | `215 28% 17%` |
+| `src/lib/pdf-helpers.ts` | **Novo** — funções utilitárias de PDF |
+| `src/pages/Dashboard.tsx` | Reescrever `handleExportPDF` com relatório completo |
+| `src/pages/LeadDetail.tsx` | Reescrever `handleExportPDF` com ficha completa |
 
-### Inicializacao do dark mode
-```text
-// No mount da app, antes do render:
-const savedMode = localStorage.getItem('color-mode');
-if (!savedMode || savedMode === 'dark') {
-  document.documentElement.classList.add('dark');
-} else {
-  document.documentElement.classList.remove('dark');
-}
-```
+### Resultado esperado
 
-### Botao no header
-```text
-// No Sidebar.tsx, antes do DropdownMenu:
-<Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-  {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-</Button>
-```
+- PDF do Dashboard: 2-4 páginas com todas as métricas, tabelas formatadas e visual profissional
+- PDF do Lead: 1-2 páginas com ficha completa do lead incluindo valores e histórico
+- Ambos com cabeçalho azul ORKA, tabelas com linhas alternadas, e rodapé com paginação
 
-### Efeitos de glow
-- Modo noturno: `box-shadow: 0 0 15px rgba(0, 87, 255, 0.3)` no hover de botoes primarios
-- Modo diurno: sem glow, apenas `box-shadow` padrao sutil
-
-## Risco
-Baixo. Estamos apenas trocando valores de variaveis CSS que ja sao consumidas por todos os componentes. O toggle usa a classe `dark` que o Tailwind ja suporta (`darkMode: ["class"]`).
