@@ -20,9 +20,9 @@ interface AdminPlanDistributionProps {
 const COLORS = [
   "hsl(var(--primary))",
   "hsl(var(--accent))",
-  "hsl(220, 70%, 50%)",
-  "hsl(280, 70%, 50%)",
-  "hsl(340, 70%, 50%)",
+  "hsl(0, 100%, 73%)",
+  "hsl(212, 100%, 67%)",
+  "hsl(128, 49%, 49%)",
   "hsl(160, 70%, 50%)",
 ];
 
