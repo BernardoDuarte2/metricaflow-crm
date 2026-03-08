@@ -1,13 +1,3 @@
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid,
-  Cell
-} from "recharts";
 import { BarChart3 } from "lucide-react";
 
 interface SourceData {
@@ -22,43 +12,23 @@ interface SourceConversionChartProps {
   title?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload || !payload.length) return null;
-
-  const leads = payload.find((p: any) => p.dataKey === 'leads')?.value || 0;
-  const converted = payload.find((p: any) => p.dataKey === 'converted')?.value || 0;
-  const rate = leads > 0 ? ((converted / leads) * 100).toFixed(1) : 0;
-
-  return (
-    <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
-      <p className="text-xs font-medium text-foreground mb-2">{label}</p>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-xs text-muted-foreground">Total leads:</span>
-          <span className="text-sm font-semibold text-primary">{leads}</span>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-xs text-muted-foreground">Convertidos:</span>
-          <span className="text-sm font-semibold text-success">{converted}</span>
-        </div>
-        <div className="flex items-center justify-between gap-4 pt-1 border-t border-border">
-          <span className="text-xs text-muted-foreground">Taxa:</span>
-          <span className="text-sm font-bold text-foreground">{rate}%</span>
-        </div>
-      </div>
-    </div>
-  );
+const getBarColor = (rate: number) => {
+  if (rate >= 20) return "hsl(142, 70%, 45%)";
+  if (rate >= 10) return "hsl(25, 100%, 50%)";
+  return "hsl(38, 90%, 50%)";
 };
 
-export const SourceConversionChart = ({ 
-  data, 
-  title = "Conversão por Fonte" 
+const getBadgeStyle = (rate: number) => {
+  if (rate >= 20) return "bg-green-500/15 text-green-400 border-green-500/20";
+  if (rate >= 10) return "bg-primary/15 text-primary border-primary/20";
+  return "bg-amber-500/15 text-amber-400 border-amber-500/20";
+};
+
+export const SourceConversionChart = ({
+  data,
+  title = "Conversão por Fonte",
 }: SourceConversionChartProps) => {
-  const getBarColor = (rate: number) => {
-    if (rate >= 20) return "hsl(142 70% 45%)";
-    if (rate >= 10) return "hsl(229 92% 62%)";
-    return "hsl(38 90% 50%)";
-  };
+  const maxLeads = Math.max(...data.map((d) => d.leads), 1);
 
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow">
@@ -69,43 +39,68 @@ export const SourceConversionChart = ({
             <BarChart3 className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground tracking-wide">
-              {title}
-            </h3>
+            <h3 className="text-sm font-semibold text-foreground tracking-wide">{title}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Leads e conversões por origem
+              Performance de conversão por origem
             </p>
           </div>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="p-4 h-[280px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }} barCategoryGap="20%">
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} dy={10} angle={-15} textAnchor="end" />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} width={40} />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.5)' }} />
-            <Bar dataKey="leads" name="Leads" radius={[4, 4, 0, 0]} fill="hsl(229 92% 62% / 0.3)" />
-            <Bar dataKey="converted" name="Convertidos" radius={[4, 4, 0, 0]}>
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(entry.conversionRate)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Horizontal Bars */}
+      <div className="px-5 py-4 space-y-4">
+        {data.map((item) => {
+          const barWidth = (item.leads / maxLeads) * 100;
+          const convertedWidth = item.leads > 0 ? (item.converted / item.leads) * 100 : 0;
+          const rate = item.leads > 0 ? ((item.converted / item.leads) * 100) : 0;
+
+          return (
+            <div key={item.name} className="group">
+              {/* Label row */}
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-foreground">{item.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {item.converted}/{item.leads}
+                  </span>
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${getBadgeStyle(rate)}`}
+                  >
+                    {rate.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Bar track */}
+              <div className="relative h-3 rounded-full bg-muted/50 overflow-hidden">
+                {/* Total leads bar (background) */}
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-muted-foreground/10 transition-all duration-500"
+                  style={{ width: `${barWidth}%` }}
+                />
+                {/* Converted bar (foreground) */}
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 group-hover:brightness-110"
+                  style={{
+                    width: `${(convertedWidth / 100) * barWidth}%`,
+                    backgroundColor: getBarColor(rate),
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Legend */}
+      {/* Footer legend */}
       <div className="px-5 py-3 border-t border-border flex items-center justify-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-primary/30" />
-          <span className="text-xs text-muted-foreground">Total Leads</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-1.5 rounded-full bg-muted-foreground/10" />
+          <span className="text-[10px] text-muted-foreground">Total Leads</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-success" />
-          <span className="text-xs text-muted-foreground">Convertidos</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-1.5 rounded-full bg-green-500" />
+          <span className="text-[10px] text-muted-foreground">Convertidos</span>
         </div>
       </div>
     </div>
