@@ -101,9 +101,9 @@ export const MoneyLeakAlerts = ({
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-red-500/5 to-transparent">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-red-500/10 animate-pulse">
+          <div className="p-2 rounded-lg bg-red-500/10">
             <AlertTriangle className="h-4 w-4 text-red-400" />
           </div>
           <div>
