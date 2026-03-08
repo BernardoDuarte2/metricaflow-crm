@@ -62,7 +62,7 @@ export default function Diagnostics() {
         });
       } else {
         toast({
-          title: "✅ Teste bem-sucedido!",
+          title: "Teste bem-sucedido",
           description: `Email enviado para ${testEmail}. Verifique sua caixa de entrada.`,
         });
       }
