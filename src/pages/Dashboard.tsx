@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardFilters from "@/components/dashboard/DashboardFilters";
+
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
 import { useUserSession } from "@/hooks/useUserSession"; // Import adicionado
