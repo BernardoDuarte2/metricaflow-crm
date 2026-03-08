@@ -85,7 +85,7 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
         <div className="flex items-center gap-3">
           <div className={cn(
             "p-2 rounded-lg",
-            criticalCount > 0 ? "bg-destructive/15 animate-pulse" : "bg-warning/15"
+            criticalCount > 0 ? "bg-destructive/15" : "bg-warning/15"
           )}>
             <Flame className={cn(
               "h-4 w-4",
