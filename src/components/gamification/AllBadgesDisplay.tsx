@@ -106,8 +106,11 @@ export function AllBadgesDisplay({ earnedBadges }: AllBadgesDisplayProps) {
                       </div>
                     )}
                     <div className="text-center space-y-2">
-                      <div className={`text-5xl ${!isEarned && 'grayscale'}`}>
-                        {badge.icon}
+                      <div className={`flex items-center justify-center ${!isEarned && 'opacity-40'}`}>
+                        {(() => {
+                          const IconComp = BADGE_ICONS[badge.id] || Trophy;
+                          return <IconComp className="h-10 w-10 text-primary" />;
+                        })()}
                       </div>
                       <div>
                         <p className="font-bold text-sm">{badge.name}</p>
