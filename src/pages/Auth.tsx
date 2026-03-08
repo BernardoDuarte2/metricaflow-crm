@@ -178,7 +178,7 @@ const Auth = () => {
       logger.info("Signup successful!");
 
       toast({
-        title: "✅ Conta criada com sucesso!",
+        title: "Conta criada com sucesso",
         description: "Você já pode fazer login.",
       });
 
