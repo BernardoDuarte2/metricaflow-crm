@@ -44,16 +44,7 @@ export const TeamGoalProgressCard = ({
   return (
     <div className="relative rounded-2xl bg-card border border-border overflow-hidden shadow-lg">
       {/* Top accent line */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-1"
-        style={{ background: `linear-gradient(to right, ${getStatusColor()}, hsl(270 70% 68%))` }}
-      />
-      
-      {/* Corner glow */}
-      <div 
-        className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: getStatusColor() }}
-      />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
 
       <div className="relative p-6">
         {/* Header */}
