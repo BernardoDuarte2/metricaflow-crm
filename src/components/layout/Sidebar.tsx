@@ -130,7 +130,7 @@ const Sidebar = () => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "fixed top-0 left-0 bottom-0 bg-[#0A1628] flex flex-col py-4 z-50 border-r border-[#FF6B00]/30 transition-all duration-300",
+        "fixed top-0 left-0 bottom-0 bg-[#072F4A] flex flex-col py-4 z-50 border-r border-[#0B4F73]/40 transition-all duration-300",
         isHovered ? "w-56" : "w-16"
       )}
     >
