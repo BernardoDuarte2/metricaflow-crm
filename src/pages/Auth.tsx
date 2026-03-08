@@ -282,7 +282,7 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "✅ Senha atualizada!",
+        title: "Senha atualizada",
         description: "Sua senha foi redefinida com sucesso.",
       });
 
