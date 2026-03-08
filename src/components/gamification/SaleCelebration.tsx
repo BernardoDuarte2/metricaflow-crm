@@ -7,6 +7,7 @@ import {
   getCelebrationType, 
   getCelebrationMessage 
 } from "@/lib/confetti-animations";
+import { Trophy, Gem, Star, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SaleCelebrationProps {
