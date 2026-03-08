@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
 import { useUserSession } from "@/hooks/useUserSession"; // Import adicionado
-import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+
 import {
   Users,
   CheckCircle,
@@ -516,10 +516,6 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Onboarding Checklist for Managers */}
-          {(userRole === 'gestor' || userRole === 'gestor_owner') && (
-            <OnboardingChecklist />
-          )}
 
           {/* 1. GOAL HERO CARD - Full width */}
           <GoalHeroCard

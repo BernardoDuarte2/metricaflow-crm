@@ -8,7 +8,8 @@ import DemoDataSettings from "@/components/company/DemoDataSettings";
 import { GamificationSettings } from "@/components/gamification/GamificationSettings";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 import { SalesManualSettings } from "@/components/settings/SalesManualSettings";
-import { Building2, User, Database, Trophy, CreditCard, CheckCircle, BookOpen } from "lucide-react";
+import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import { Building2, User, Database, Trophy, CreditCard, CheckCircle, BookOpen, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 const Settings = () => {
@@ -75,6 +76,12 @@ const Settings = () => {
               Manual de Vendas
             </TabsTrigger>
           )}
+          {canEditSalesManual && (
+            <TabsTrigger value="onboarding" className="flex items-center gap-2">
+              <Rocket className="h-4 w-4" />
+              Configure seu CRM
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="company" className="mt-6">
@@ -102,6 +109,11 @@ const Settings = () => {
         {canEditSalesManual && (
           <TabsContent value="sales-manual" className="mt-6">
             <SalesManualSettings />
+          </TabsContent>
+        )}
+        {canEditSalesManual && (
+          <TabsContent value="onboarding" className="mt-6">
+            <OnboardingChecklist />
           </TabsContent>
         )}
       </Tabs>
