@@ -1,14 +1,12 @@
 import { Timer, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Blue gradient matching UnifiedFunnel — darkest first, lighter last
+// Navy blue gradient matching UnifiedFunnel
 const stageGradients = [
   'linear-gradient(135deg, hsl(210, 80%, 28%), hsl(210, 80%, 38%))',
   'linear-gradient(135deg, hsl(212, 75%, 34%), hsl(212, 75%, 44%))',
   'linear-gradient(135deg, hsl(215, 70%, 40%), hsl(215, 70%, 50%))',
   'linear-gradient(135deg, hsl(215, 65%, 48%), hsl(215, 65%, 56%))',
-  'linear-gradient(135deg, hsl(212, 60%, 55%), hsl(212, 60%, 63%))',
-  'linear-gradient(135deg, hsl(210, 55%, 62%), hsl(210, 55%, 70%))',
 ];
 
 interface VelocityData {
@@ -29,34 +27,29 @@ export const VelocityMeter = ({
   
   const getStatusInfo = (ratio: number) => {
     if (ratio <= 1) return {
-      color: "bg-[hsl(142_70%_45%)]",
-      textColor: "text-[hsl(142_70%_40%)]",
+      color: "bg-success",
+      textColor: "text-success",
       label: "Rápido",
-      glow: "shadow-[0_0_10px_hsl(142_70%_45%/0.3)]"
     };
     if (ratio <= 1.5) return {
-      color: "bg-[hsl(38_90%_50%)]",
-      textColor: "text-[hsl(38_90%_45%)]",
+      color: "bg-warning",
+      textColor: "text-warning",
       label: "Normal",
-      glow: ""
     };
     return {
-      color: "bg-[hsl(0_75%_55%)]",
-      textColor: "text-[hsl(0_75%_50%)]",
+      color: "bg-destructive",
+      textColor: "text-destructive",
       label: "Lento",
-      glow: "shadow-[0_0_10px_hsl(0_75%_55%/0.3)]"
     };
   };
 
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-xl bg-white dark:bg-[hsl(0_0%_8%)] border border-[hsl(0_0%_90%)] dark:border-[hsl(0_0%_18%)] overflow-hidden h-full shadow-sm">
-        <div className="px-5 py-4 border-b border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_15%)]">
-          <h3 className="text-sm font-semibold text-[hsl(0_0%_8%)] dark:text-[hsl(0_0%_95%)]">
-            {title}
-          </h3>
+      <div className="rounded-xl bg-card border border-border overflow-hidden h-full shadow-sm">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         </div>
-        <div className="p-8 text-center text-[hsl(0_0%_50%)]">
+        <div className="p-8 text-center text-muted-foreground">
           <p className="text-sm">Nenhum dado disponível</p>
         </div>
       </div>
@@ -69,21 +62,22 @@ export const VelocityMeter = ({
   const overallStatus = getStatusInfo(overallRatio);
 
   return (
-    <div className="rounded-xl bg-white dark:bg-[hsl(0_0%_8%)] border border-[hsl(0_0%_90%)] dark:border-[hsl(0_0%_18%)] overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-xl bg-card border border-border overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_15%)] flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-[hsl(330_100%_62%/0.1)]">
-            <Timer className="h-4 w-4 text-[hsl(330_100%_62%)]" />
+          <div className="p-1.5 rounded-md bg-primary/10">
+            <Timer className="h-4 w-4 text-primary" />
           </div>
-          <h3 className="text-sm font-semibold text-[hsl(0_0%_8%)] dark:text-[hsl(0_0%_95%)] tracking-wide">
+          <h3 className="text-sm font-semibold text-foreground tracking-wide">
             {title}
           </h3>
         </div>
         <span className={cn(
           "text-xs font-semibold px-2.5 py-1 rounded-full",
           overallStatus.textColor,
-          "bg-current/10"
+          overallStatus.textColor === "text-success" ? "bg-success/10" :
+          overallStatus.textColor === "text-warning" ? "bg-warning/10" : "bg-destructive/10"
         )}>
           {overallStatus.label}
         </span>
@@ -104,26 +98,23 @@ export const VelocityMeter = ({
             <div key={item.stage || index} className="group">
               {/* Stage Header */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-[hsl(0_0%_45%)] uppercase tracking-wider">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {item.stage}
                 </span>
                 <div className="flex items-center gap-3">
                   <span className={cn("text-sm font-bold", status.textColor)}>
                     {avgDays} dias
                   </span>
-                  <span className="text-xs text-[hsl(0_0%_55%)]">
+                  <span className="text-xs text-muted-foreground">
                     / ideal: {idealDays}d
                   </span>
                 </div>
               </div>
 
               {/* Progress Bar */}
-              <div className="relative h-3 bg-[hsl(0_0%_96%)] dark:bg-[hsl(0_0%_12%)] rounded-full overflow-hidden">
+              <div className="relative h-3 bg-muted rounded-full overflow-hidden">
                 {/* Ideal marker */}
-                <div 
-                  className="absolute top-0 bottom-0 w-0.5 bg-[hsl(0_0%_70%)] dark:bg-[hsl(0_0%_40%)] z-10"
-                  style={{ left: '50%' }}
-                />
+                <div className="absolute top-0 bottom-0 w-0.5 bg-muted-foreground/30 z-10" style={{ left: '50%' }} />
                 
                 {/* Progress */}
                 <div 
@@ -140,17 +131,17 @@ export const VelocityMeter = ({
       </div>
 
       {/* Footer Summary */}
-      <div className="px-5 py-4 bg-[hsl(0_0%_98%)] dark:bg-[hsl(0_0%_6%)] border-t border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_15%)]">
+      <div className="px-5 py-4 bg-muted/30 border-t border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className={cn("h-4 w-4", overallStatus.textColor)} />
-            <span className="text-xs text-[hsl(0_0%_50%)]">Ciclo médio total</span>
+            <span className="text-xs text-muted-foreground">Ciclo médio total</span>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("text-sm font-bold", overallStatus.textColor)}>
               {totalAvgDays} dias
             </span>
-            <span className="text-xs text-[hsl(0_0%_55%)]">
+            <span className="text-xs text-muted-foreground">
               (ideal: {totalIdealDays}d)
             </span>
           </div>

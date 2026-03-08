@@ -143,7 +143,7 @@ export const TeamGoalProgressCard = ({
         {gap > 0 && (
           <div className="mt-4 p-3 rounded-lg bg-warning/5 border border-warning/20">
             <p className="text-xs text-warning">
-              ⚠️ Faltam <span className="font-bold">R$ {gap.toLocaleString('pt-BR')}</span> para bater a meta. 
+              Faltam <span className="font-bold">R$ {gap.toLocaleString('pt-BR')}</span> para bater a meta. 
               Velocidade necessária: <span className="font-bold">R$ {dailyNeeded.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}/dia</span>
             </p>
           </div>
