@@ -188,7 +188,7 @@ export default function UsersPage() {
     },
     onSuccess: (data) => {
       toast({
-        title: "✅ Usuário criado!",
+        title: "Usuário criado",
         description: `${data.user?.name} foi adicionado à equipe.`,
       });
       queryClient.invalidateQueries({ queryKey: ["company-users"] });
