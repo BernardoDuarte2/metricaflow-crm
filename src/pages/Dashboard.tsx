@@ -605,24 +605,13 @@ const Dashboard = () => {
             />
           )}
 
-          {/* 8. ACTIVITY BREAKDOWN (Managers) */}
-          {isManager && activityData.length > 0 && (
-            <ActivityBreakdownPanel
-              data={activityData}
-              title="Atividades por Vendedor"
-            />
-          )}
-
-
-          {/* 10. CHARTS GRID - Revenue Trend + Source Conversion */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {monthlyClosedData && monthlyClosedData.length > 0 && (
-              <TrendChart
-                data={monthlyClosedData}
-                title="Evolução da Receita"
-                subtitle="Receita mensal de vendas fechadas"
-                valuePrefix="R$ "
-                color="success"
+          {/* 8. CHARTS - Revenue by Seller + Source Conversion */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {isManager && dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
+              <RevenueBySellerChart
+                data={dashboardData.monthlyRevenueBySellerData}
+                sellers={dashboardData.sellers || []}
+                title="Receita por Vendedor"
               />
             )}
 
@@ -630,24 +619,6 @@ const Dashboard = () => {
               <SourceConversionChart
                 data={processedSourceData}
                 title="Conversão por Fonte"
-              />
-            )}
-          </div>
-
-          {/* 11. MONTHLY CHARTS - Revenue by Seller + Leads vs Closed */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {isManager && dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
-              <RevenueBySellerChart
-                data={dashboardData.monthlyRevenueBySellerData}
-                sellers={dashboardData.sellers || []}
-                title="Receita por Vendedor (Mês a Mês)"
-              />
-            )}
-
-            {dashboardData?.monthlyLeadsConversion?.length > 0 && (
-              <LeadsConversionMonthlyChart
-                data={dashboardData.monthlyLeadsConversion}
-                title="Leads vs Fechados + Conversão"
               />
             )}
           </div>
