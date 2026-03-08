@@ -516,10 +516,6 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Onboarding Checklist for Managers */}
-          {(userRole === 'gestor' || userRole === 'gestor_owner') && (
-            <OnboardingChecklist />
-          )}
 
           {/* 1. GOAL HERO CARD - Full width */}
           <GoalHeroCard

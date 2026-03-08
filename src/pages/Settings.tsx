@@ -111,6 +111,11 @@ const Settings = () => {
             <SalesManualSettings />
           </TabsContent>
         )}
+        {canEditSalesManual && (
+          <TabsContent value="onboarding" className="mt-6">
+            <OnboardingChecklist />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
