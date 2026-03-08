@@ -126,7 +126,7 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
               onClick={() => onAlertClick?.(alert.id)}
               className={cn(
                 "relative text-left rounded-xl p-4 border transition-all duration-300",
-                "hover:translate-y-[-2px] hover:shadow-lg",
+                "hover:shadow-lg",
                 severity.bg,
                 severity.border,
                 severity.glow,
