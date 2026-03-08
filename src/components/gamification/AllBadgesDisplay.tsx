@@ -9,151 +9,42 @@ interface AllBadgesDisplayProps {
   earnedBadges: BadgeType[];
 }
 
+const BADGE_ICONS: Record<string, LucideIcon> = {
+  first_blood: Trophy,
+  closer_bronze: Medal,
+  closer_silver: Medal,
+  closer_gold: Award,
+  master_closer: Crown,
+  sniper: Target,
+  surgical_precision: Crosshair,
+  high_ticket_bronze: Banknote,
+  high_ticket_silver: Gem,
+  high_ticket_gold: DollarSign,
+  money_maker: CircleDollarSign,
+  communicator: MessageSquare,
+  persistent: Dumbbell,
+  proposal_machine: ClipboardList,
+  active_prospector: Search,
+  warrior: Sword,
+};
+
 const ALL_POSSIBLE_BADGES: BadgeType[] = [
-  {
-    id: "first_blood",
-    name: "Primeira Venda",
-    icon: "🎉",
-    description: "Fechou sua primeira venda",
-    requirement: "1 venda",
-    tier: 'bronze',
-    category: 'performance'
-  },
-  {
-    id: "closer_bronze",
-    name: "Fechador Bronze",
-    icon: "🥉",
-    description: "Fechou 5 vendas",
-    requirement: "5 vendas",
-    tier: 'bronze',
-    category: 'performance'
-  },
-  {
-    id: "closer_silver",
-    name: "Fechador Prata",
-    icon: "🥈",
-    description: "Fechou 10 vendas",
-    requirement: "10 vendas",
-    tier: 'silver',
-    category: 'performance'
-  },
-  {
-    id: "closer_gold",
-    name: "Fechador Ouro",
-    icon: "🥇",
-    description: "Fechou 25 vendas",
-    requirement: "25 vendas",
-    tier: 'gold',
-    category: 'performance'
-  },
-  {
-    id: "master_closer",
-    name: "Fechador Master",
-    icon: "🏆",
-    description: "Fechou 50 vendas - Elite absoluta",
-    requirement: "50 vendas",
-    tier: 'platinum',
-    category: 'performance'
-  },
-  {
-    id: "sniper",
-    name: "Sniper",
-    icon: "🎯",
-    description: "Taxa de conversão acima de 50%",
-    requirement: "50% conversão",
-    tier: 'gold',
-    category: 'performance'
-  },
-  {
-    id: "surgical_precision",
-    name: "Precisão Cirúrgica",
-    icon: "🔬",
-    description: "Taxa de conversão acima de 75%",
-    requirement: "75% conversão",
-    tier: 'platinum',
-    category: 'performance'
-  },
-  {
-    id: "high_ticket_bronze",
-    name: "High Ticket Bronze",
-    icon: "💰",
-    description: "Vendas acima de R$ 50.000",
-    requirement: "R$ 50k",
-    tier: 'bronze',
-    category: 'value'
-  },
-  {
-    id: "high_ticket_silver",
-    name: "High Ticket Prata",
-    icon: "💎",
-    description: "Vendas acima de R$ 100.000",
-    requirement: "R$ 100k",
-    tier: 'silver',
-    category: 'value'
-  },
-  {
-    id: "high_ticket_gold",
-    name: "High Ticket Ouro",
-    icon: "💵",
-    description: "Vendas acima de R$ 250.000",
-    requirement: "R$ 250k",
-    tier: 'gold',
-    category: 'value'
-  },
-  {
-    id: "money_maker",
-    name: "Money Maker",
-    icon: "🤑",
-    description: "Meio milhão em vendas!",
-    requirement: "R$ 500k",
-    tier: 'platinum',
-    category: 'value'
-  },
-  {
-    id: "communicator",
-    name: "Comunicador",
-    icon: "💬",
-    description: "Fez 10 observações",
-    requirement: "10 observações",
-    tier: 'bronze',
-    category: 'consistency'
-  },
-  {
-    id: "persistent",
-    name: "Persistente",
-    icon: "💪",
-    description: "Enviou 5 propostas",
-    requirement: "5 propostas",
-    tier: 'bronze',
-    category: 'consistency'
-  },
-  {
-    id: "proposal_machine",
-    name: "Máquina de Propostas",
-    icon: "📋",
-    description: "Enviou 20+ propostas",
-    requirement: "20 propostas",
-    tier: 'silver',
-    category: 'consistency'
-  },
-  {
-    id: "active_prospector",
-    name: "Prospecção Ativa",
-    icon: "🔍",
-    description: "Criou 50+ leads",
-    requirement: "50 leads",
-    tier: 'silver',
-    category: 'consistency'
-  },
-  {
-    id: "warrior",
-    name: "Guerreiro",
-    icon: "⚔️",
-    description: "Criou 100+ leads - Incansável",
-    requirement: "100 leads",
-    tier: 'gold',
-    category: 'consistency'
-  },
+  { id: "first_blood", name: "Primeira Venda", icon: "trophy", description: "Fechou sua primeira venda", requirement: "1 venda", tier: 'bronze', category: 'performance' },
+  { id: "closer_bronze", name: "Fechador Bronze", icon: "medal", description: "Fechou 5 vendas", requirement: "5 vendas", tier: 'bronze', category: 'performance' },
+  { id: "closer_silver", name: "Fechador Prata", icon: "medal", description: "Fechou 10 vendas", requirement: "10 vendas", tier: 'silver', category: 'performance' },
+  { id: "closer_gold", name: "Fechador Ouro", icon: "award", description: "Fechou 25 vendas", requirement: "25 vendas", tier: 'gold', category: 'performance' },
+  { id: "master_closer", name: "Fechador Master", icon: "crown", description: "Fechou 50 vendas - Elite absoluta", requirement: "50 vendas", tier: 'platinum', category: 'performance' },
+  { id: "sniper", name: "Sniper", icon: "target", description: "Taxa de conversão acima de 50%", requirement: "50% conversão", tier: 'gold', category: 'performance' },
+  { id: "surgical_precision", name: "Precisão Cirúrgica", icon: "crosshair", description: "Taxa de conversão acima de 75%", requirement: "75% conversão", tier: 'platinum', category: 'performance' },
+  { id: "high_ticket_bronze", name: "High Ticket Bronze", icon: "banknote", description: "Vendas acima de R$ 50.000", requirement: "R$ 50k", tier: 'bronze', category: 'value' },
+  { id: "high_ticket_silver", name: "High Ticket Prata", icon: "gem", description: "Vendas acima de R$ 100.000", requirement: "R$ 100k", tier: 'silver', category: 'value' },
+  { id: "high_ticket_gold", name: "High Ticket Ouro", icon: "dollar", description: "Vendas acima de R$ 250.000", requirement: "R$ 250k", tier: 'gold', category: 'value' },
+  { id: "money_maker", name: "Money Maker", icon: "dollar-circle", description: "Meio milhão em vendas!", requirement: "R$ 500k", tier: 'platinum', category: 'value' },
+  { id: "communicator", name: "Comunicador", icon: "message", description: "Fez 10 observações", requirement: "10 observações", tier: 'bronze', category: 'consistency' },
+  { id: "persistent", name: "Persistente", icon: "dumbbell", description: "Enviou 5 propostas", requirement: "5 propostas", tier: 'bronze', category: 'consistency' },
+  { id: "proposal_machine", name: "Máquina de Propostas", icon: "clipboard", description: "Enviou 20+ propostas", requirement: "20 propostas", tier: 'silver', category: 'consistency' },
+  { id: "active_prospector", name: "Prospecção Ativa", icon: "search", description: "Criou 50+ leads", requirement: "50 leads", tier: 'silver', category: 'consistency' },
+  { id: "warrior", name: "Guerreiro", icon: "sword", description: "Criou 100+ leads - Incansável", requirement: "100 leads", tier: 'gold', category: 'consistency' },
 ];
 
 export function AllBadgesDisplay({ earnedBadges }: AllBadgesDisplayProps) {
