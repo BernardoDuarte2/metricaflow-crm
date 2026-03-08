@@ -145,7 +145,7 @@
     --sidebar-accent: 204 60% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 204 50% 18%;
-    --sidebar-ring: 25 100% 50%;
+    --sidebar-ring: 0 0% 95%;
 
     /* Chart colors dark */
     --chart-1: 198 70% 40%;
