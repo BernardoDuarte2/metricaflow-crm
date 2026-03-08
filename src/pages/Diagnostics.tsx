@@ -56,7 +56,7 @@ export default function Diagnostics() {
 
       if (data.error) {
         toast({
-          title: "❌ Erro na configuração",
+          title: "Erro na configuração",
           description: data.details || data.error,
           variant: "destructive",
         });
