@@ -132,7 +132,7 @@ export const MoneyLeakAlerts = ({
               className={cn(
                 "relative text-left rounded-xl p-4 border transition-all duration-300 group",
                 isActive
-                  ? cn(colors.bg, colors.border, colors.hover, "cursor-pointer hover:translate-y-[-2px]")
+                  ? cn(colors.bg, colors.border, colors.hover, "cursor-pointer")
                   : "bg-muted/30 border-border/50 opacity-50 cursor-default"
               )}
             >
