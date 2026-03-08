@@ -76,6 +76,12 @@ const Settings = () => {
               Manual de Vendas
             </TabsTrigger>
           )}
+          {canEditSalesManual && (
+            <TabsTrigger value="onboarding" className="flex items-center gap-2">
+              <Rocket className="h-4 w-4" />
+              Configure seu CRM
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="company" className="mt-6">
