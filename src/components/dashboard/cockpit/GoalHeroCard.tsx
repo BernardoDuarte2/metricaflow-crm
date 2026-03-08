@@ -35,32 +35,24 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
       icon: CheckCircle, 
       color: "text-success", 
       bg: "bg-success/10",
-      gradient: "from-success/20 to-success/5",
-      accentColor: "hsl(142 70% 45%)"
     };
     if (percentage >= 75) return { 
       label: "No Caminho", 
       icon: TrendingUp, 
       color: "text-primary", 
       bg: "bg-primary/10",
-      gradient: "from-primary/20 to-primary/5",
-      accentColor: "hsl(229 92% 62%)"
     };
     if (percentage >= 50) return { 
       label: "Atenção", 
       icon: AlertTriangle, 
       color: "text-warning", 
       bg: "bg-warning/10",
-      gradient: "from-warning/20 to-warning/5",
-      accentColor: "hsl(38 90% 50%)"
     };
     return { 
       label: "Risco", 
       icon: AlertTriangle, 
       color: "text-destructive", 
       bg: "bg-destructive/10",
-      gradient: "from-destructive/20 to-destructive/5",
-      accentColor: "hsl(0 75% 55%)"
     };
   };
 
@@ -68,20 +60,11 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
   const StatusIcon = status.icon;
 
   return (
-    <div className="relative rounded-2xl bg-card border border-border overflow-hidden shadow-lg">
-      {/* Top accent */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-1"
-        style={{ background: `linear-gradient(to right, ${status.accentColor}, hsl(270 70% 68%))` }}
-      />
+    <div className="rounded-2xl bg-card border border-border overflow-hidden">
+      {/* Top accent — solid coral */}
+      <div className="h-1 bg-primary" />
 
-      {/* Background glow */}
-      <div className={cn(
-        "absolute inset-0 bg-gradient-to-br opacity-30 pointer-events-none",
-        status.gradient
-      )} />
-
-      <div className="relative p-6 lg:p-8">
+      <div className="p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -106,7 +89,6 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
 
         {/* Main metrics row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          {/* Meta */}
           <div className="text-center md:text-left">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Meta Mensal</p>
             <p className="text-2xl lg:text-3xl font-bold text-foreground">
@@ -114,7 +96,6 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
             </p>
           </div>
 
-          {/* Realizado */}
           <div className="text-center md:text-left">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Realizado</p>
             <p className="text-2xl lg:text-3xl font-bold text-success">
@@ -122,7 +103,6 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
             </p>
           </div>
 
-          {/* Gap - Main highlight */}
           <div className="text-center md:text-left">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Falta para a Meta</p>
             <p className={cn(
@@ -133,7 +113,6 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
             </p>
           </div>
 
-          {/* Ritmo diário */}
           <div className="text-center md:text-left">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Ritmo Necessário</p>
             <div className="flex items-baseline gap-1.5">

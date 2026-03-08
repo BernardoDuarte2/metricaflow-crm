@@ -112,7 +112,7 @@ const Sidebar = () => {
             className="h-8 w-auto object-contain"
           />
         ) : (
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-red-600 bg-clip-text text-transparent">
             {profile?.company?.system_name || "Pro"}
           </h1>
         )}

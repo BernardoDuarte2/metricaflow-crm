@@ -89,23 +89,23 @@
   .dark {
     /* ORKA Dark Mode — Paleta A */
     --background: 216 28% 7%;
-    --foreground: 40 31% 87%;
+    --foreground: 33 31% 87%;
 
     --card: 215 21% 11%;
-    --card-foreground: 40 31% 87%;
+    --card-foreground: 33 31% 87%;
 
     --popover: 215 21% 11%;
-    --popover-foreground: 40 31% 87%;
+    --popover-foreground: 33 31% 87%;
 
     /* Coral Primary */
     --primary: 0 100% 73%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 215 18% 13%;
-    --secondary-foreground: 212 9% 58%;
+    --secondary-foreground: 210 10% 58%;
 
     --muted: 215 18% 13%;
-    --muted-foreground: 212 9% 58%;
+    --muted-foreground: 210 10% 58%;
 
     --accent: 0 100% 73%;
     --accent-foreground: 0 0% 100%;
@@ -113,8 +113,8 @@
     --destructive: 3 92% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 212 12% 21%;
-    --input: 212 12% 21%;
+    --border: 213 14% 21%;
+    --input: 213 14% 21%;
     --ring: 0 100% 73%;
 
     --success: 128 49% 49%;
@@ -126,25 +126,25 @@
     /* Cockpit variables - Dark */
     --cockpit-bg: 216 28% 7%;
     --cockpit-card: 215 21% 11%;
-    --cockpit-border: 212 12% 21%;
+    --cockpit-border: 213 14% 21%;
     --cockpit-accent: 0 100% 73%;
     --cockpit-success: 128 49% 49%;
     --cockpit-danger: 3 92% 63%;
     --cockpit-warning: 42 75% 57%;
-    --cockpit-muted: 212 9% 58%;
-    --cockpit-foreground: 40 31% 87%;
+    --cockpit-muted: 210 10% 58%;
+    --cockpit-foreground: 33 31% 87%;
     --cockpit-glow: 0 100% 73%;
 
     --gradient-primary: linear-gradient(135deg, hsl(0 100% 73%), hsl(0 52% 51%));
     --gradient-success: linear-gradient(135deg, hsl(128 49% 49%), hsl(142 70% 55%));
 
     --sidebar-background: 216 28% 5%;
-    --sidebar-foreground: 40 31% 87%;
+    --sidebar-foreground: 33 31% 87%;
     --sidebar-primary: 0 100% 73%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 18% 13%;
-    --sidebar-accent-foreground: 40 31% 87%;
-    --sidebar-border: 212 12% 19%;
+    --sidebar-accent-foreground: 33 31% 87%;
+    --sidebar-border: 213 14% 19%;
     --sidebar-ring: 0 100% 73%;
 
     /* Chart colors dark */
@@ -174,7 +174,7 @@
     letter-spacing: 0.015em;
   }
   
-  /* ORKA card styles */
+  /* ORKA card styles — clean, flat */
   body.theme-futurista .card,
   body.theme-futurista [class*="Card"] {
     border-radius: 12px;
@@ -182,68 +182,10 @@
     border: 1px solid hsl(var(--border));
   }
   
-  /* Dark mode: subtle glow on cards */
-  .dark body.theme-futurista .card:hover,
-  .dark body.theme-futurista [class*="Card"]:hover,
-  body.theme-futurista.dark .card:hover,
-  body.theme-futurista.dark [class*="Card"]:hover {
-    border-color: hsl(var(--primary) / 0.2);
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.06);
-  }
-  
-  /* Light mode: clean shadow on cards */
+  /* Card hover — subtle border change only */
   body.theme-futurista .card:hover,
   body.theme-futurista [class*="Card"]:hover {
-    box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
-  }
-
-  /* ORKA button styles - primary */
-  body.theme-futurista button[class*="bg-primary"],
-  body.theme-futurista .btn-primary,
-  body.theme-futurista [data-variant="default"] {
-    background: hsl(var(--primary)) !important;
-    color: hsl(0 0% 100%) !important;
-    font-weight: 600;
-    border: none !important;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-
-  /* Hover for primary buttons */
-  body.theme-futurista button[class*="bg-primary"]:hover,
-  body.theme-futurista .btn-primary:hover,
-  body.theme-futurista [data-variant="default"]:hover {
-    background: hsl(0 73% 62%) !important;
-    box-shadow: 0 4px 16px hsl(var(--primary) / 0.3);
-    transform: translateY(-1px);
-  }
-  
-  /* ORKA secondary buttons */
-  body.theme-futurista button[class*="bg-secondary"],
-  body.theme-futurista [data-variant="secondary"] {
-    background: hsl(var(--secondary)) !important;
-    color: hsl(var(--foreground)) !important;
-    font-weight: 500;
-    border: 1px solid hsl(var(--border)) !important;
-    border-radius: 8px;
-  }
-  
-  /* ORKA outline buttons */
-  body.theme-futurista button[class*="border"],
-  body.theme-futurista [data-variant="outline"] {
-    background: hsl(var(--background)) !important;
-    color: hsl(var(--foreground)) !important;
-    border: 1.5px solid hsl(var(--border)) !important;
-    font-weight: 500;
-    border-radius: 8px;
-  }
-  
-  body.theme-futurista button[class*="border"]:hover,
-  body.theme-futurista [data-variant="outline"]:hover {
-    background: hsl(var(--secondary)) !important;
-    border-color: hsl(var(--primary) / 0.4) !important;
+    border-color: hsl(var(--muted-foreground) / 0.3);
   }
   
   /* ORKA headings */
@@ -257,27 +199,16 @@
     font-weight: 600;
     letter-spacing: -0.02em;
   }
-  
-  /* ORKA badges */
-  body.theme-futurista [class*="badge"],
-  body.theme-futurista [class*="Badge"] {
-    background: hsl(var(--primary) / 0.12);
-    color: hsl(var(--primary));
-    border: 1px solid hsl(var(--primary) / 0.25);
-    font-weight: 500;
+
+  /* Dark mode inputs — use card bg for contrast */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: hsl(var(--card));
   }
 }
 
 /* Keyframes */
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.3), 0 0 30px hsl(var(--primary) / 0.15);
-  }
-  50% {
-    box-shadow: 0 0 25px hsl(var(--primary) / 0.5), 0 0 50px hsl(var(--primary) / 0.25);
-  }
-}
-
 @keyframes shimmer {
   0% { background-position: -1000px 0; }
   100% { background-position: 1000px 0; }
@@ -314,27 +245,6 @@
     border: 1px solid hsl(var(--border));
   }
   
-  .glow-border {
-    position: relative;
-  }
-  
-  .glow-border::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    background: var(--gradient-primary);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: -1;
-    filter: blur(8px);
-  }
-  
-  .glow-border:hover::before {
-    opacity: 0.7;
-    animation: glow-pulse 2s ease-in-out infinite;
-  }
-  
   .gradient-bg-animated {
     background: linear-gradient(135deg, hsl(0 100% 73%), hsl(0 52% 51%), hsl(0 73% 62%), hsl(0 100% 73%));
     background-size: 300% 300%;
@@ -354,68 +264,13 @@
     animation: shimmer 3s infinite;
   }
   
-  /* ORKA Premium Utilities */
-  .cyber-glow {
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.2), 0 0 20px hsl(var(--primary) / 0.1);
-  }
-  
-  .cyber-glow-intense {
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.4), 0 0 30px hsl(var(--primary) / 0.2), 0 0 45px hsl(var(--primary) / 0.1);
-  }
-  
   .premium-card {
     background: hsl(var(--card));
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border: 1px solid hsl(var(--border));
-    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
   }
   
   .premium-card:hover {
-    border-color: hsl(var(--primary) / 0.2);
-    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.25);
-  }
-  
-  .cyber-line-vertical {
-    position: relative;
-  }
-  
-  .cyber-line-vertical::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: linear-gradient(180deg, transparent, hsl(var(--primary) / 0.3), transparent);
-  }
-  
-  .futurista-button {
-    background: hsl(var(--primary));
-    color: hsl(0 0% 100%);
-    font-weight: 600;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-  
-  .futurista-button::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s;
-  }
-  
-  .futurista-button:hover::before {
-    transform: translateX(100%);
-  }
-  
-  .futurista-button:hover {
-    background: hsl(0 73% 62%);
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.3);
+    border-color: hsl(var(--muted-foreground) / 0.3);
   }
 
   /* Nav horizontal scrollbar */
