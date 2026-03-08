@@ -143,7 +143,7 @@ const Sidebar = () => {
             className="h-8 w-8 object-contain rounded"
           />
         ) : (
-          <div className="h-9 w-9 rounded-lg bg-[#0B4F73] flex items-center justify-center">
+          <div className="h-9 w-9 rounded-lg bg-sidebar-accent flex items-center justify-center">
             <span className="text-white font-bold text-sm">
               {(profile?.company?.system_name || "O")[0]}
             </span>
