@@ -32,11 +32,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 const APP_VERSION = "v1.0.0";
 
@@ -49,10 +45,7 @@ const roleLabels: Record<string, string> = {
 const Sidebar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved === "true";
-  });
+  const [isHovered, setIsHovered] = useState(false);
 
   const { data: sessionData } = useUserSession();
   const { isDark, toggleDarkMode } = useTheme();
@@ -60,15 +53,9 @@ const Sidebar = () => {
   const profile = sessionData?.profile;
   const userRole = sessionData?.role;
 
-  useEffect(() => {
-    localStorage.setItem("sidebar-collapsed", isCollapsed.toString());
-  }, [isCollapsed]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Logout realizado com sucesso",
-    });
+    toast({ title: "Logout realizado com sucesso" });
     navigate("/auth");
   };
 
@@ -102,18 +89,53 @@ const Sidebar = () => {
   ];
 
   const bottomNavItems = [
-    ...(isOwnerOrGestor ? [
-      { to: "/users", icon: Users, label: "Usuários" },
-      { to: "/integrations", icon: Plug, label: "Integrações" },
-      { to: "/settings", icon: Settings, label: "Configurações" },
-    ] : []),
+    ...(isOwnerOrGestor
+      ? [
+          { to: "/users", icon: Users, label: "Usuários" },
+          { to: "/integrations", icon: Plug, label: "Integrações" },
+          { to: "/settings", icon: Settings, label: "Configurações" },
+        ]
+      : []),
     { to: "/help", icon: HelpCircle, label: "Ajuda" },
   ];
 
+  const NavItem = ({ item }: { item: typeof mainNavItems[0] }) => (
+    <NavLink
+      to={item.to}
+      end={item.to === "/"}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center h-10 rounded-lg transition-all duration-200 relative group",
+          isHovered ? "px-3 gap-3" : "justify-center w-10 mx-auto",
+          isActive
+            ? "bg-white/5 text-[#FF6B00] border-l-[3px] border-[#FF6B00]"
+            : "text-white/70 hover:bg-white/5 hover:text-white border-l-[3px] border-transparent"
+        )
+      }
+    >
+      <item.icon className="h-5 w-5 shrink-0" />
+      <span
+        className={cn(
+          "text-sm font-medium whitespace-nowrap transition-all duration-300",
+          isHovered ? "opacity-100 translate-x-0" : "opacity-0 w-0 overflow-hidden"
+        )}
+      >
+        {item.label}
+      </span>
+    </NavLink>
+  );
+
   return (
-    <nav className="fixed top-0 left-0 bottom-0 w-16 bg-[hsl(216,28%,7%)] flex flex-col items-center py-4 z-50 border-r border-[hsl(212,100%,67%)]">
+    <nav
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cn(
+        "fixed top-0 left-0 bottom-0 bg-[#0A1628] flex flex-col py-4 z-50 border-r border-[#FF6B00]/30 transition-all duration-300",
+        isHovered ? "w-56" : "w-16"
+      )}
+    >
       {/* Logo */}
-      <div className="mb-6 flex-shrink-0">
+      <div className={cn("mb-6 flex-shrink-0", isHovered ? "px-4" : "flex justify-center")}>
         {profile?.company?.logo_url ? (
           <img
             src={profile.company.logo_url}
@@ -121,94 +143,72 @@ const Sidebar = () => {
             className="h-8 w-8 object-contain rounded"
           />
         ) : (
-          <div className="h-9 w-9 rounded-lg bg-primary/15 flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">
+          <div className="h-9 w-9 rounded-lg bg-[#FF6B00] flex items-center justify-center">
+            <span className="text-white font-bold text-sm">
               {(profile?.company?.system_name || "O")[0]}
             </span>
           </div>
         )}
       </div>
 
-      {/* Blue accent line */}
-      <div className="w-8 h-[2px] bg-[hsl(212,100%,67%)] rounded-full mb-4" />
+      {/* Separator */}
+      <div className={cn("h-[1px] bg-white/10 rounded-full mb-4", isHovered ? "mx-4" : "mx-4")} />
 
-      {/* Main nav items */}
-      <div className="flex-1 flex flex-col items-center gap-1 overflow-y-auto">
+      {/* Main nav */}
+      <div className={cn("flex-1 flex flex-col gap-1 overflow-y-auto", isHovered ? "px-2" : "px-3")}>
         {mainNavItems.map((item) => (
-          <Tooltip key={item.to} delayDuration={0}>
-            <TooltipTrigger asChild>
-              <NavLink
-                to={item.to}
-                end={item.to === "/"}
-                className={({ isActive }) =>
-                  `flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-[hsl(210,10%,58%)] hover:bg-[hsl(215,18%,13%)] hover:text-[hsl(33,31%,87%)]"
-                  }`
-                }
-              >
-                <item.icon className="h-5 w-5" />
-              </NavLink>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="bg-popover text-popover-foreground">
-              {item.label}
-            </TooltipContent>
-          </Tooltip>
+          <NavItem key={item.to} item={item} />
         ))}
       </div>
 
       {/* Bottom section */}
-      <div className="flex flex-col items-center gap-1 mt-2 pt-2 border-t border-border/20">
+      <div className={cn("flex flex-col gap-1 mt-2 pt-2 border-t border-white/10", isHovered ? "px-2" : "px-3")}>
         {bottomNavItems.map((item) => (
-          <Tooltip key={item.to} delayDuration={0}>
-            <TooltipTrigger asChild>
-              <NavLink
-                to={item.to}
-                className={({ isActive }) =>
-                  `flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-[hsl(210,10%,58%)] hover:bg-[hsl(215,18%,13%)] hover:text-[hsl(33,31%,87%)]"
-                  }`
-                }
-              >
-                <item.icon className="h-5 w-5" />
-              </NavLink>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="bg-popover text-popover-foreground">
-              {item.label}
-            </TooltipContent>
-          </Tooltip>
+          <NavItem key={item.to} item={item} />
         ))}
 
         {/* Theme toggle */}
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="w-10 h-10 text-[hsl(210,10%,58%)] hover:bg-[hsl(215,18%,13%)] hover:text-[hsl(33,31%,87%)]"
-            >
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-popover text-popover-foreground">
+        <Button
+          variant="ghost"
+          onClick={toggleDarkMode}
+          className={cn(
+            "h-10 text-white/70 hover:bg-white/5 hover:text-white transition-all duration-200",
+            isHovered ? "justify-start px-3 gap-3 w-full" : "w-10 mx-auto p-0"
+          )}
+        >
+          {isDark ? <Sun className="h-5 w-5 shrink-0" /> : <Moon className="h-5 w-5 shrink-0" />}
+          <span
+            className={cn(
+              "text-sm font-medium whitespace-nowrap transition-all duration-300",
+              isHovered ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+            )}
+          >
             {isDark ? "Modo Claro" : "Modo Escuro"}
-          </TooltipContent>
-        </Tooltip>
+          </span>
+        </Button>
 
         {/* Avatar dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 mt-1">
-              <Avatar className="h-8 w-8">
+            <Button
+              variant="ghost"
+              className={cn(
+                "relative rounded-lg mt-1 hover:bg-white/5 transition-all duration-200",
+                isHovered ? "justify-start px-3 gap-3 w-full h-12" : "h-10 w-10 mx-auto p-0"
+              )}
+            >
+              <Avatar className="h-8 w-8 shrink-0">
                 <AvatarImage src={userAvatar || undefined} alt={userName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                <AvatarFallback className="bg-[#FF6B00] text-white text-xs font-semibold">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
+              {isHovered && (
+                <div className="flex flex-col items-start text-left overflow-hidden">
+                  <span className="text-sm font-medium text-white truncate max-w-[120px]">{userName}</span>
+                  <span className="text-xs text-white/50 truncate max-w-[120px]">{companyName}</span>
+                </div>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 bg-popover" align="end" side="right" forceMount>
