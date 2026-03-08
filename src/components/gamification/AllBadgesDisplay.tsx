@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Badge as BadgeType } from "@/lib/gamification";
 import { motion } from "framer-motion";
-import { Lock } from "lucide-react";
+import { Lock, Trophy, Award, Medal, Crown, Target, Crosshair, Banknote, Gem, DollarSign, CircleDollarSign, MessageSquare, Dumbbell, ClipboardList, Search, Sword } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface AllBadgesDisplayProps {
   earnedBadges: BadgeType[];
