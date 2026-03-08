@@ -220,7 +220,7 @@ const Auth = () => {
         // Erro de configuração do Resend
         if (data.details) {
           toast({
-            title: "❌ Erro de configuração",
+            title: "Erro de configuração",
             description: data.details,
             variant: "destructive",
           });
