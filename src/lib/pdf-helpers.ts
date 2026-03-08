@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 
 const COLORS = {
   headerBg: [30, 64, 175] as [number, number, number],     // blue-800
