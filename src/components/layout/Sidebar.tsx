@@ -111,7 +111,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 bottom-0 w-16 bg-[hsl(216,28%,7%)] flex flex-col items-center py-4 z-50 border-r border-border/30">
+    <nav className="fixed top-0 left-0 bottom-0 w-16 bg-[hsl(216,28%,7%)] flex flex-col items-center py-4 z-50 border-r border-[hsl(212,100%,67%)]">
       {/* Logo */}
       <div className="mb-6 flex-shrink-0">
         {profile?.company?.logo_url ? (
