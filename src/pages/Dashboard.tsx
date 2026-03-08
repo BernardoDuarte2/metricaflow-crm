@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardFilters from "@/components/dashboard/DashboardFilters";
+
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
 import { useUserSession } from "@/hooks/useUserSession"; // Import adicionado
@@ -487,19 +487,6 @@ const Dashboard = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <DashboardFilters
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            compareMode={compareMode}
-            compareMonth={compareMonth}
-            compareYear={compareYear}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-            onCompareModeChange={setCompareMode}
-            onCompareMonthChange={setCompareMonth}
-            onCompareYearChange={setCompareYear}
-          />
-
           <Button
             onClick={handleExportPDF}
             disabled={isExporting || !stats}
