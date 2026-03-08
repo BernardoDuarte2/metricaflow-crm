@@ -233,7 +233,7 @@ const Auth = () => {
       logger.info("Password reset email sent successfully");
 
       toast({
-        title: "✅ Email enviado!",
+        title: "Email enviado",
         description: "Verifique sua caixa de entrada (e spam) para redefinir sua senha.",
       });
 
