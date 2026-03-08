@@ -31,7 +31,7 @@ export const GoalHeroCard = ({ goal, achieved, periodLabel }: GoalHeroCardProps)
 
   const getStatusConfig = () => {
     if (percentage >= 100) return { 
-      label: "Meta Batida! 🎉", 
+      label: "Meta Batida!", 
       icon: CheckCircle, 
       color: "text-success", 
       bg: "bg-success/10",

@@ -20,8 +20,8 @@
     --popover: 210 17% 98%;
     --popover-foreground: 216 14% 7%;
 
-    /* Coral Primary */
-    --primary: 0 100% 73%;
+    /* Electric Orange Primary */
+    --primary: 25 100% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 12% 92%;
@@ -30,7 +30,7 @@
     --muted: 210 12% 92%;
     --muted-foreground: 212 9% 58%;
 
-    --accent: 0 100% 73%;
+    --accent: 25 100% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 3 92% 63%;
@@ -38,7 +38,7 @@
 
     --border: 212 12% 80%;
     --input: 212 12% 80%;
-    --ring: 0 100% 73%;
+    --ring: 25 100% 50%;
 
     --success: 128 49% 49%;
     --success-foreground: 0 0% 100%;
@@ -52,15 +52,15 @@
     --cockpit-bg: 210 17% 95%;
     --cockpit-card: 210 17% 98%;
     --cockpit-border: 212 12% 80%;
-    --cockpit-accent: 0 100% 73%;
+    --cockpit-accent: 25 100% 50%;
     --cockpit-success: 128 49% 49%;
     --cockpit-danger: 3 92% 63%;
     --cockpit-warning: 42 75% 57%;
     --cockpit-muted: 212 9% 58%;
     --cockpit-foreground: 216 14% 7%;
-    --cockpit-glow: 0 100% 73%;
+    --cockpit-glow: 25 100% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(0 100% 73%), hsl(0 52% 51%));
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(30 100% 40%));
     --gradient-success: linear-gradient(135deg, hsl(128 49% 49%), hsl(142 70% 55%));
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -68,15 +68,15 @@
 
     --sidebar-background: 210 17% 98%;
     --sidebar-foreground: 216 14% 7%;
-    --sidebar-primary: 0 100% 73%;
+    --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 12% 92%;
     --sidebar-accent-foreground: 216 14% 7%;
     --sidebar-border: 212 12% 80%;
-    --sidebar-ring: 0 100% 73%;
+    --sidebar-ring: 25 100% 50%;
 
     /* Chart colors */
-    --chart-1: 0 100% 73%;
+    --chart-1: 25 100% 50%;
     --chart-2: 212 100% 67%;
     --chart-3: 128 49% 49%;
     --chart-4: 42 75% 57%;
@@ -97,8 +97,8 @@
     --popover: 215 21% 11%;
     --popover-foreground: 33 31% 87%;
 
-    /* Coral Primary */
-    --primary: 0 100% 73%;
+    /* Electric Orange Primary */
+    --primary: 25 100% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 215 18% 13%;
@@ -107,7 +107,7 @@
     --muted: 215 18% 13%;
     --muted-foreground: 210 10% 58%;
 
-    --accent: 0 100% 73%;
+    --accent: 25 100% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 3 92% 63%;
@@ -115,7 +115,7 @@
 
     --border: 213 14% 21%;
     --input: 213 14% 21%;
-    --ring: 0 100% 73%;
+    --ring: 25 100% 50%;
 
     --success: 128 49% 49%;
     --success-foreground: 0 0% 100%;
@@ -127,28 +127,28 @@
     --cockpit-bg: 216 28% 7%;
     --cockpit-card: 215 21% 11%;
     --cockpit-border: 213 14% 21%;
-    --cockpit-accent: 0 100% 73%;
+    --cockpit-accent: 25 100% 50%;
     --cockpit-success: 128 49% 49%;
     --cockpit-danger: 3 92% 63%;
     --cockpit-warning: 42 75% 57%;
     --cockpit-muted: 210 10% 58%;
     --cockpit-foreground: 33 31% 87%;
-    --cockpit-glow: 0 100% 73%;
+    --cockpit-glow: 25 100% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(0 100% 73%), hsl(0 52% 51%));
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(30 100% 40%));
     --gradient-success: linear-gradient(135deg, hsl(128 49% 49%), hsl(142 70% 55%));
 
     --sidebar-background: 216 28% 5%;
     --sidebar-foreground: 33 31% 87%;
-    --sidebar-primary: 0 100% 73%;
+    --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 18% 13%;
     --sidebar-accent-foreground: 33 31% 87%;
     --sidebar-border: 213 14% 19%;
-    --sidebar-ring: 0 100% 73%;
+    --sidebar-ring: 25 100% 50%;
 
     /* Chart colors dark */
-    --chart-1: 0 100% 73%;
+    --chart-1: 25 100% 50%;
     --chart-2: 212 100% 67%;
     --chart-3: 128 49% 49%;
     --chart-4: 42 75% 57%;
@@ -246,7 +246,7 @@
   }
   
   .gradient-bg-animated {
-    background: linear-gradient(135deg, hsl(0 100% 73%), hsl(0 52% 51%), hsl(0 73% 62%), hsl(0 100% 73%));
+    background: linear-gradient(135deg, hsl(25 100% 50%), hsl(30 100% 40%), hsl(25 100% 45%), hsl(25 100% 50%));
     background-size: 300% 300%;
     animation: gradient-shift 10s ease infinite;
   }

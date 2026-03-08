@@ -44,16 +44,7 @@ export const TeamGoalProgressCard = ({
   return (
     <div className="relative rounded-2xl bg-card border border-border overflow-hidden shadow-lg">
       {/* Top accent line */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-1"
-        style={{ background: `linear-gradient(to right, ${getStatusColor()}, hsl(270 70% 68%))` }}
-      />
-      
-      {/* Corner glow */}
-      <div 
-        className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: getStatusColor() }}
-      />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
 
       <div className="relative p-6">
         {/* Header */}
@@ -152,7 +143,7 @@ export const TeamGoalProgressCard = ({
         {gap > 0 && (
           <div className="mt-4 p-3 rounded-lg bg-warning/5 border border-warning/20">
             <p className="text-xs text-warning">
-              ⚠️ Faltam <span className="font-bold">R$ {gap.toLocaleString('pt-BR')}</span> para bater a meta. 
+              Faltam <span className="font-bold">R$ {gap.toLocaleString('pt-BR')}</span> para bater a meta. 
               Velocidade necessária: <span className="font-bold">R$ {dailyNeeded.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}/dia</span>
             </p>
           </div>

@@ -16,39 +16,35 @@ interface AlertPanelProps {
 const alertConfig = {
   money: {
     icon: DollarSign,
-    bgColor: "bg-[hsl(330_100%_62%/0.08)]",
-    borderColor: "border-[hsl(330_100%_62%/0.25)]",
-    iconBg: "bg-[hsl(330_100%_62%/0.15)]",
-    iconColor: "text-[hsl(330_100%_62%)]",
-    valueBg: "bg-[hsl(330_100%_62%)]",
-    glow: "shadow-[0_0_20px_hsl(330_100%_62%/0.15)]"
+    bgColor: "bg-destructive/8",
+    borderColor: "border-destructive/25",
+    iconBg: "bg-destructive/15",
+    iconColor: "text-destructive",
+    valueBg: "bg-destructive",
   },
   bottleneck: {
     icon: AlertTriangle,
-    bgColor: "bg-[hsl(38_90%_50%/0.08)]",
-    borderColor: "border-[hsl(38_90%_50%/0.25)]",
-    iconBg: "bg-[hsl(38_90%_50%/0.15)]",
-    iconColor: "text-[hsl(38_90%_50%)]",
-    valueBg: "bg-[hsl(38_90%_50%)]",
-    glow: "shadow-[0_0_20px_hsl(38_90%_50%/0.15)]"
+    bgColor: "bg-warning/8",
+    borderColor: "border-warning/25",
+    iconBg: "bg-warning/15",
+    iconColor: "text-warning",
+    valueBg: "bg-warning",
   },
   performance: {
     icon: TrendingDown,
-    bgColor: "bg-[hsl(0_75%_55%/0.08)]",
-    borderColor: "border-[hsl(0_75%_55%/0.25)]",
-    iconBg: "bg-[hsl(0_75%_55%/0.15)]",
-    iconColor: "text-[hsl(0_75%_55%)]",
-    valueBg: "bg-[hsl(0_75%_55%)]",
-    glow: "shadow-[0_0_20px_hsl(0_75%_55%/0.15)]"
+    bgColor: "bg-destructive/8",
+    borderColor: "border-destructive/25",
+    iconBg: "bg-destructive/15",
+    iconColor: "text-destructive",
+    valueBg: "bg-destructive",
   },
   stale: {
     icon: Clock,
-    bgColor: "bg-[hsl(0_0%_50%/0.08)]",
-    borderColor: "border-[hsl(0_0%_50%/0.25)]",
-    iconBg: "bg-[hsl(0_0%_50%/0.15)]",
-    iconColor: "text-[hsl(0_0%_50%)]",
-    valueBg: "bg-[hsl(0_0%_40%)]",
-    glow: "shadow-[0_0_20px_hsl(0_0%_50%/0.15)]"
+    bgColor: "bg-muted/50",
+    borderColor: "border-border",
+    iconBg: "bg-muted",
+    iconColor: "text-muted-foreground",
+    valueBg: "bg-muted-foreground",
   }
 };
 
@@ -58,16 +54,16 @@ export const AlertPanel = ({ alerts }: AlertPanelProps) => {
   }
 
   return (
-    <div className="rounded-xl bg-white dark:bg-[hsl(0_0%_8%)] border border-[hsl(0_0%_90%)] dark:border-[hsl(0_0%_18%)] overflow-hidden shadow-sm">
+    <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-[hsl(0_0%_92%)] dark:border-[hsl(0_0%_15%)] flex items-center gap-2">
-        <div className="p-1.5 rounded-md bg-[hsl(330_100%_62%/0.1)]">
-          <AlertCircle className="h-4 w-4 text-[hsl(330_100%_62%)]" />
+      <div className="px-5 py-3 border-b border-border flex items-center gap-2">
+        <div className="p-1.5 rounded-md bg-primary/10">
+          <AlertCircle className="h-4 w-4 text-primary" />
         </div>
-        <h3 className="text-sm font-semibold text-[hsl(0_0%_8%)] dark:text-[hsl(0_0%_95%)]">
+        <h3 className="text-sm font-semibold text-foreground">
           Alertas Inteligentes
         </h3>
-        <span className="ml-auto px-2 py-0.5 rounded-full bg-[hsl(330_100%_62%/0.1)] text-[hsl(330_100%_62%)] text-xs font-semibold">
+        <span className="ml-auto px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
           {alerts.length}
         </span>
       </div>
@@ -83,10 +79,9 @@ export const AlertPanel = ({ alerts }: AlertPanelProps) => {
               key={alert.id}
               className={cn(
                 "relative rounded-xl p-4 border transition-all duration-300",
-                "hover:translate-y-[-2px] hover:shadow-lg cursor-pointer",
+                "hover:shadow-md cursor-pointer",
                 config.bgColor,
                 config.borderColor,
-                config.glow
               )}
             >
               {/* Icon */}
@@ -98,10 +93,10 @@ export const AlertPanel = ({ alerts }: AlertPanelProps) => {
               </div>
 
               {/* Content */}
-              <h4 className="text-sm font-semibold text-[hsl(0_0%_15%)] dark:text-[hsl(0_0%_90%)] mb-1">
+              <h4 className="text-sm font-semibold text-foreground mb-1">
                 {alert.title}
               </h4>
-              <p className="text-xs text-[hsl(0_0%_45%)] dark:text-[hsl(0_0%_55%)] leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {alert.message}
               </p>
 

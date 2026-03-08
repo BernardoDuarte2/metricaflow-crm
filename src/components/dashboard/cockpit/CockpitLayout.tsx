@@ -21,11 +21,11 @@ export const CockpitLayout = ({ children }: CockpitLayoutProps) => {
           }}
         />
         
-        {/* Top ambient glow - coral */}
+        {/* Top ambient glow - electric orange */}
         <div 
           className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[450px] rounded-full"
           style={{
-            background: 'radial-gradient(ellipse, hsl(var(--primary) / 0.04) 0%, transparent 70%)'
+            background: 'radial-gradient(ellipse, hsl(25 100% 50% / 0.04) 0%, transparent 70%)'
           }}
         />
       </div>
