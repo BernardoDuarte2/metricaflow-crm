@@ -106,10 +106,9 @@ export const CommandKPI = ({
     <div 
       className={cn(
         "relative overflow-hidden rounded-xl bg-card border transition-all duration-300",
-        "hover:translate-y-[-2px] hover:shadow-lg group",
+        "hover:shadow-lg group",
         colors.border,
-        colors.glow,
-        alert && "ring-2 ring-primary/30 animate-pulse"
+        alert && "ring-2 ring-primary/30"
       )}
     >
       {/* Top accent line */}
@@ -118,11 +117,7 @@ export const CommandKPI = ({
         colors.line
       )} />
       
-      {/* Corner gradient */}
-      <div className={cn(
-        "absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-40 pointer-events-none",
-        colors.gradient
-      )} />
+      
 
       <div className={cn(
         "relative p-5",

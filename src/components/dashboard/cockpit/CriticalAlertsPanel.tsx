@@ -85,7 +85,7 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
         <div className="flex items-center gap-3">
           <div className={cn(
             "p-2 rounded-lg",
-            criticalCount > 0 ? "bg-destructive/15 animate-pulse" : "bg-warning/15"
+            criticalCount > 0 ? "bg-destructive/15" : "bg-warning/15"
           )}>
             <Flame className={cn(
               "h-4 w-4",
@@ -106,8 +106,8 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
         </div>
         
         {criticalCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive text-white text-xs font-bold animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive text-white text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-white" />
             <span>{criticalCount} CRÍTICO{criticalCount > 1 ? 'S' : ''}</span>
           </div>
         )}
@@ -126,7 +126,7 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
               onClick={() => onAlertClick?.(alert.id)}
               className={cn(
                 "relative text-left rounded-xl p-4 border transition-all duration-300",
-                "hover:translate-y-[-2px] hover:shadow-lg",
+                "hover:shadow-lg",
                 severity.bg,
                 severity.border,
                 severity.glow,
@@ -174,7 +174,6 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
               {/* Pulse indicator for critical */}
               {alert.severity === 'critical' && (
                 <div className="absolute top-3 right-3 w-3 h-3">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75 animate-ping" />
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive" />
                 </div>
               )}

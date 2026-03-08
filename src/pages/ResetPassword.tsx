@@ -168,7 +168,7 @@ const ResetPassword = () => {
                 <>
                   <PasswordStrength password={password} />
                   <p className="text-xs text-muted-foreground mt-2">
-                    💡 Dica: Evite senhas que você já usou em outros sites ou que sejam muito comuns.
+                    Evite senhas que você já usou em outros sites ou que sejam muito comuns.
                   </p>
                 </>
               )}

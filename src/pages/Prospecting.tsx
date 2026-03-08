@@ -287,7 +287,7 @@ const Prospecting = () => {
         );
         setLeads(mappedLeads);
 
-        toast.success("🎯 Prospecção finalizada!", {
+        toast.success("Prospecção finalizada", {
           description: `${data.count} leads encontrados para "${data.termo}"`,
           duration: 5000,
         });

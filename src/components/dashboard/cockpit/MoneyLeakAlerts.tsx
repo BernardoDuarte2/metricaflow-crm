@@ -101,9 +101,9 @@ export const MoneyLeakAlerts = ({
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-red-500/5 to-transparent">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-red-500/10 animate-pulse">
+          <div className="p-2 rounded-lg bg-red-500/10">
             <AlertTriangle className="h-4 w-4 text-red-400" />
           </div>
           <div>
@@ -132,7 +132,7 @@ export const MoneyLeakAlerts = ({
               className={cn(
                 "relative text-left rounded-xl p-4 border transition-all duration-300 group",
                 isActive
-                  ? cn(colors.bg, colors.border, colors.hover, "cursor-pointer hover:translate-y-[-2px]")
+                  ? cn(colors.bg, colors.border, colors.hover, "cursor-pointer")
                   : "bg-muted/30 border-border/50 opacity-50 cursor-default"
               )}
             >
@@ -162,7 +162,6 @@ export const MoneyLeakAlerts = ({
               {/* Critical pulse */}
               {isActive && alert.count >= 5 && (
                 <div className="absolute top-3 right-3 w-2.5 h-2.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60 animate-ping" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
                 </div>
               )}

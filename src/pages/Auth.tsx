@@ -115,7 +115,7 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "✅ Login realizado com sucesso!",
+        title: "Login realizado com sucesso",
         description: "Bem-vindo de volta.",
       });
     } catch (error: any) {
@@ -178,7 +178,7 @@ const Auth = () => {
       logger.info("Signup successful!");
 
       toast({
-        title: "✅ Conta criada com sucesso!",
+        title: "Conta criada com sucesso",
         description: "Você já pode fazer login.",
       });
 
@@ -220,7 +220,7 @@ const Auth = () => {
         // Erro de configuração do Resend
         if (data.details) {
           toast({
-            title: "❌ Erro de configuração",
+            title: "Erro de configuração",
             description: data.details,
             variant: "destructive",
           });
@@ -233,7 +233,7 @@ const Auth = () => {
       logger.info("Password reset email sent successfully");
 
       toast({
-        title: "✅ Email enviado!",
+        title: "Email enviado",
         description: "Verifique sua caixa de entrada (e spam) para redefinir sua senha.",
       });
 
@@ -282,7 +282,7 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "✅ Senha atualizada!",
+        title: "Senha atualizada",
         description: "Sua senha foi redefinida com sucesso.",
       });
 
@@ -394,7 +394,7 @@ const Auth = () => {
           {/* Planet Circle - Half visible with futuristic glow */}
           <div className="absolute -bottom-1/3 left-1/2 -translate-x-1/2 w-[650px] h-[650px]">
             {/* Outer Glow - Blue Electric */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px]" />
 
             {/* Main Planet - Electric Blue Core */}
             <div className="absolute inset-12 rounded-full bg-gradient-to-br from-primary/50 via-accent/40 to-primary/30 border-2 border-primary/40 shadow-2xl shadow-primary/20">
@@ -408,18 +408,18 @@ const Auth = () => {
             </div>
 
             {/* Animated Rings */}
-            <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse" style={{ animationDuration: '3s' }} />
-            <div className="absolute inset-6 rounded-full border border-accent/20 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+            <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
+            <div className="absolute inset-6 rounded-full border border-accent/20" />
 
             {/* Glow Ring */}
             <div className="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(93,123,255,0.4)]" />
           </div>
 
           {/* Floating Particles - Futuristic Colors */}
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)] animate-pulse" />
-          <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)] animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)] animate-pulse" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)] animate-pulse" style={{ animationDelay: '1.5s' }} />
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)]" />
+          <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)]" />
+          <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)]" />
+          <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)]" />
         </div>
       </div>
     );
@@ -675,7 +675,7 @@ const Auth = () => {
         {/* Planet Circle - Half visible with futuristic glow */}
         <div className="absolute -bottom-1/3 left-1/2 -translate-x-1/2 w-[650px] h-[650px]">
           {/* Outer Glow - Blue Electric */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 via-accent/30 to-transparent blur-[100px]" />
 
           {/* Main Planet - Electric Blue Core */}
           <div className="absolute inset-12 rounded-full bg-gradient-to-br from-primary/50 via-accent/40 to-primary/30 border-2 border-primary/40 shadow-2xl shadow-primary/20">
@@ -689,18 +689,18 @@ const Auth = () => {
           </div>
 
           {/* Animated Rings */}
-          <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse" style={{ animationDuration: '3s' }} />
-          <div className="absolute inset-6 rounded-full border border-accent/20 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+           <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
+           <div className="absolute inset-6 rounded-full border border-accent/20" />
 
           {/* Glow Ring */}
           <div className="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(93,123,255,0.4)]" />
         </div>
 
         {/* Floating Particles - Futuristic Colors */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)] animate-pulse" />
-        <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)] animate-pulse" style={{ animationDelay: '1.5s' }} />
+         <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)]" />
+         <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)]" />
+         <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)]" />
+         <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)]" />
       </div>
     </div>
   );

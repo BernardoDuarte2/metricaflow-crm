@@ -56,13 +56,13 @@ export default function Diagnostics() {
 
       if (data.error) {
         toast({
-          title: "❌ Erro na configuração",
+          title: "Erro na configuração",
           description: data.details || data.error,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "✅ Teste bem-sucedido!",
+          title: "Teste bem-sucedido",
           description: `Email enviado para ${testEmail}. Verifique sua caixa de entrada.`,
         });
       }
@@ -171,7 +171,7 @@ export default function Diagnostics() {
               </div>
 
               <div className="bg-muted p-4 rounded-lg text-sm space-y-2">
-                <h4 className="font-medium">📚 Como configurar:</h4>
+                <h4 className="font-medium">Como configurar:</h4>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                   <li>Crie uma conta em <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">resend.com</a></li>
                   <li>Verifique seu domínio em <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">resend.com/domains</a></li>

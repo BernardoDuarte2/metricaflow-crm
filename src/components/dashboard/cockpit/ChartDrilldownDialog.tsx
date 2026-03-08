@@ -108,9 +108,9 @@ export function ChartDrilldownDialog({ open, onOpenChange, data }: ChartDrilldow
                     <TableRow key={seller.name} className="border-cockpit-border">
                       <TableCell className="font-medium text-cockpit-foreground">
                         <div className="flex items-center gap-2">
-                          {index === 0 && <Badge className="bg-yellow-500/20 text-yellow-500 text-xs">🥇</Badge>}
-                          {index === 1 && <Badge className="bg-gray-400/20 text-gray-400 text-xs">🥈</Badge>}
-                          {index === 2 && <Badge className="bg-orange-500/20 text-orange-500 text-xs">🥉</Badge>}
+                          {index === 0 && <Badge className="bg-yellow-500/20 text-yellow-500 text-xs">#1</Badge>}
+                          {index === 1 && <Badge className="bg-gray-400/20 text-gray-400 text-xs">#2</Badge>}
+                          {index === 2 && <Badge className="bg-orange-500/20 text-orange-500 text-xs">#3</Badge>}
                           {seller.name}
                         </div>
                       </TableCell>
@@ -191,7 +191,7 @@ export function ChartDrilldownDialog({ open, onOpenChange, data }: ChartDrilldow
                 Em <span className="text-cockpit-foreground font-medium">{data.month}</span>, 
                 {' '}{data.leadsDetails.closedLeads} de {data.leadsDetails.totalLeads} leads foram convertidos
                 {data.leadsDetails.conversionRate >= 20 
-                  ? ' - ótima performance! 🎉' 
+                  ? ' — ótima performance.' 
                   : data.leadsDetails.conversionRate >= 10 
                     ? ' - performance razoável.' 
                     : ' - há espaço para melhorias.'}

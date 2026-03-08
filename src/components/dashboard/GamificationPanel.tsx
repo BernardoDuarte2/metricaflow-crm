@@ -60,12 +60,12 @@ export function GamificationPanel() {
 
         // Sistema de badges
         const badges: string[] = [];
-        if (convertedLeads.length >= 10) badges.push('🏆 Fechador Master');
-        if (convertedLeads.length >= 5) badges.push('⭐ Top Performer');
-        if (conversionRate >= 50) badges.push('🎯 Sniper');
-        if (conversionRate >= 30) badges.push('📈 Alta Conversão');
-        if (userObservations.length >= 50) badges.push('💬 Comunicador');
-        if (userLeads.length >= 20) badges.push('🚀 Gerador de Leads');
+        if (convertedLeads.length >= 10) badges.push('Fechador Master');
+        if (convertedLeads.length >= 5) badges.push('Top Performer');
+        if (conversionRate >= 50) badges.push('Sniper');
+        if (conversionRate >= 30) badges.push('Alta Conversão');
+        if (userObservations.length >= 50) badges.push('Comunicador');
+        if (userLeads.length >= 20) badges.push('Gerador de Leads');
 
         return {
           id: profile.id,
@@ -121,11 +121,11 @@ export function GamificationPanel() {
   return (
     <div className="space-y-6">
       {/* Top 3 Podium */}
-      <Card className="bg-gradient-to-br from-primary/5 via-background to-background border-primary/20">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary animate-pulse" />
-            🎮 Ranking Live - Últimos 30 dias
+            <Trophy className="h-5 w-5 text-primary" />
+            Ranking — Últimos 30 dias
             <Badge variant="secondary" className="ml-auto">
               <Zap className="h-3 w-3 mr-1" />
               Tempo Real
@@ -240,7 +240,7 @@ export function GamificationPanel() {
                     <div className="flex flex-wrap gap-1">
                       {person.badges.slice(0, 2).map((badge, i) => (
                         <Badge key={i} variant="secondary" className="text-[10px] px-1 py-0">
-                          {badge.split(' ')[0]}
+                          {badge}
                         </Badge>
                       ))}
                     </div>
@@ -305,7 +305,7 @@ export function GamificationPanel() {
       {/* Sistema de Pontuação */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">📊 Como Ganhar Pontos</CardTitle>
+          <CardTitle className="text-lg">Como Ganhar Pontos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

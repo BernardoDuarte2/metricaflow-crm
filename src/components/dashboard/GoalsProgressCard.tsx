@@ -137,7 +137,7 @@ export const GoalsProgressCard = () => {
             <div className="flex items-center justify-center gap-2">
               <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
               <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                🎉 Parabéns! Você bateu sua meta de hoje!
+                Parabéns! Você bateu sua meta de hoje!
               </span>
             </div>
           </div>

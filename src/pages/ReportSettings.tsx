@@ -110,7 +110,7 @@ const ReportSettings = () => {
         {/* Relatórios Diários */}
         <Card>
           <CardHeader>
-            <CardTitle>📊 Relatórios Diários</CardTitle>
+            <CardTitle>Relatórios Diários</CardTitle>
             <CardDescription>
               Enviados automaticamente todos os dias úteis para cada vendedor e gestores
             </CardDescription>
@@ -152,7 +152,7 @@ const ReportSettings = () => {
         {/* Relatórios Semanais */}
         <Card>
           <CardHeader>
-            <CardTitle>📅 Relatórios Semanais</CardTitle>
+            <CardTitle>Relatórios Semanais</CardTitle>
             <CardDescription>
               Análise completa da semana com insights estratégicos da IA
             </CardDescription>
@@ -214,7 +214,7 @@ const ReportSettings = () => {
         {/* Configurações da IA */}
         <Card>
           <CardHeader>
-            <CardTitle>🤖 Análise com IA</CardTitle>
+            <CardTitle>Análise com IA</CardTitle>
             <CardDescription>
               Configure o nível de detalhe das análises geradas pela inteligência artificial
             </CardDescription>
@@ -275,7 +275,7 @@ const ReportSettings = () => {
         {/* Testar Envio */}
         <Card>
           <CardHeader>
-            <CardTitle>🧪 Enviar Relatório de Teste</CardTitle>
+            <CardTitle>Enviar Relatório de Teste</CardTitle>
             <CardDescription>
               Envie um relatório de teste agora para verificar como ficará
             </CardDescription>
