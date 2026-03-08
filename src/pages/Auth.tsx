@@ -689,8 +689,8 @@ const Auth = () => {
           </div>
 
           {/* Animated Rings */}
-          <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse" style={{ animationDuration: '3s' }} />
-          <div className="absolute inset-6 rounded-full border border-accent/20 animate-pulse" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+           <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
+           <div className="absolute inset-6 rounded-full border border-accent/20" />
 
           {/* Glow Ring */}
           <div className="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(93,123,255,0.4)]" />
