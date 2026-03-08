@@ -68,12 +68,12 @@
 
     --sidebar-background: 204 84% 10%;
     --sidebar-foreground: 200 20% 85%;
-    --sidebar-primary: 25 100% 50%;
+    --sidebar-primary: 0 0% 95%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 204 60% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 204 50% 18%;
-    --sidebar-ring: 25 100% 50%;
+    --sidebar-ring: 0 0% 95%;
 
     /* Chart colors */
     --chart-1: 198 82% 25%;
@@ -140,12 +140,12 @@
 
     --sidebar-background: 204 84% 10%;
     --sidebar-foreground: 200 20% 85%;
-    --sidebar-primary: 25 100% 50%;
+    --sidebar-primary: 0 0% 95%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 204 60% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 204 50% 18%;
-    --sidebar-ring: 25 100% 50%;
+    --sidebar-ring: 0 0% 95%;
 
     /* Chart colors dark */
     --chart-1: 198 70% 40%;
