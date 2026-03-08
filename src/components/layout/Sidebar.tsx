@@ -130,7 +130,7 @@ const Sidebar = () => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "fixed top-0 left-0 bottom-0 bg-[#072F4A] flex flex-col py-4 z-50 border-r border-[#0B4F73]/40 transition-all duration-300",
+        "fixed top-0 left-0 bottom-0 bg-sidebar flex flex-col py-4 z-50 border-r border-sidebar-border transition-all duration-300",
         isHovered ? "w-56" : "w-16"
       )}
     >
@@ -143,7 +143,7 @@ const Sidebar = () => {
             className="h-8 w-8 object-contain rounded"
           />
         ) : (
-          <div className="h-9 w-9 rounded-lg bg-[#0B4F73] flex items-center justify-center">
+          <div className="h-9 w-9 rounded-lg bg-sidebar-accent flex items-center justify-center">
             <span className="text-white font-bold text-sm">
               {(profile?.company?.system_name || "O")[0]}
             </span>
@@ -199,7 +199,7 @@ const Sidebar = () => {
             >
               <Avatar className="h-8 w-8 shrink-0">
                 <AvatarImage src={userAvatar || undefined} alt={userName} />
-                <AvatarFallback className="bg-[#0B4F73] text-white text-xs font-semibold">
+                <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs font-semibold">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
