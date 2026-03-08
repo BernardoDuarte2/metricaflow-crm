@@ -193,6 +193,7 @@ const Sidebar = () => {
         </DropdownMenuContent>
       </DropdownMenu>
     </nav>
+    </>
   );
 };
 
