@@ -214,7 +214,7 @@ const ReportSettings = () => {
         {/* Configurações da IA */}
         <Card>
           <CardHeader>
-            <CardTitle>🤖 Análise com IA</CardTitle>
+            <CardTitle>Análise com IA</CardTitle>
             <CardDescription>
               Configure o nível de detalhe das análises geradas pela inteligência artificial
             </CardDescription>
