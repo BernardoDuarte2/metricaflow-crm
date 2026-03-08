@@ -199,7 +199,7 @@ const Sidebar = () => {
             >
               <Avatar className="h-8 w-8 shrink-0">
                 <AvatarImage src={userAvatar || undefined} alt={userName} />
-                <AvatarFallback className="bg-[#FF6B00] text-white text-xs font-semibold">
+                <AvatarFallback className="bg-[#0B4F73] text-white text-xs font-semibold">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>

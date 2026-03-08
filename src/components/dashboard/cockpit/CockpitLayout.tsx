@@ -25,7 +25,7 @@ export const CockpitLayout = ({ children }: CockpitLayoutProps) => {
         <div 
           className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[450px] rounded-full"
           style={{
-            background: 'radial-gradient(ellipse, hsl(25 100% 50% / 0.04) 0%, transparent 70%)'
+            background: 'radial-gradient(ellipse, hsl(198 82% 25% / 0.06) 0%, transparent 70%)'
           }}
         />
       </div>

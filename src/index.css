@@ -4,31 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ORKA Design System — Paleta A (Dark-first, Coral Primary) */
+/* ORKA Design System — Azul ORKA + Laranja Elétrico */
 
 @layer base {
   :root {
     --font-sans: 'Inter', 'Plus Jakarta Sans', sans-serif;
     
-    /* Light Mode — Paleta A adapted */
-    --background: 210 17% 95%;
-    --foreground: 216 14% 7%;
+    /* Light Mode — ORKA Brand */
+    --background: 0 0% 95%;
+    --foreground: 204 84% 16%;
 
-    --card: 210 17% 98%;
-    --card-foreground: 216 14% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 204 84% 16%;
 
-    --popover: 210 17% 98%;
-    --popover-foreground: 216 14% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 204 84% 16%;
 
-    /* Electric Orange Primary */
-    --primary: 25 100% 50%;
+    /* Azul ORKA Primary */
+    --primary: 198 82% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 12% 92%;
-    --secondary-foreground: 216 14% 7%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 204 84% 16%;
 
-    --muted: 210 12% 92%;
-    --muted-foreground: 212 9% 58%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 200 10% 46%;
 
     --accent: 25 100% 50%;
     --accent-foreground: 0 0% 100%;
@@ -36,11 +36,11 @@
     --destructive: 3 92% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 212 12% 80%;
-    --input: 212 12% 80%;
-    --ring: 25 100% 50%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 198 82% 25%;
 
-    --success: 128 49% 49%;
+    --success: 152 56% 40%;
     --success-foreground: 0 0% 100%;
 
     --warning: 42 75% 57%;
@@ -49,63 +49,63 @@
     --radius: 0.75rem;
     
     /* Cockpit variables - Light */
-    --cockpit-bg: 210 17% 95%;
-    --cockpit-card: 210 17% 98%;
-    --cockpit-border: 212 12% 80%;
+    --cockpit-bg: 0 0% 95%;
+    --cockpit-card: 0 0% 100%;
+    --cockpit-border: 0 0% 85%;
     --cockpit-accent: 25 100% 50%;
-    --cockpit-success: 128 49% 49%;
+    --cockpit-success: 152 56% 40%;
     --cockpit-danger: 3 92% 63%;
     --cockpit-warning: 42 75% 57%;
-    --cockpit-muted: 212 9% 58%;
-    --cockpit-foreground: 216 14% 7%;
-    --cockpit-glow: 25 100% 50%;
+    --cockpit-muted: 200 10% 46%;
+    --cockpit-foreground: 204 84% 16%;
+    --cockpit-glow: 198 82% 25%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(30 100% 40%));
-    --gradient-success: linear-gradient(135deg, hsl(128 49% 49%), hsl(142 70% 55%));
+    --gradient-primary: linear-gradient(135deg, hsl(198 82% 25%), hsl(204 84% 16%));
+    --gradient-success: linear-gradient(135deg, hsl(152 56% 40%), hsl(160 60% 45%));
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-    --sidebar-background: 210 17% 98%;
-    --sidebar-foreground: 216 14% 7%;
+    --sidebar-background: 204 84% 16%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 12% 92%;
-    --sidebar-accent-foreground: 216 14% 7%;
-    --sidebar-border: 212 12% 80%;
+    --sidebar-accent: 198 82% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 198 50% 22%;
     --sidebar-ring: 25 100% 50%;
 
     /* Chart colors */
-    --chart-1: 25 100% 50%;
-    --chart-2: 212 100% 67%;
-    --chart-3: 128 49% 49%;
+    --chart-1: 198 82% 25%;
+    --chart-2: 25 100% 50%;
+    --chart-3: 152 56% 40%;
     --chart-4: 42 75% 57%;
     --chart-5: 3 92% 63%;
-    --chart-6: 280 70% 50%;
-    --chart-7: 170 60% 50%;
-    --chart-8: 30 80% 55%;
+    --chart-6: 280 50% 45%;
+    --chart-7: 170 50% 42%;
+    --chart-8: 30 70% 50%;
   }
 
   .dark {
-    /* ORKA Dark Mode — Paleta A */
-    --background: 216 28% 7%;
-    --foreground: 33 31% 87%;
+    /* ORKA Dark Mode */
+    --background: 204 84% 16%;
+    --foreground: 0 0% 92%;
 
-    --card: 215 21% 11%;
-    --card-foreground: 33 31% 87%;
+    --card: 200 60% 12%;
+    --card-foreground: 0 0% 92%;
 
-    --popover: 215 21% 11%;
-    --popover-foreground: 33 31% 87%;
+    --popover: 200 60% 12%;
+    --popover-foreground: 0 0% 92%;
 
-    /* Electric Orange Primary */
-    --primary: 25 100% 50%;
+    /* Azul ORKA Primary (lighter in dark for contrast) */
+    --primary: 198 70% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 18% 13%;
-    --secondary-foreground: 210 10% 58%;
+    --secondary: 200 40% 14%;
+    --secondary-foreground: 200 10% 60%;
 
-    --muted: 215 18% 13%;
-    --muted-foreground: 210 10% 58%;
+    --muted: 200 40% 14%;
+    --muted-foreground: 200 10% 55%;
 
     --accent: 25 100% 50%;
     --accent-foreground: 0 0% 100%;
@@ -113,49 +113,49 @@
     --destructive: 3 92% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 213 14% 21%;
-    --input: 213 14% 21%;
-    --ring: 25 100% 50%;
+    --border: 200 30% 20%;
+    --input: 200 30% 20%;
+    --ring: 198 70% 40%;
 
-    --success: 128 49% 49%;
+    --success: 152 56% 40%;
     --success-foreground: 0 0% 100%;
 
     --warning: 42 75% 57%;
     --warning-foreground: 0 0% 10%;
     
     /* Cockpit variables - Dark */
-    --cockpit-bg: 216 28% 7%;
-    --cockpit-card: 215 21% 11%;
-    --cockpit-border: 213 14% 21%;
+    --cockpit-bg: 204 84% 16%;
+    --cockpit-card: 200 60% 12%;
+    --cockpit-border: 200 30% 20%;
     --cockpit-accent: 25 100% 50%;
-    --cockpit-success: 128 49% 49%;
+    --cockpit-success: 152 56% 40%;
     --cockpit-danger: 3 92% 63%;
     --cockpit-warning: 42 75% 57%;
-    --cockpit-muted: 210 10% 58%;
-    --cockpit-foreground: 33 31% 87%;
-    --cockpit-glow: 25 100% 50%;
+    --cockpit-muted: 200 10% 55%;
+    --cockpit-foreground: 0 0% 92%;
+    --cockpit-glow: 198 70% 40%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(30 100% 40%));
-    --gradient-success: linear-gradient(135deg, hsl(128 49% 49%), hsl(142 70% 55%));
+    --gradient-primary: linear-gradient(135deg, hsl(198 70% 40%), hsl(198 82% 25%));
+    --gradient-success: linear-gradient(135deg, hsl(152 56% 40%), hsl(160 60% 45%));
 
-    --sidebar-background: 216 28% 5%;
-    --sidebar-foreground: 33 31% 87%;
+    --sidebar-background: 206 85% 12%;
+    --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 18% 13%;
-    --sidebar-accent-foreground: 33 31% 87%;
-    --sidebar-border: 213 14% 19%;
+    --sidebar-accent: 200 40% 14%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 200 30% 18%;
     --sidebar-ring: 25 100% 50%;
 
     /* Chart colors dark */
-    --chart-1: 25 100% 50%;
-    --chart-2: 212 100% 67%;
-    --chart-3: 128 49% 49%;
+    --chart-1: 198 70% 40%;
+    --chart-2: 25 100% 50%;
+    --chart-3: 152 56% 40%;
     --chart-4: 42 75% 57%;
     --chart-5: 3 92% 63%;
-    --chart-6: 280 70% 55%;
-    --chart-7: 170 60% 55%;
-    --chart-8: 30 80% 60%;
+    --chart-6: 280 50% 50%;
+    --chart-7: 170 50% 48%;
+    --chart-8: 30 70% 55%;
   }
 }
 
@@ -232,21 +232,21 @@
 /* Utility classes */
 @layer utilities {
   .glassmorphism {
-    background: rgba(22, 27, 34, 0.6);
+    background: hsl(var(--card) / 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid hsl(var(--border));
   }
   
   .glassmorphism-dark {
-    background: rgba(13, 17, 23, 0.7);
+    background: hsl(var(--background) / 0.7);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid hsl(var(--border));
   }
   
   .gradient-bg-animated {
-    background: linear-gradient(135deg, hsl(25 100% 50%), hsl(30 100% 40%), hsl(25 100% 45%), hsl(25 100% 50%));
+    background: linear-gradient(135deg, hsl(198 82% 25%), hsl(204 84% 16%), hsl(198 70% 30%), hsl(198 82% 25%));
     background-size: 300% 300%;
     animation: gradient-shift 10s ease infinite;
   }
