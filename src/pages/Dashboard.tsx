@@ -52,8 +52,8 @@ const AdvancedMetricsCard = lazy(() => import("@/components/dashboard/AdvancedMe
 
 // Lazy load de bibliotecas pesadas (somente quando necessário)
 const loadJsPDF = async () => {
-  const jsPDF = await import("jspdf").then(m => m.default);
-  return jsPDF;
+  const mod = await import("jspdf");
+  return mod.jsPDF || mod.default;
 };
 
 // Componente de fallback para Suspense
