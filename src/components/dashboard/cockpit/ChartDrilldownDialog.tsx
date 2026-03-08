@@ -191,7 +191,7 @@ export function ChartDrilldownDialog({ open, onOpenChange, data }: ChartDrilldow
                 Em <span className="text-cockpit-foreground font-medium">{data.month}</span>, 
                 {' '}{data.leadsDetails.closedLeads} de {data.leadsDetails.totalLeads} leads foram convertidos
                 {data.leadsDetails.conversionRate >= 20 
-                  ? ' - ótima performance! 🎉' 
+                  ? ' — ótima performance.' 
                   : data.leadsDetails.conversionRate >= 10 
                     ? ' - performance razoável.' 
                     : ' - há espaço para melhorias.'}

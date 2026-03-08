@@ -390,7 +390,7 @@ const Goals = () => {
                         >
                           {dailyProgress.leads >= (dailyGoal.leads_goal || 0) &&
                           dailyProgress.conversions >= (dailyGoal.conversions_goal || 0)
-                            ? "Meta Atingida 🎉"
+                            ? "Meta Atingida"
                             : "Em Progresso"}
                         </Badge>
                       )}
