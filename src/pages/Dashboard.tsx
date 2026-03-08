@@ -487,19 +487,6 @@ const Dashboard = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <DashboardFilters
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            compareMode={compareMode}
-            compareMonth={compareMonth}
-            compareYear={compareYear}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-            onCompareModeChange={setCompareMode}
-            onCompareMonthChange={setCompareMonth}
-            onCompareYearChange={setCompareYear}
-          />
-
           <Button
             onClick={handleExportPDF}
             disabled={isExporting || !stats}
