@@ -66,13 +66,13 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-    --sidebar-background: 204 84% 16%;
-    --sidebar-foreground: 0 0% 95%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 85%;
     --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 198 82% 25%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 198 50% 22%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 14%;
     --sidebar-ring: 25 100% 50%;
 
     /* Chart colors */
