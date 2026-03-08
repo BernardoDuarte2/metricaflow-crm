@@ -138,13 +138,13 @@
     --gradient-primary: linear-gradient(135deg, hsl(198 70% 40%), hsl(198 82% 25%));
     --gradient-success: linear-gradient(135deg, hsl(152 56% 40%), hsl(160 60% 45%));
 
-    --sidebar-background: 206 85% 12%;
-    --sidebar-foreground: 0 0% 92%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 85%;
     --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 40% 14%;
-    --sidebar-accent-foreground: 0 0% 92%;
-    --sidebar-border: 200 30% 18%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 14%;
     --sidebar-ring: 25 100% 50%;
 
     /* Chart colors dark */
