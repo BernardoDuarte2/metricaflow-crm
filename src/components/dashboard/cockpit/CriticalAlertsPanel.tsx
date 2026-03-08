@@ -106,8 +106,8 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
         </div>
         
         {criticalCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive text-white text-xs font-bold animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive text-white text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-white" />
             <span>{criticalCount} CRÍTICO{criticalCount > 1 ? 'S' : ''}</span>
           </div>
         )}
