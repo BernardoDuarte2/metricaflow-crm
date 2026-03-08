@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDetailedPerformanceData } from "@/hooks/useDetailedPerformanceData";
 import { useRealtimeLeads } from "@/hooks/useRealtimeLeads";
 import { useUserSession } from "@/hooks/useUserSession"; // Import adicionado
-import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+
 import {
   Users,
   CheckCircle,
