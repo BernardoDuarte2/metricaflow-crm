@@ -69,8 +69,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="pt-16">
-        <main className="min-h-[calc(100vh-4rem)] overflow-y-auto p-6">{children}</main>
+      <div className="pl-16">
+        <main className="min-h-screen overflow-y-auto p-6">{children}</main>
       </div>
       <OnboardingTour />
       <WhatsAppButton />
