@@ -8,7 +8,8 @@ import DemoDataSettings from "@/components/company/DemoDataSettings";
 import { GamificationSettings } from "@/components/gamification/GamificationSettings";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 import { SalesManualSettings } from "@/components/settings/SalesManualSettings";
-import { Building2, User, Database, Trophy, CreditCard, CheckCircle, BookOpen } from "lucide-react";
+import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
+import { Building2, User, Database, Trophy, CreditCard, CheckCircle, BookOpen, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 const Settings = () => {
