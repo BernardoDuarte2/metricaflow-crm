@@ -110,7 +110,7 @@ const ReportSettings = () => {
         {/* Relatórios Diários */}
         <Card>
           <CardHeader>
-            <CardTitle>📊 Relatórios Diários</CardTitle>
+            <CardTitle>Relatórios Diários</CardTitle>
             <CardDescription>
               Enviados automaticamente todos os dias úteis para cada vendedor e gestores
             </CardDescription>
