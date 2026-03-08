@@ -106,10 +106,9 @@ export const CommandKPI = ({
     <div 
       className={cn(
         "relative overflow-hidden rounded-xl bg-card border transition-all duration-300",
-        "hover:translate-y-[-2px] hover:shadow-lg group",
+        "hover:shadow-lg group",
         colors.border,
-        colors.glow,
-        alert && "ring-2 ring-primary/30 animate-pulse"
+        alert && "ring-2 ring-primary/30"
       )}
     >
       {/* Top accent line */}
