@@ -108,7 +108,7 @@ const Sidebar = () => {
           "flex items-center h-10 rounded-lg transition-all duration-200 relative group",
           isHovered ? "px-3 gap-3" : "justify-center w-10 mx-auto",
           isActive
-            ? "bg-white/5 text-[#FF6B00] border-l-[3px] border-[#FF6B00]"
+            ? "bg-white/10 text-accent border-l-[3px] border-accent"
             : "text-white/70 hover:bg-white/5 hover:text-white border-l-[3px] border-transparent"
         )
       }
