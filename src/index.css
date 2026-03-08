@@ -66,13 +66,13 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-    --sidebar-background: 0 0% 4%;
-    --sidebar-foreground: 0 0% 85%;
+    --sidebar-background: 204 84% 10%;
+    --sidebar-foreground: 200 20% 85%;
     --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent: 204 60% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 14%;
+    --sidebar-border: 204 50% 18%;
     --sidebar-ring: 25 100% 50%;
 
     /* Chart colors */
@@ -138,13 +138,13 @@
     --gradient-primary: linear-gradient(135deg, hsl(198 70% 40%), hsl(198 82% 25%));
     --gradient-success: linear-gradient(135deg, hsl(152 56% 40%), hsl(160 60% 45%));
 
-    --sidebar-background: 0 0% 4%;
-    --sidebar-foreground: 0 0% 85%;
+    --sidebar-background: 204 84% 10%;
+    --sidebar-foreground: 200 20% 85%;
     --sidebar-primary: 25 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent: 204 60% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 14%;
+    --sidebar-border: 204 50% 18%;
     --sidebar-ring: 25 100% 50%;
 
     /* Chart colors dark */
