@@ -162,7 +162,6 @@ export const MoneyLeakAlerts = ({
               {/* Critical pulse */}
               {isActive && alert.count >= 5 && (
                 <div className="absolute top-3 right-3 w-2.5 h-2.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60 animate-ping" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
                 </div>
               )}

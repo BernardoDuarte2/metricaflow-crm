@@ -416,10 +416,10 @@ const Auth = () => {
           </div>
 
           {/* Floating Particles - Futuristic Colors */}
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)] animate-pulse" />
-          <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)] animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)] animate-pulse" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)] animate-pulse" style={{ animationDelay: '1.5s' }} />
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_rgba(143,174,255,0.8)]" />
+          <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(93,123,255,0.8)]" />
+          <div className="absolute bottom-1/3 left-1/3 w-2.5 h-2.5 rounded-full bg-accent/80 shadow-[0_0_12px_rgba(143,174,255,0.6)]" />
+          <div className="absolute top-1/2 right-1/3 w-1 h-1 rounded-full bg-primary/60 shadow-[0_0_6px_rgba(93,123,255,0.6)]" />
         </div>
       </div>
     );

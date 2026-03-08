@@ -214,9 +214,9 @@ export default function Integrations() {
 
       if (error || !result?.success) {
         const message = (error as any)?.message || result?.error || "Erro desconhecido";
-        toast({ title: "❌ Erro na integração", description: message, variant: "destructive" });
+        toast({ title: "Erro na integração", description: message, variant: "destructive" });
       } else {
-        toast({ title: "✅ Integração funcionando!", description: `Lead criado: ${result.lead_id}` });
+        toast({ title: "Integração funcionando", description: `Lead criado: ${result.lead_id}` });
         loadLogs();
       }
     } catch (error) {

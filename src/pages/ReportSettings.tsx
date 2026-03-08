@@ -275,7 +275,7 @@ const ReportSettings = () => {
         {/* Testar Envio */}
         <Card>
           <CardHeader>
-            <CardTitle>🧪 Enviar Relatório de Teste</CardTitle>
+            <CardTitle>Enviar Relatório de Teste</CardTitle>
             <CardDescription>
               Envie um relatório de teste agora para verificar como ficará
             </CardDescription>

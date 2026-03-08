@@ -247,7 +247,7 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       toast({
-        title: "✅ Usuário atualizado!",
+        title: "Usuário atualizado",
         description: "As informações foram salvas com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ["company-users"] });

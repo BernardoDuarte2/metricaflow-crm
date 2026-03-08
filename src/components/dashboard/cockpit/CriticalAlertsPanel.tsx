@@ -174,7 +174,6 @@ export const CriticalAlertsPanel = ({ alerts, onAlertClick }: CriticalAlertsPane
               {/* Pulse indicator for critical */}
               {alert.severity === 'critical' && (
                 <div className="absolute top-3 right-3 w-3 h-3">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75 animate-ping" />
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive" />
                 </div>
               )}

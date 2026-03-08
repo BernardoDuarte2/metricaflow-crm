@@ -141,17 +141,20 @@ export function SaleCelebration({
             {/* Celebration Icon */}
             <motion.div
               animate={{ 
-                rotate: [0, 360],
-                scale: [1, 1.2, 1]
+                scale: [1, 1.1, 1]
               }}
               transition={{ 
                 duration: 2,
                 repeat: Infinity,
-                ease: "linear"
+                ease: "easeInOut"
               }}
-              className="text-8xl"
+              className="flex items-center justify-center"
             >
-              {celebrationType === 'mega' ? '🔥' : celebrationType === 'large' ? '💎' : '⭐'}
+              {celebrationType === 'mega' 
+                ? <Flame className="h-20 w-20 text-orange-500" /> 
+                : celebrationType === 'large' 
+                ? <Gem className="h-20 w-20 text-purple-400" /> 
+                : <Star className="h-20 w-20 text-primary" />}
             </motion.div>
           </motion.div>
         </motion.div>

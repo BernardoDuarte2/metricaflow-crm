@@ -117,11 +117,7 @@ export const CommandKPI = ({
         colors.line
       )} />
       
-      {/* Corner gradient */}
-      <div className={cn(
-        "absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-40 pointer-events-none",
-        colors.gradient
-      )} />
+      
 
       <div className={cn(
         "relative p-5",

@@ -16,7 +16,7 @@ export const ForecastCard = ({ forecastValue, currentRevenue, targetRevenue }: F
     : 0;
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 border-primary/20 hover:border-primary/40 bg-gradient-to-br from-card to-card/50">
+    <Card className="hover:shadow-lg transition-all duration-300 border-border bg-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <TrendingUp className="h-5 w-5 text-primary" />

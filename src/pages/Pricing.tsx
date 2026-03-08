@@ -76,7 +76,6 @@ const Pricing = () => {
           Cancele quando quiser, sem multas.
         </p>
         <div className="inline-flex items-center gap-2 bg-green-500/10 text-green-400 px-4 py-2 rounded-full mb-8">
-          <span className="text-lg">🎉</span>
           <span className="font-medium">14 dias grátis para testar</span>
         </div>
 
