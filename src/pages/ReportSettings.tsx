@@ -152,7 +152,7 @@ const ReportSettings = () => {
         {/* Relatórios Semanais */}
         <Card>
           <CardHeader>
-            <CardTitle>📅 Relatórios Semanais</CardTitle>
+            <CardTitle>Relatórios Semanais</CardTitle>
             <CardDescription>
               Análise completa da semana com insights estratégicos da IA
             </CardDescription>
