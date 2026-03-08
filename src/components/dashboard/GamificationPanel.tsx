@@ -121,11 +121,11 @@ export function GamificationPanel() {
   return (
     <div className="space-y-6">
       {/* Top 3 Podium */}
-      <Card className="bg-gradient-to-br from-primary/5 via-background to-background border-primary/20">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary animate-pulse" />
-            🎮 Ranking Live - Últimos 30 dias
+            <Trophy className="h-5 w-5 text-primary" />
+            Ranking — Últimos 30 dias
             <Badge variant="secondary" className="ml-auto">
               <Zap className="h-3 w-3 mr-1" />
               Tempo Real
