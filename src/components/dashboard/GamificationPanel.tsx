@@ -60,12 +60,12 @@ export function GamificationPanel() {
 
         // Sistema de badges
         const badges: string[] = [];
-        if (convertedLeads.length >= 10) badges.push('🏆 Fechador Master');
-        if (convertedLeads.length >= 5) badges.push('⭐ Top Performer');
-        if (conversionRate >= 50) badges.push('🎯 Sniper');
-        if (conversionRate >= 30) badges.push('📈 Alta Conversão');
-        if (userObservations.length >= 50) badges.push('💬 Comunicador');
-        if (userLeads.length >= 20) badges.push('🚀 Gerador de Leads');
+        if (convertedLeads.length >= 10) badges.push('Fechador Master');
+        if (convertedLeads.length >= 5) badges.push('Top Performer');
+        if (conversionRate >= 50) badges.push('Sniper');
+        if (conversionRate >= 30) badges.push('Alta Conversão');
+        if (userObservations.length >= 50) badges.push('Comunicador');
+        if (userLeads.length >= 20) badges.push('Gerador de Leads');
 
         return {
           id: profile.id,
