@@ -240,7 +240,7 @@ export function GamificationPanel() {
                     <div className="flex flex-wrap gap-1">
                       {person.badges.slice(0, 2).map((badge, i) => (
                         <Badge key={i} variant="secondary" className="text-[10px] px-1 py-0">
-                          {badge.split(' ')[0]}
+                          {badge}
                         </Badge>
                       ))}
                     </div>
