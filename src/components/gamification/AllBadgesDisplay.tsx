@@ -67,12 +67,12 @@ export function AllBadgesDisplay({ earnedBadges }: AllBadgesDisplayProps) {
     return acc;
   }, {} as Record<string, BadgeType[]>);
 
-  const categoryNames = {
-    performance: '🏆 Performance',
-    value: '💰 Valor',
-    consistency: '📊 Consistência',
-    speed: '⚡ Velocidade',
-    special: '🌟 Especiais'
+  const categoryNames: Record<string, string> = {
+    performance: 'Performance',
+    value: 'Valor',
+    consistency: 'Consistência',
+    speed: 'Velocidade',
+    special: 'Especiais'
   };
 
   return (
