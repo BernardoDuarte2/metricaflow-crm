@@ -1,83 +1,107 @@
 
 
-# Reformulação Visual ORKA — Design Limpo GitHub-Dark
+# Tema ORKA: Dark/Light Mode com Botao de Alternancia
 
-A foto de referência mostra um design **flat, limpo e profissional** inspirado no GitHub Dark. O sistema atual tem excesso de efeitos visuais (glow, shimmer, gradient text, transform animations) que não existem na referência. A mudança é puramente visual — nenhuma lógica de negócio será alterada.
-
-## Diferenças principais entre o atual e a referência
-
-| Elemento | Atual | Referência (foto) |
-|---|---|---|
-| Valores nos cards | Gradient text multicolorido | Texto sólido champagne (#E8E2D6) |
-| Títulos dos cards | Gradient text coral→accent | Texto sólido cinza (#8B949E) |
-| Cards hover | Glow border + shimmer + gradient BG | Hover sutil, sem efeitos |
-| Botões hover | Transform translateY + glow shadow | Cor de fundo escurece apenas |
-| Badges | Todos forçados coral | Variam por contexto (verde, amarelo, etc) |
-| Inputs/selects | bg-background (= #0D1117) | bg-card (#161B22) para melhor contraste |
-| Nav bar | bg-card (#161B22) | bg-background (#0D1117) sem borda visível |
-| Cards border | border-primary/20 (coral sutil) | border sólido #30363D |
-| Progress bar | bg-secondary track | bg #30363D track |
+## Resumo
+Substituir a identidade visual atual "Futurista Premium" pelo tema ORKA, com modo noturno como padrao e um botao sol/lua no header para alternar. As cores serao baseadas na paleta fornecida (inspirada na Gene Digital). A mudanca e segura pois o sistema de variaveis CSS ja existe -- estamos apenas trocando os valores.
 
 ## Arquivos a alterar
 
-### 1. `src/index.css` — Limpar efeitos globais do tema
+### 1. `src/index.css` - Paleta ORKA
+Substituir todos os valores das variaveis CSS em `:root` (light) e `.dark` (dark) pelos valores ORKA:
 
-- **Remover** todo o bloco `body.theme-futurista button[class*="bg-primary"]` com `!important`, transform, glow
-- **Remover** o bloco `body.theme-futurista button[class*="border"]` com `!important`
-- **Remover** o bloco de badges que força coral em todos (`body.theme-futurista [class*="badge"]`)
-- **Simplificar** card hover: apenas `border-color` sutil, sem glow-pulse
-- **Manter** keyframes e utility classes (glassmorphism etc) pois podem ser usadas pontualmente
-- Adicionar regra para inputs/textareas no dark usarem `bg-card` ao invés de `bg-background`
+**Modo Diurno (`:root`)**
+- `--background`: branco `#FFFFFF` -> `0 0% 100%`
+- `--foreground`: `#1E293B` -> `215 28% 17%`
+- `--card`: `#F8FAFC` -> `210 40% 98%`
+- `--primary`: `#0057FF` -> `220 100% 50%`
+- `--border`: `#E2E8F0` -> `214 32% 91%`
+- `--muted`: `#F8FAFC` -> `210 40% 98%`
+- `--muted-foreground`: `#64748B` -> `215 16% 47%`
+- Gradientes: `#0057FF` -> `#003599`
+- Remover/suavizar efeitos de glow no modo light
 
-### 2. `src/components/dashboard/MetricCard.tsx` — Simplificar completamente
+**Modo Noturno (`.dark`) - PADRAO**
+- `--background`: `#08090B` -> `220 16% 4%`
+- `--foreground`: `#FFFFFF` -> `0 0% 100%`
+- `--card`: `#111317` -> `220 14% 8%`
+- `--primary`: `#0057FF` -> `220 100% 50%`
+- `--border`: `#1E293B` -> `217 33% 17%`
+- `--muted-foreground`: `#94A3B8` -> `215 20% 65%`
+- Gradientes: `#0057FF` -> `#003599`
+- Manter efeitos de glow azul sutis
 
-- Remover `glow-border`, `border-primary/20`
-- Remover divs de gradient background e shimmer effect
-- Trocar texto gradient (`bg-gradient-to-br from-foreground via-primary...`) por texto sólido `text-foreground`
-- Simplificar ícone: remover blur, pulse, glow. Manter apenas o ícone com bg sutil
-- Remover barra de progresso animada inferior
-- Remover bottom accent line gradient
+Atualizar tambem: sidebar, cockpit, chart colors, e utility classes para usar azul puro (sem purple/lilac).
 
-### 3. `src/components/layout/Sidebar.tsx` — Alinhar nav com referência
+Remover referencias a `hsl(270 70% 68%)` (lilac) em todo o arquivo -- substituir por tons de azul.
 
-- Mudar `bg-card` para `bg-background` na nav
-- Mudar `border-b border-border` para `border-b border-border/50` (mais sutil)
-- Logo fallback: `from-primary to-red-600` (coral, sem purple)
+Atualizar `body.theme-futurista` para remover gradientes purple nos botoes e badges.
 
-### 4. `src/components/ui/button.tsx` — Ajuste de border-radius
+### 2. `src/lib/themes.ts` - Valores ORKA
+Atualizar os valores de cores light e dark do tema `futurista` para corresponder a paleta ORKA.
 
-- Mudar `rounded-md` base para `rounded-lg` (8px = o `--radius` de 0.75rem)
-- Sem mudanças funcionais
+### 3. `src/hooks/useTheme.ts` - Suporte a Dark Mode Toggle
+- Adicionar funcao `toggleDarkMode()` que alterna a classe `dark` no `<html>`
+- Persistir preferencia em `localStorage` (chave `color-mode`)
+- Inicializar como dark por padrao
+- Exportar `isDark` e `toggleDarkMode`
 
-### 5. `src/components/ui/input.tsx` e `src/components/ui/textarea.tsx`
+### 4. `src/components/layout/Sidebar.tsx` - Botao Sol/Lua
+Adicionar um botao de toggle antes do avatar dropdown:
+- Icone `Sun` quando em dark mode (clica para ir ao light)
+- Icone `Moon` quando em light mode (clica para ir ao dark)
+- Estilo sutil, ghost button, tamanho icon
 
-- No dark mode, inputs devem usar bg mais claro que o body para contraste
-- Adicionar CSS global: `.dark input, .dark textarea, .dark select { background-color: hsl(var(--card)); }`
+### 5. `src/pages/ProtectedRoute.tsx` - Inicializar dark mode
+Garantir que o dark mode e aplicado no mount (classe `dark` no `<html>` baseado no localStorage).
 
-### 6. `src/components/ui/progress.tsx`
+### 6. `src/components/ui/sonner.tsx` - Manter compativel
+Ja usa `next-themes` mas apenas para ler o tema. Verificar compatibilidade.
 
-- Track: `bg-[hsl(213,14%,21%)]` (= #30363D) ao invés de `bg-secondary`
-- Fill: manter `bg-primary` (coral)
+## O que NAO muda
+- Estrutura de componentes (cards, buttons, tables)
+- Logica de negocios (dashboard, leads, kanban)
+- Layout do sidebar (continua horizontal no topo)
+- Funcionalidade de nenhuma feature
 
-### 7. Dashboard chart cards — Remover gradient titles
+## Detalhes tecnicos
 
-Nos seguintes arquivos, trocar `bg-gradient-to-r from-X to-Y bg-clip-text text-transparent` por `text-foreground`:
-- `src/components/dashboard/LeadsStatusChart.tsx`
-- `src/components/dashboard/SalesPerformanceChart.tsx`
-- `src/components/dashboard/SalesPerformanceDetailedChart.tsx`
-- `src/components/dashboard/FinancialMetricsChart.tsx`
+### Conversao de cores hex -> HSL
+| Hex | HSL |
+|---|---|
+| `#08090B` | `220 16% 4%` |
+| `#111317` | `220 14% 8%` |
+| `#0057FF` | `220 100% 50%` |
+| `#003599` | `220 100% 30%` |
+| `#1E293B` | `217 33% 17%` |
+| `#94A3B8` | `215 20% 65%` |
+| `#F8FAFC` | `210 40% 98%` |
+| `#E2E8F0` | `214 32% 91%` |
+| `#64748B` | `215 16% 47%` |
+| `#1E293B` (text) | `215 28% 17%` |
 
-E remover a div `absolute inset-0 bg-gradient-to-br` de hover nesses mesmos arquivos.
-Simplificar `className` dos Cards para `bg-card border-border`.
+### Inicializacao do dark mode
+```text
+// No mount da app, antes do render:
+const savedMode = localStorage.getItem('color-mode');
+if (!savedMode || savedMode === 'dark') {
+  document.documentElement.classList.add('dark');
+} else {
+  document.documentElement.classList.remove('dark');
+}
+```
 
-### 8. `src/components/dashboard/cockpit/GoalHeroCard.tsx`
+### Botao no header
+```text
+// No Sidebar.tsx, antes do DropdownMenu:
+<Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+  {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+</Button>
+```
 
-- Remover o gradient accent line no top (`linear-gradient... hsl(270 70% 68%)`) — substituir por borda sólida coral
-- Simplificar background glow
+### Efeitos de glow
+- Modo noturno: `box-shadow: 0 0 15px rgba(0, 87, 255, 0.3)` no hover de botoes primarios
+- Modo diurno: sem glow, apenas `box-shadow` padrao sutil
 
-## Resumo de impacto
-
-- **~12 arquivos** alterados
-- **Apenas CSS e classes Tailwind** — nenhuma prop, estado, lógica ou query alterada
-- **Resultado**: visual flat, limpo, profissional, idêntico à referência da Paleta A
-
+## Risco
+Baixo. Estamos apenas trocando valores de variaveis CSS que ja sao consumidas por todos os componentes. O toggle usa a classe `dark` que o Tailwind ja suporta (`darkMode: ["class"]`).

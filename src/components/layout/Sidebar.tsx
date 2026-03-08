@@ -103,7 +103,7 @@ const Sidebar = () => {
   ] : [];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center px-6 z-50 gap-4">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border/50 flex items-center px-6 z-50 gap-4">
       <div className="flex items-center gap-3 flex-shrink-0">
         {profile?.company?.logo_url ? (
           <img
@@ -112,7 +112,7 @@ const Sidebar = () => {
             className="h-8 w-auto object-contain"
           />
         ) : (
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-red-600 bg-clip-text text-transparent">
             {profile?.company?.system_name || "Pro"}
           </h1>
         )}
