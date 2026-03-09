@@ -558,11 +558,10 @@ const Dashboard = () => {
           )}
 
           {/* 6. MONTHLY COMPARISON (Managers) */}
-          {isManager && comparisonData.length > 0 && (
+          {isManager && sessionData?.session?.user?.id && (
             <MonthlyComparisonCard
-              metrics={comparisonData}
-              currentPeriod={selectedMonth === 'all' ? selectedYear : `${selectedMonth}/${selectedYear}`}
-              previousPeriod="Período anterior"
+              userRole={userRole}
+              userId={sessionData.session.user.id}
             />
           )}
 
