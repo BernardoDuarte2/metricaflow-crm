@@ -33,7 +33,7 @@ import { toast } from "sonner";
 import {
   CockpitLayout,
   AlertPanel,
-  VelocityMeter,
+  
   LossWaterfallChart,
   SourceConversionChart,
   QuickStats,
@@ -520,9 +520,10 @@ const Dashboard = () => {
             <AlertPanel alerts={alerts} />
           )}
 
-          {/* 3. FUNIL ÚNICO END-TO-END */}
+          {/* 3. FUNIL ÚNICO END-TO-END + VELOCIDADE */}
           <UnifiedFunnel
             stages={unifiedFunnelData}
+            velocityData={velocityData}
             title="Funil End-to-End"
           />
 
@@ -535,12 +536,6 @@ const Dashboard = () => {
               noFollowUpLeads={dashboardData.moneyLeakAlerts.noFollowUpLeads}
             />
           )}
-
-          {/* 4. VELOCITY METER */}
-          <VelocityMeter
-            data={velocityData}
-            title="Velocidade do Funil"
-          />
 
           {/* 5. TEAM GOAL PROGRESS (Managers) */}
           {isManager && stats?.totalTeamGoal > 0 && (
