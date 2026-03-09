@@ -565,31 +565,34 @@ const Dashboard = () => {
             />
           )}
 
-          {/* 7. DETAILED TEAM PERFORMANCE (Managers) */}
-          {isManager && teamRankingData.length > 0 && (
-            <SalesRepDetailedPanel
-              data={teamRankingData}
-              title="Performance Detalhada do Time"
-            />
+          {/* 7. TEAM PERFORMANCE + REVENUE SIDE BY SIDE */}
+          {isManager && (teamRankingData.length > 0 || dashboardData?.monthlyRevenueBySellerData?.length > 0) && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {teamRankingData.length > 0 && (
+                <SalesRepDetailedPanel
+                  data={teamRankingData}
+                  title="Performance do Time"
+                />
+              )}
+              {dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
+                <RevenueBySellerChart
+                  data={dashboardData.monthlyRevenueBySellerData}
+                  sellers={dashboardData.sellers || []}
+                  title="Receita por Vendedor"
+                />
+              )}
+            </div>
           )}
 
-          {/* 8. CHARTS - Revenue by Seller + Source Conversion */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {isManager && dashboardData?.monthlyRevenueBySellerData?.length > 0 && (
-              <RevenueBySellerChart
-                data={dashboardData.monthlyRevenueBySellerData}
-                sellers={dashboardData.sellers || []}
-                title="Receita por Vendedor"
-              />
-            )}
-
-            {processedSourceData.length > 0 && (
+          {/* 8. CHARTS - Source Conversion */}
+          {processedSourceData.length > 0 && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <SourceConversionChart
                 data={processedSourceData}
                 title="Conversão por Fonte"
               />
-            )}
-          </div>
+            </div>
+          )}
 
           {/* 12. ADVANCED METRICS - Collapsible */}
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
