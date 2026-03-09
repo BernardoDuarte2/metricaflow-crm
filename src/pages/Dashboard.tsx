@@ -308,16 +308,7 @@ const Dashboard = () => {
     }));
   }, [dashboardData?.teamData, userRole]);
 
-  // Monthly comparison data
-  const comparisonData = useMemo(() => {
-    if (!stats) return [];
-    return [
-      { label: 'Leads', current: stats.totalLeads || 0, previous: stats.previousTotalLeads || 0, format: 'number' as const, icon: Users },
-      { label: 'Vendas', current: stats.wonLeads || 0, previous: stats.previousWonLeads || 0, format: 'number' as const, icon: CheckCircle },
-      { label: 'Conversão', current: parseFloat(stats.conversionRate) || 0, previous: parseFloat(stats.previousConversionRate) || 0, format: 'percent' as const, icon: Percent },
-      { label: 'Ciclo', current: stats.avgTimeInFunnel || 0, previous: stats.avgTimeInFunnel || 0, format: 'days' as const, icon: Timer },
-    ];
-  }, [stats]);
+  // Monthly comparison data removed - MonthlyComparisonCard now fetches its own data
 
   // Velocity data
   const velocityData = useMemo(() => {
@@ -567,11 +558,10 @@ const Dashboard = () => {
           )}
 
           {/* 6. MONTHLY COMPARISON (Managers) */}
-          {isManager && comparisonData.length > 0 && (
+          {isManager && sessionData?.session?.user?.id && (
             <MonthlyComparisonCard
-              metrics={comparisonData}
-              currentPeriod={selectedMonth === 'all' ? selectedYear : `${selectedMonth}/${selectedYear}`}
-              previousPeriod="Período anterior"
+              userRole={userRole}
+              userId={sessionData.session.user.id}
             />
           )}
 
