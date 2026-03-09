@@ -82,9 +82,9 @@ export const SalesRepDetailedPanel = ({
                 {/* Rank */}
                 <span className={cn(
                   "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                  index === 0 && "bg-amber-500/20 text-amber-400",
-                  index === 1 && "bg-slate-400/20 text-slate-300",
-                  index === 2 && "bg-orange-500/20 text-orange-400",
+                  index === 0 && "bg-warning/20 text-warning",
+                  index === 1 && "bg-muted-foreground/20 text-muted-foreground",
+                  index === 2 && "bg-accent/20 text-accent-foreground",
                   index > 2 && "bg-muted text-muted-foreground"
                 )}>
                   {index + 1}
