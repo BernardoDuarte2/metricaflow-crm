@@ -527,6 +527,16 @@ const Dashboard = () => {
             title="Funil End-to-End"
           />
 
+          {/* 3.5 MONEY LEAK ALERTS */}
+          {dashboardData?.moneyLeakAlerts && (
+            <MoneyLeakAlerts
+              stalledProposals={dashboardData.moneyLeakAlerts.stalledProposals}
+              stalledNegotiations={dashboardData.moneyLeakAlerts.stalledNegotiations}
+              noContactLeads={dashboardData.moneyLeakAlerts.noContactLeads}
+              noFollowUpLeads={dashboardData.moneyLeakAlerts.noFollowUpLeads}
+            />
+          )}
+
           {/* 5. TEAM GOAL PROGRESS (Managers) */}
           {isManager && stats?.totalTeamGoal > 0 && (
             <TeamGoalProgressCard
