@@ -520,26 +520,11 @@ const Dashboard = () => {
             <AlertPanel alerts={alerts} />
           )}
 
-          {/* 3. FUNIL ÚNICO END-TO-END */}
+          {/* 3. FUNIL ÚNICO END-TO-END + VELOCIDADE */}
           <UnifiedFunnel
             stages={unifiedFunnelData}
+            velocityData={velocityData}
             title="Funil End-to-End"
-          />
-
-          {/* 3.5 MONEY LEAK ALERTS */}
-          {dashboardData?.moneyLeakAlerts && (
-            <MoneyLeakAlerts
-              stalledProposals={dashboardData.moneyLeakAlerts.stalledProposals}
-              stalledNegotiations={dashboardData.moneyLeakAlerts.stalledNegotiations}
-              noContactLeads={dashboardData.moneyLeakAlerts.noContactLeads}
-              noFollowUpLeads={dashboardData.moneyLeakAlerts.noFollowUpLeads}
-            />
-          )}
-
-          {/* 4. VELOCITY METER */}
-          <VelocityMeter
-            data={velocityData}
-            title="Velocidade do Funil"
           />
 
           {/* 5. TEAM GOAL PROGRESS (Managers) */}

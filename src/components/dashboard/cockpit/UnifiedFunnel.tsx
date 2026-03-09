@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Clock, TrendingDown, ArrowRight } from "lucide-react";
+import { Clock, TrendingDown, ArrowRight, Timer, Zap } from "lucide-react";
 
 interface FunnelStage {
   name: string;
@@ -8,8 +8,15 @@ interface FunnelStage {
   estimatedValue?: number;
 }
 
+interface VelocityData {
+  stage: string;
+  avgDays: number;
+  idealDays: number;
+}
+
 interface UnifiedFunnelProps {
   stages: FunnelStage[];
+  velocityData?: VelocityData[];
   title?: string;
 }
 
@@ -23,21 +30,18 @@ const getHealthStatus = (avgDays: number, stageName: string) => {
     'Fechado': [Infinity, Infinity],
   };
   const [warn, crit] = thresholds[stageName] || [7, 14];
-  if (avgDays >= crit) return { color: 'text-red-400', dot: 'bg-red-500', label: 'Crítico' };
-  if (avgDays >= warn) return { color: 'text-yellow-400', dot: 'bg-yellow-500', label: 'Atenção' };
-  return { color: 'text-emerald-400', dot: 'bg-emerald-500', label: 'Saudável' };
+  if (avgDays >= crit) return { color: 'text-destructive', dot: 'bg-destructive', label: 'Crítico' };
+  if (avgDays >= warn) return { color: 'text-warning', dot: 'bg-warning', label: 'Atenção' };
+  return { color: 'text-success', dot: 'bg-success', label: 'Saudável' };
 };
 
-const stageDescriptions: Record<string, string> = {
-  'Leads': 'Novos contatos captados por marketing ou prospecção.',
-  'MQL': 'Leads qualificados pelo marketing com perfil validado.',
-  'SQL': 'Leads aceitos pelo time comercial para abordagem.',
-  'Proposta': 'Propostas enviadas aguardando retorno do cliente.',
-  'Negociação': 'Negociação ativa de termos e condições.',
-  'Fechado': 'Deals fechados — receita confirmada.',
+const getVelocityStatus = (ratio: number) => {
+  if (ratio <= 1) return { textColor: "text-success", label: "Rápido" };
+  if (ratio <= 1.5) return { textColor: "text-warning", label: "Normal" };
+  return { textColor: "text-destructive", label: "Lento" };
 };
 
-// Blue gradient — darkest at top, lighter at bottom (continuous feel)
+// Blue gradient — darkest at top, lighter at bottom
 const stageColors = [
   { bg: 'hsl(210, 80%, 28%)', border: 'hsl(210, 80%, 38%)' },
   { bg: 'hsl(212, 75%, 34%)', border: 'hsl(212, 75%, 44%)' },
@@ -47,7 +51,7 @@ const stageColors = [
   { bg: 'hsl(210, 55%, 62%)', border: 'hsl(210, 55%, 70%)' },
 ];
 
-export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFunnelProps) => {
+export const UnifiedFunnel = ({ stages, velocityData, title = "Funil End-to-End" }: UnifiedFunnelProps) => {
   if (!stages || stages.length === 0) {
     return (
       <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm">
@@ -71,6 +75,12 @@ export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFun
   const minW = 38;
   const widths = stages.map((_, i) => maxW - ((maxW - minW) / (count - 1)) * i);
 
+  // Velocity totals
+  const totalAvgDays = velocityData?.reduce((sum, item) => sum + (item?.avgDays || 0), 0) || 0;
+  const totalIdealDays = velocityData?.reduce((sum, item) => sum + (item?.idealDays || 0), 0) || 0;
+  const overallRatio = totalIdealDays > 0 ? totalAvgDays / totalIdealDays : 1;
+  const overallStatus = getVelocityStatus(overallRatio);
+
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
@@ -79,9 +89,18 @@ export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFun
           <TrendingDown className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Conversão total:</span>
-          <span className="font-bold text-primary">{totalConversion}%</span>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>Conversão total: <span className="font-bold text-primary">{totalConversion}%</span></span>
+          {velocityData && velocityData.length > 0 && (
+            <span className={cn("font-semibold px-2 py-0.5 rounded-full text-[10px]",
+              overallStatus.textColor,
+              overallStatus.textColor === "text-success" ? "bg-success/10" :
+              overallStatus.textColor === "text-warning" ? "bg-warning/10" : "bg-destructive/10"
+            )}>
+              <Timer className="h-3 w-3 inline mr-0.5 -mt-0.5" />
+              {totalAvgDays}d ciclo
+            </span>
+          )}
         </div>
       </div>
 
@@ -92,9 +111,6 @@ export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFun
           {stages.map((stage, i) => {
             const topW = widths[i];
             const bottomW = i < count - 1 ? widths[i + 1] : widths[i] * 0.85;
-
-            // ClipPath: taper from topW to bottomW within the element
-            // Element is rendered at topW%, so clipPath percentages are relative to element
             const insetBottomLeft = ((topW - bottomW) / topW / 2) * 100;
             const insetBottomRight = 100 - insetBottomLeft;
 
@@ -110,14 +126,12 @@ export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFun
                   marginTop: i === 0 ? 0 : '-1px',
                 }}
               >
-                {/* Shine */}
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
                     background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 40%, transparent 65%)',
                   }}
                 />
-                {/* Content */}
                 <div className="relative z-10 flex items-center gap-2 px-3">
                   <span className="text-xs font-bold text-white drop-shadow-sm whitespace-nowrap">
                     {stage.name}
@@ -167,11 +181,6 @@ export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFun
                     borderLeft: `3px solid ${color.bg}`,
                   }}
                 >
-                  {/* Description */}
-                  <p className="text-[10px] text-muted-foreground leading-tight flex-1 min-w-0 line-clamp-2">
-                    {stageDescriptions[stage.name] || ''}
-                  </p>
-
                   {/* Conversion badge */}
                   {conversionFromPrev !== null && (
                     <div
@@ -200,20 +209,52 @@ export const UnifiedFunnel = ({ stages, title = "Funil End-to-End" }: UnifiedFun
         </div>
       </div>
 
+      {/* Velocity inline section */}
+      {velocityData && velocityData.length > 0 && (
+        <div className="px-5 pb-4">
+          <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+            <Zap className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold">Velocidade por Etapa</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {velocityData.map((item, index) => {
+              if (!item) return null;
+              const ratio = item.avgDays / (item.idealDays || 1);
+              const status = getVelocityStatus(ratio);
+              return (
+                <div key={item.stage || index} className="bg-muted/40 rounded-lg px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground font-medium truncate mb-1">
+                    {item.stage}
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className={cn("text-sm font-bold", status.textColor)}>
+                      {item.avgDays}d
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      / {item.idealDays}d
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Legend */}
       <div className="px-5 py-3 border-t border-border bg-muted/30">
         <div className="flex items-center justify-between gap-4 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="w-2 h-2 rounded-full bg-success" />
               <span>Saudável</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <div className="w-2 h-2 rounded-full bg-warning" />
               <span>Atenção</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <div className="w-2 h-2 rounded-full bg-destructive" />
               <span>Crítico</span>
             </div>
           </div>
