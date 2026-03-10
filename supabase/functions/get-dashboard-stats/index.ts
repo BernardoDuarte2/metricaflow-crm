@@ -357,13 +357,27 @@ Deno.serve(async (req) => {
       };
     });
 
+    // Track which leads have lead_values entries
+    const leadValuesRevenue: Record<string, Record<string, number>> = {}; // sellerId -> leadId -> total
+    const wonLeadIdsSet = new Set(allLeads.filter((l: any) => isWonStatus(l.status)).map((l: any) => l.id));
+    
+    (wonLeadValuesResult.data || []).forEach((lv: any) => {
+      if (wonLeadIdsSet.has(lv.lead_id) && lv.leads?.assigned_to) {
+        const sellerId = lv.leads.assigned_to;
+        if (!leadValuesRevenue[sellerId]) leadValuesRevenue[sellerId] = {};
+        leadValuesRevenue[sellerId][lv.lead_id] = (leadValuesRevenue[sellerId][lv.lead_id] || 0) + Number(lv.amount || 0);
+      }
+    });
+
     allLeads.forEach((lead: any) => {
       if (!lead.assigned_to || !teamPerformance[lead.assigned_to]) return;
       const tp = teamPerformance[lead.assigned_to];
       tp.leads += 1;
       if (isWonStatus(lead.status)) {
         tp.convertedLeads += 1;
-        tp.revenue += Number(lead.estimated_value) || 0;
+        // Use lead_values if available, otherwise estimated_value
+        const lvRevenue = leadValuesRevenue[lead.assigned_to]?.[lead.id];
+        tp.revenue += lvRevenue !== undefined ? lvRevenue : (Number(lead.estimated_value) || 0);
         const created = new Date(lead.created_at);
         const updated = new Date(lead.updated_at);
         const days = Math.ceil((updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
@@ -371,15 +385,6 @@ Deno.serve(async (req) => {
         tp.closedCount += 1;
       }
     });
-
-    const wonLeadIdsSet = new Set(allLeads.filter((l: any) => isWonStatus(l.status)).map((l: any) => l.id));
-    (wonLeadValuesResult.data || []).forEach((lv: any) => {
-      if (wonLeadIdsSet.has(lv.lead_id) && lv.leads?.assigned_to && teamPerformance[lv.leads.assigned_to]) {
-        const tp = teamPerformance[lv.leads.assigned_to];
-        tp.revenue = (tp.revenue || 0) + Number(lv.amount || 0);
-      }
-    });
-
     allMeetings.forEach((meeting: any) => {
       if (meeting.created_by && teamPerformance[meeting.created_by]) {
         teamPerformance[meeting.created_by].meetings += 1;
@@ -459,43 +464,79 @@ Deno.serve(async (req) => {
     }).filter(m => m.totalLeads > 0 || m.closedLeads > 0);
 
     // Process monthly revenue by seller
+    // First try lead_values, fallback to estimated_value from leads
     const monthlyRevenueData = monthlyRevenueBySellerResult.data || [];
     const sellerRevenueMap: Record<string, Record<string, number>> = {};
     const sellerNames = new Set<string>();
     
-    monthlyRevenueData.forEach((item: any) => {
-      const leadMonth = new Date(item.leads.updated_at).getMonth();
-      const monthName = monthNames[leadMonth];
-      const sellerId = item.leads.assigned_to;
-      
-      if (!sellerId) return;
-      
-      if (!sellerRevenueMap[monthName]) {
-        sellerRevenueMap[monthName] = {};
-      }
-      
-      sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(item.amount || 0);
-      sellerNames.add(sellerId);
-    });
+    if (monthlyRevenueData.length > 0) {
+      // Use lead_values data
+      monthlyRevenueData.forEach((item: any) => {
+        const leadMonth = new Date(item.leads.updated_at).getMonth();
+        const monthName = monthNames[leadMonth];
+        const sellerId = item.leads.assigned_to;
+        
+        if (!sellerId) return;
+        
+        if (!sellerRevenueMap[monthName]) {
+          sellerRevenueMap[monthName] = {};
+        }
+        
+        sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(item.amount || 0);
+        sellerNames.add(sellerId);
+      });
+    } else {
+      // Fallback: use estimated_value from won leads
+      allLeads.forEach((lead: any) => {
+        if (!lead.assigned_to || !isWonStatus(lead.status)) return;
+        const leadMonth = new Date(lead.updated_at).getMonth();
+        const monthName = monthNames[leadMonth];
+        const sellerId = lead.assigned_to;
+        
+        if (!sellerRevenueMap[monthName]) {
+          sellerRevenueMap[monthName] = {};
+        }
+        
+        sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(lead.estimated_value || 0);
+        sellerNames.add(sellerId);
+      });
+    }
 
-    // Get seller names from profiles
+    // Get seller names from profiles - reuse existing profilesMap if available
     const sellerIdsArray = Array.from(sellerNames);
     let sellerProfilesMap: Record<string, string> = {};
     if (sellerIdsArray.length > 0) {
-      const { data: sellerProfiles } = await supabaseClient
-        .from('profiles')
-        .select('id, name')
-        .in('id', sellerIdsArray);
-      
-      (sellerProfiles || []).forEach((p: any) => {
-        sellerProfilesMap[p.id] = p.name;
-      });
+      // Reuse profilesMap from team data if available
+      if (Object.keys(profilesMap).length > 0) {
+        sellerIdsArray.forEach(id => {
+          if (profilesMap[id]) sellerProfilesMap[id] = profilesMap[id].name;
+        });
+        // Fetch any missing profiles
+        const missingIds = sellerIdsArray.filter(id => !sellerProfilesMap[id]);
+        if (missingIds.length > 0) {
+          const { data: sellerProfiles } = await supabaseClient
+            .from('profiles')
+            .select('id, name')
+            .in('id', missingIds);
+          (sellerProfiles || []).forEach((p: any) => {
+            sellerProfilesMap[p.id] = p.name;
+          });
+        }
+      } else {
+        const { data: sellerProfiles } = await supabaseClient
+          .from('profiles')
+          .select('id, name')
+          .in('id', sellerIdsArray);
+        (sellerProfiles || []).forEach((p: any) => {
+          sellerProfilesMap[p.id] = p.name;
+        });
+      }
     }
 
     const sellerColors = [
       'hsl(215, 70%, 55%)', 'hsl(142, 70%, 45%)', 'hsl(38, 90%, 50%)', 
       'hsl(255, 60%, 60%)', 'hsl(195, 80%, 50%)', 'hsl(340, 70%, 55%)',
-      'hsl(170, 70%, 45%)', 'hsl(25, 85%, 55%)'
+      'hsl(170, 70%, 45%)', 'hsl(25, 85%, 55%)', 'hsl(0, 70%, 55%)', 'hsl(60, 70%, 45%)'
     ];
 
     const sellers = sellerIdsArray.map((id, index) => ({
