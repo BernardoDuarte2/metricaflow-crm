@@ -459,43 +459,79 @@ Deno.serve(async (req) => {
     }).filter(m => m.totalLeads > 0 || m.closedLeads > 0);
 
     // Process monthly revenue by seller
+    // First try lead_values, fallback to estimated_value from leads
     const monthlyRevenueData = monthlyRevenueBySellerResult.data || [];
     const sellerRevenueMap: Record<string, Record<string, number>> = {};
     const sellerNames = new Set<string>();
     
-    monthlyRevenueData.forEach((item: any) => {
-      const leadMonth = new Date(item.leads.updated_at).getMonth();
-      const monthName = monthNames[leadMonth];
-      const sellerId = item.leads.assigned_to;
-      
-      if (!sellerId) return;
-      
-      if (!sellerRevenueMap[monthName]) {
-        sellerRevenueMap[monthName] = {};
-      }
-      
-      sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(item.amount || 0);
-      sellerNames.add(sellerId);
-    });
+    if (monthlyRevenueData.length > 0) {
+      // Use lead_values data
+      monthlyRevenueData.forEach((item: any) => {
+        const leadMonth = new Date(item.leads.updated_at).getMonth();
+        const monthName = monthNames[leadMonth];
+        const sellerId = item.leads.assigned_to;
+        
+        if (!sellerId) return;
+        
+        if (!sellerRevenueMap[monthName]) {
+          sellerRevenueMap[monthName] = {};
+        }
+        
+        sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(item.amount || 0);
+        sellerNames.add(sellerId);
+      });
+    } else {
+      // Fallback: use estimated_value from won leads
+      allLeads.forEach((lead: any) => {
+        if (!lead.assigned_to || !isWonStatus(lead.status)) return;
+        const leadMonth = new Date(lead.updated_at).getMonth();
+        const monthName = monthNames[leadMonth];
+        const sellerId = lead.assigned_to;
+        
+        if (!sellerRevenueMap[monthName]) {
+          sellerRevenueMap[monthName] = {};
+        }
+        
+        sellerRevenueMap[monthName][sellerId] = (sellerRevenueMap[monthName][sellerId] || 0) + Number(lead.estimated_value || 0);
+        sellerNames.add(sellerId);
+      });
+    }
 
-    // Get seller names from profiles
+    // Get seller names from profiles - reuse existing profilesMap if available
     const sellerIdsArray = Array.from(sellerNames);
     let sellerProfilesMap: Record<string, string> = {};
     if (sellerIdsArray.length > 0) {
-      const { data: sellerProfiles } = await supabaseClient
-        .from('profiles')
-        .select('id, name')
-        .in('id', sellerIdsArray);
-      
-      (sellerProfiles || []).forEach((p: any) => {
-        sellerProfilesMap[p.id] = p.name;
-      });
+      // Reuse profilesMap from team data if available
+      if (Object.keys(profilesMap).length > 0) {
+        sellerIdsArray.forEach(id => {
+          if (profilesMap[id]) sellerProfilesMap[id] = profilesMap[id].name;
+        });
+        // Fetch any missing profiles
+        const missingIds = sellerIdsArray.filter(id => !sellerProfilesMap[id]);
+        if (missingIds.length > 0) {
+          const { data: sellerProfiles } = await supabaseClient
+            .from('profiles')
+            .select('id, name')
+            .in('id', missingIds);
+          (sellerProfiles || []).forEach((p: any) => {
+            sellerProfilesMap[p.id] = p.name;
+          });
+        }
+      } else {
+        const { data: sellerProfiles } = await supabaseClient
+          .from('profiles')
+          .select('id, name')
+          .in('id', sellerIdsArray);
+        (sellerProfiles || []).forEach((p: any) => {
+          sellerProfilesMap[p.id] = p.name;
+        });
+      }
     }
 
     const sellerColors = [
       'hsl(215, 70%, 55%)', 'hsl(142, 70%, 45%)', 'hsl(38, 90%, 50%)', 
       'hsl(255, 60%, 60%)', 'hsl(195, 80%, 50%)', 'hsl(340, 70%, 55%)',
-      'hsl(170, 70%, 45%)', 'hsl(25, 85%, 55%)'
+      'hsl(170, 70%, 45%)', 'hsl(25, 85%, 55%)', 'hsl(0, 70%, 55%)', 'hsl(60, 70%, 45%)'
     ];
 
     const sellers = sellerIdsArray.map((id, index) => ({
