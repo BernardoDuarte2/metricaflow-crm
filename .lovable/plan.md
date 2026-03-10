@@ -1,107 +1,68 @@
 
 
-# Tema ORKA: Dark/Light Mode com Botao de Alternancia
+## TV Display Mode for "Ranking ao Vivo"
 
-## Resumo
-Substituir a identidade visual atual "Futurista Premium" pelo tema ORKA, com modo noturno como padrao e um botao sol/lua no header para alternar. As cores serao baseadas na paleta fornecida (inspirada na Gene Digital). A mudanca e segura pois o sistema de variaveis CSS ja existe -- estamos apenas trocando os valores.
+The current page uses tabs, small text, and a layout optimized for desktop monitors. For a sales floor TV, we need a completely different approach: large fonts, high contrast, no interaction needed, and auto-rotating content.
 
-## Arquivos a alterar
+### Design Concept: "Stadium Scoreboard"
 
-### 1. `src/index.css` - Paleta ORKA
-Substituir todos os valores das variaveis CSS em `:root` (light) e `.dark` (dark) pelos valores ORKA:
+A full-screen, single-view layout with no tabs or scrolling. Everything important visible at once, optimized for readability at 3-5 meters distance.
 
-**Modo Diurno (`:root`)**
-- `--background`: branco `#FFFFFF` -> `0 0% 100%`
-- `--foreground`: `#1E293B` -> `215 28% 17%`
-- `--card`: `#F8FAFC` -> `210 40% 98%`
-- `--primary`: `#0057FF` -> `220 100% 50%`
-- `--border`: `#E2E8F0` -> `214 32% 91%`
-- `--muted`: `#F8FAFC` -> `210 40% 98%`
-- `--muted-foreground`: `#64748B` -> `215 16% 47%`
-- Gradientes: `#0057FF` -> `#003599`
-- Remover/suavizar efeitos de glow no modo light
-
-**Modo Noturno (`.dark`) - PADRAO**
-- `--background`: `#08090B` -> `220 16% 4%`
-- `--foreground`: `#FFFFFF` -> `0 0% 100%`
-- `--card`: `#111317` -> `220 14% 8%`
-- `--primary`: `#0057FF` -> `220 100% 50%`
-- `--border`: `#1E293B` -> `217 33% 17%`
-- `--muted-foreground`: `#94A3B8` -> `215 20% 65%`
-- Gradientes: `#0057FF` -> `#003599`
-- Manter efeitos de glow azul sutis
-
-Atualizar tambem: sidebar, cockpit, chart colors, e utility classes para usar azul puro (sem purple/lilac).
-
-Remover referencias a `hsl(270 70% 68%)` (lilac) em todo o arquivo -- substituir por tons de azul.
-
-Atualizar `body.theme-futurista` para remover gradientes purple nos botoes e badges.
-
-### 2. `src/lib/themes.ts` - Valores ORKA
-Atualizar os valores de cores light e dark do tema `futurista` para corresponder a paleta ORKA.
-
-### 3. `src/hooks/useTheme.ts` - Suporte a Dark Mode Toggle
-- Adicionar funcao `toggleDarkMode()` que alterna a classe `dark` no `<html>`
-- Persistir preferencia em `localStorage` (chave `color-mode`)
-- Inicializar como dark por padrao
-- Exportar `isDark` e `toggleDarkMode`
-
-### 4. `src/components/layout/Sidebar.tsx` - Botao Sol/Lua
-Adicionar um botao de toggle antes do avatar dropdown:
-- Icone `Sun` quando em dark mode (clica para ir ao light)
-- Icone `Moon` quando em light mode (clica para ir ao dark)
-- Estilo sutil, ghost button, tamanho icon
-
-### 5. `src/pages/ProtectedRoute.tsx` - Inicializar dark mode
-Garantir que o dark mode e aplicado no mount (classe `dark` no `<html>` baseado no localStorage).
-
-### 6. `src/components/ui/sonner.tsx` - Manter compativel
-Ja usa `next-themes` mas apenas para ler o tema. Verificar compatibilidade.
-
-## O que NAO muda
-- Estrutura de componentes (cards, buttons, tables)
-- Logica de negocios (dashboard, leads, kanban)
-- Layout do sidebar (continua horizontal no topo)
-- Funcionalidade de nenhuma feature
-
-## Detalhes tecnicos
-
-### Conversao de cores hex -> HSL
-| Hex | HSL |
-|---|---|
-| `#08090B` | `220 16% 4%` |
-| `#111317` | `220 14% 8%` |
-| `#0057FF` | `220 100% 50%` |
-| `#003599` | `220 100% 30%` |
-| `#1E293B` | `217 33% 17%` |
-| `#94A3B8` | `215 20% 65%` |
-| `#F8FAFC` | `210 40% 98%` |
-| `#E2E8F0` | `214 32% 91%` |
-| `#64748B` | `215 16% 47%` |
-| `#1E293B` (text) | `215 28% 17%` |
-
-### Inicializacao do dark mode
 ```text
-// No mount da app, antes do render:
-const savedMode = localStorage.getItem('color-mode');
-if (!savedMode || savedMode === 'dark') {
-  document.documentElement.classList.add('dark');
-} else {
-  document.documentElement.classList.remove('dark');
-}
+┌─────────────────────────────────────────────────────────────┐
+│  🏆  RANKING AO VIVO          ● Live    14:32:05           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│         ┌──────┐    ┌──────┐    ┌──────┐                    │
+│         │  2nd │    │  1st │    │  3rd │                    │
+│         │ 🥈   │    │ 🥇   │    │ 🥉   │                    │
+│         │Avatar│    │Avatar│    │Avatar│                    │
+│  ░░░░░░ │ Name │ ░░ │ Name │░░░ │ Name │ ░░░░░░            │
+│  ░ BAR ░│ Pts  │ ░░ │ Pts  │░░░ │ Pts  │ ░ BAR ░           │
+│  ░░░░░░ └──────┘ ░░ └──────┘░░░ └──────┘ ░░░░░░            │
+│         ▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓                    │
+│          medium       tall        short   ← actual podium   │
+│                                                             │
+├──────────────────────────────────┬──────────────────────────┤
+│  4. Avatar  Name     1.250 pts  │  FEED AO VIVO            │
+│  5. Avatar  Name       980 pts  │  ● João fechou venda!    │
+│  6. Avatar  Name       870 pts  │  ● Maria criou lead      │
+│  7. Avatar  Name       650 pts  │  ● Pedro enviou proposta │
+│  ...                             │  ...                     │
+└──────────────────────────────────┴──────────────────────────┘
 ```
 
-### Botao no header
-```text
-// No Sidebar.tsx, antes do DropdownMenu:
-<Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-  {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-</Button>
-```
+### Changes
 
-### Efeitos de glow
-- Modo noturno: `box-shadow: 0 0 15px rgba(0, 87, 255, 0.3)` no hover de botoes primarios
-- Modo diurno: sem glow, apenas `box-shadow` padrao sutil
+**1. Redesign `GamificationLive.tsx` for TV mode**
+- Remove tabs entirely -- show a single unified view
+- Remove footer motivational cards (redundant for TV)
+- Remove "Voltar ao Dashboard" button
+- Layout: Podium (top 60% of screen) + Bottom split (list 4-10 left, activity feed right)
+- Add a pulsing red "● AO VIVO" indicator with current time (clock updates every second)
+- Header: much simpler, just title + live indicator + clock, no bouncing trophies
 
-## Risco
-Baixo. Estamos apenas trocando valores de variaveis CSS que ja sao consumidas por todos os componentes. O toggle usa a classe `dark` que o Tailwind ja suporta (`darkMode: ["class"]`).
+**2. Redesign `LeaderboardLive.tsx` with a true visual podium**
+- Top 3 get a **physical podium** effect: three columns with different heights (2nd=medium, 1st=tall, 3rd=short) using actual height blocks at the bottom
+- 1st place: huge avatar (128px), large name text (2xl), massive points (4xl), coral glow ring around avatar, subtle pulse animation
+- 2nd/3rd: large avatar (96px), proportionally sized text
+- Points use `tabular-nums` font for clean alignment
+- Each podium block shows: medal emoji, avatar, name, points, sales count, conversion rate -- all large enough to read from across the room
+- Rank 4-10 list: single horizontal rows with large text (lg/xl), big avatars (48px), clear separation
+
+**3. Scale everything up for TV readability**
+- Base font sizes increase: names 2xl-3xl, points 3xl-5xl, stats xl
+- Avatars: 1st place 128px, 2nd/3rd 96px, rest 56px
+- More whitespace/padding between elements
+- Use `font-variant-numeric: tabular-nums` on all numbers for clean columns
+
+**4. Auto-rotate activity feed**
+- The activity feed on the right auto-scrolls through recent events
+- No manual scrolling needed
+
+### Files to edit
+- `src/pages/GamificationLive.tsx` -- Flatten to single view, remove tabs/footer
+- `src/components/gamification/LeaderboardLive.tsx` -- True podium with height blocks, scaled-up typography
+
+No new dependencies needed. All existing data fetching and celebration modals remain intact.
+
