@@ -29,7 +29,21 @@ export function LeaderboardLive() {
     },
   });
 
-  const leaderboard = events
+  // Mock data for demo/preview mode
+  const MOCK_LEADERBOARD = [
+    { userId: "m1", userName: "Rafael Oliveira", avatar: "https://i.pravatar.cc/150?img=12", stats: { totalPoints: 4850, salesClosed: 28, conversionRate: 42, leadsCreated: 67, proposalsSent: 45, observations: 30, totalSalesValue: 285000 }, badges: [{ id: "closer", name: "Fechador", icon: "🎯" }, { id: "streak", name: "Sequência", icon: "🔥" }, { id: "speed", name: "Veloz", icon: "⚡" }], totalPoints: 4850 },
+    { userId: "m2", userName: "Camila Santos", avatar: "https://i.pravatar.cc/150?img=5", stats: { totalPoints: 4620, salesClosed: 26, conversionRate: 45, leadsCreated: 58, proposalsSent: 40, observations: 35, totalSalesValue: 310000 }, badges: [{ id: "converter", name: "Conversor", icon: "💎" }, { id: "streak", name: "Sequência", icon: "🔥" }], totalPoints: 4620 },
+    { userId: "m3", userName: "Lucas Mendes", avatar: "https://i.pravatar.cc/150?img=11", stats: { totalPoints: 4380, salesClosed: 24, conversionRate: 38, leadsCreated: 63, proposalsSent: 42, observations: 28, totalSalesValue: 245000 }, badges: [{ id: "hunter", name: "Caçador", icon: "🏹" }, { id: "volume", name: "Volume", icon: "📊" }], totalPoints: 4380 },
+    { userId: "m4", userName: "Ana Beatriz Costa", avatar: "https://i.pravatar.cc/150?img=9", stats: { totalPoints: 3950, salesClosed: 21, conversionRate: 40, leadsCreated: 52, proposalsSent: 38, observations: 25, totalSalesValue: 198000 }, badges: [{ id: "closer", name: "Fechador", icon: "🎯" }], totalPoints: 3950 },
+    { userId: "m5", userName: "Pedro Henrique", avatar: "https://i.pravatar.cc/150?img=14", stats: { totalPoints: 3720, salesClosed: 19, conversionRate: 36, leadsCreated: 53, proposalsSent: 35, observations: 22, totalSalesValue: 175000 }, badges: [{ id: "speed", name: "Veloz", icon: "⚡" }], totalPoints: 3720 },
+    { userId: "m6", userName: "Juliana Ferreira", avatar: "https://i.pravatar.cc/150?img=20", stats: { totalPoints: 3410, salesClosed: 17, conversionRate: 34, leadsCreated: 50, proposalsSent: 32, observations: 20, totalSalesValue: 162000 }, badges: [{ id: "streak", name: "Sequência", icon: "🔥" }], totalPoints: 3410 },
+    { userId: "m7", userName: "Gabriel Souza", avatar: "https://i.pravatar.cc/150?img=53", stats: { totalPoints: 3180, salesClosed: 15, conversionRate: 32, leadsCreated: 47, proposalsSent: 30, observations: 18, totalSalesValue: 148000 }, badges: [], totalPoints: 3180 },
+    { userId: "m8", userName: "Mariana Lima", avatar: "https://i.pravatar.cc/150?img=45", stats: { totalPoints: 2890, salesClosed: 14, conversionRate: 30, leadsCreated: 46, proposalsSent: 28, observations: 16, totalSalesValue: 132000 }, badges: [], totalPoints: 2890 },
+    { userId: "m9", userName: "Thiago Almeida", avatar: "https://i.pravatar.cc/150?img=60", stats: { totalPoints: 2650, salesClosed: 12, conversionRate: 28, leadsCreated: 43, proposalsSent: 25, observations: 14, totalSalesValue: 115000 }, badges: [], totalPoints: 2650 },
+    { userId: "m10", userName: "Isabela Rocha", avatar: "https://i.pravatar.cc/150?img=25", stats: { totalPoints: 2380, salesClosed: 10, conversionRate: 26, leadsCreated: 38, proposalsSent: 22, observations: 12, totalSalesValue: 98000 }, badges: [], totalPoints: 2380 },
+  ];
+
+  const realLeaderboard = events
     ? Object.entries(
         events.reduce((acc: any, event: any) => {
           const userId = event.profiles.id;
@@ -60,6 +74,9 @@ export function LeaderboardLive() {
         .sort((a, b) => b.totalPoints - a.totalPoints)
         .slice(0, 20)
     : [];
+
+  // Use mock data when no real data exists
+  const leaderboard = realLeaderboard.length > 0 ? realLeaderboard : MOCK_LEADERBOARD;
 
   const rankingChanges = useRankingChanges(leaderboard);
   const getChangeForUser = (userId: string) =>
