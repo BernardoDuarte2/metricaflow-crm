@@ -357,13 +357,27 @@ Deno.serve(async (req) => {
       };
     });
 
+    // Track which leads have lead_values entries
+    const leadValuesRevenue: Record<string, Record<string, number>> = {}; // sellerId -> leadId -> total
+    const wonLeadIdsSet = new Set(allLeads.filter((l: any) => isWonStatus(l.status)).map((l: any) => l.id));
+    
+    (wonLeadValuesResult.data || []).forEach((lv: any) => {
+      if (wonLeadIdsSet.has(lv.lead_id) && lv.leads?.assigned_to) {
+        const sellerId = lv.leads.assigned_to;
+        if (!leadValuesRevenue[sellerId]) leadValuesRevenue[sellerId] = {};
+        leadValuesRevenue[sellerId][lv.lead_id] = (leadValuesRevenue[sellerId][lv.lead_id] || 0) + Number(lv.amount || 0);
+      }
+    });
+
     allLeads.forEach((lead: any) => {
       if (!lead.assigned_to || !teamPerformance[lead.assigned_to]) return;
       const tp = teamPerformance[lead.assigned_to];
       tp.leads += 1;
       if (isWonStatus(lead.status)) {
         tp.convertedLeads += 1;
-        tp.revenue += Number(lead.estimated_value) || 0;
+        // Use lead_values if available, otherwise estimated_value
+        const lvRevenue = leadValuesRevenue[lead.assigned_to]?.[lead.id];
+        tp.revenue += lvRevenue !== undefined ? lvRevenue : (Number(lead.estimated_value) || 0);
         const created = new Date(lead.created_at);
         const updated = new Date(lead.updated_at);
         const days = Math.ceil((updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
@@ -371,15 +385,6 @@ Deno.serve(async (req) => {
         tp.closedCount += 1;
       }
     });
-
-    const wonLeadIdsSet = new Set(allLeads.filter((l: any) => isWonStatus(l.status)).map((l: any) => l.id));
-    (wonLeadValuesResult.data || []).forEach((lv: any) => {
-      if (wonLeadIdsSet.has(lv.lead_id) && lv.leads?.assigned_to && teamPerformance[lv.leads.assigned_to]) {
-        const tp = teamPerformance[lv.leads.assigned_to];
-        tp.revenue = (tp.revenue || 0) + Number(lv.amount || 0);
-      }
-    });
-
     allMeetings.forEach((meeting: any) => {
       if (meeting.created_by && teamPerformance[meeting.created_by]) {
         teamPerformance[meeting.created_by].meetings += 1;
