@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       buildQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at)`)),
       buildWonQuery(supabaseClient.from('lead_values').select(`*, leads!inner (id, status, assigned_to, created_at, updated_at)`).in('leads.status', WON_STATUSES)),
       buildQuery(supabaseClient.from('leads').select('status')),
-      buildQuery(supabaseClient.from('leads').select('source')),
+      buildQuery(supabaseClient.from('leads').select('source, status')),
       buildQuery(supabaseClient.from('leads').select('status, updated_at')),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).eq('qualificado', true)),
       buildQuery(supabaseClient.from('leads').select('*', { count: 'exact', head: true }).in('status', OPPORTUNITY_STATUSES)),
