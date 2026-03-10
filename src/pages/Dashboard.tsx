@@ -207,10 +207,10 @@ const Dashboard = () => {
     if (!sourceData) return [];
 
     return sourceData.map((item: any) => ({
-      name: item.name,
-      leads: item.total || item.value || 0,
-      converted: item.converted || Math.floor((item.total || item.value || 0) * 0.15),
-      conversionRate: item.conversionRate || 15
+      name: item.name || item.source || 'Desconhecido',
+      leads: item.total || item.count || 0,
+      converted: item.converted || 0,
+      conversionRate: item.conversionRate || 0
     }));
   }, [sourceData]);
 
