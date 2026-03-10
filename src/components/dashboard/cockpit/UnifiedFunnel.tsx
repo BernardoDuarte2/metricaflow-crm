@@ -41,14 +41,14 @@ const getVelocityStatus = (ratio: number) => {
   return { textColor: "text-destructive", label: "Lento" };
 };
 
-// Blue gradient — darkest at top, lighter at bottom
+// ORKA gradient — Coral-to-Red, darkest at top
 const stageColors = [
-  { bg: 'hsl(210, 80%, 28%)', border: 'hsl(210, 80%, 38%)' },
-  { bg: 'hsl(212, 75%, 34%)', border: 'hsl(212, 75%, 44%)' },
-  { bg: 'hsl(215, 70%, 40%)', border: 'hsl(215, 70%, 50%)' },
-  { bg: 'hsl(215, 65%, 48%)', border: 'hsl(215, 65%, 56%)' },
-  { bg: 'hsl(212, 60%, 55%)', border: 'hsl(212, 60%, 63%)' },
-  { bg: 'hsl(210, 55%, 62%)', border: 'hsl(210, 55%, 70%)' },
+  { bg: 'hsl(0, 55%, 38%)', border: 'hsl(0, 55%, 48%)' },
+  { bg: 'hsl(3, 60%, 44%)', border: 'hsl(3, 60%, 54%)' },
+  { bg: 'hsl(5, 68%, 50%)', border: 'hsl(5, 68%, 60%)' },
+  { bg: 'hsl(8, 75%, 56%)', border: 'hsl(8, 75%, 64%)' },
+  { bg: 'hsl(10, 80%, 62%)', border: 'hsl(10, 80%, 70%)' },
+  { bg: 'hsl(12, 85%, 68%)', border: 'hsl(12, 85%, 76%)' },
 ];
 
 export const UnifiedFunnel = ({ stages, velocityData, title = "Funil End-to-End" }: UnifiedFunnelProps) => {
