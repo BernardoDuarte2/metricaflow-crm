@@ -234,15 +234,19 @@ Deno.serve(async (req) => {
       status, count, color: colors[status] || 'hsl(var(--chart-1))',
     }));
 
-    const sourceCounts = sourceDataResult.data?.reduce((acc: Record<string, number>, lead: any) => {
+    const sourceAgg: Record<string, { total: number; converted: number }> = {};
+    (sourceDataResult.data || []).forEach((lead: any) => {
       const source = lead.source || 'Não informado';
-      acc[source] = (acc[source] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) || {};
+      if (!sourceAgg[source]) sourceAgg[source] = { total: 0, converted: 0 };
+      sourceAgg[source].total++;
+      if (WON_STATUSES.includes(lead.status)) sourceAgg[source].converted++;
+    });
 
     const chartColors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
-    const sourceData = Object.entries(sourceCounts).map(([source, count], index) => ({
-      source, count, color: chartColors[index % chartColors.length],
+    const sourceData = Object.entries(sourceAgg).map(([source, data], index) => ({
+      source, count: data.total, color: chartColors[index % chartColors.length],
+      name: source, total: data.total, converted: data.converted,
+      conversionRate: data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0,
     }));
 
     // Funnel stages with aliases grouped
