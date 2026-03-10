@@ -91,8 +91,28 @@ export default function GamificationLive() {
     clearLatestSale();
   };
 
+  const [seeding, setSeeding] = useState(false);
+  const seedDemo = async () => {
+    setSeeding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('seed-gamification-demo');
+      if (error) throw error;
+      console.log('Seed result:', data);
+      alert(`Dados criados! ${data.users_created} vendedores, ${data.events_inserted} eventos, ${data.leads_created} leads`);
+      window.location.reload();
+    } catch (e: any) {
+      alert('Erro: ' + e.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col p-6 lg:p-8">
+      {/* Seed button - temporary */}
+      <button onClick={seedDemo} disabled={seeding} className="fixed bottom-4 right-4 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold opacity-70 hover:opacity-100">
+        {seeding ? 'Criando...' : '🎲 Seed Demo'}
+      </button>
       {/* Sound Controls */}
       <SoundControls
         isMuted={isMuted}
