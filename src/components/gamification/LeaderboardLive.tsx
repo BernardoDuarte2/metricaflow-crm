@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Target, TrendingUp, ArrowUp, ArrowDown } from "lucide-react";
+import { Trophy, Target, ArrowUp, ArrowDown, Zap } from "lucide-react";
 import {
   calculateUserStats,
   calculateBadges,
@@ -12,6 +11,7 @@ import {
 } from "@/lib/gamification";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRankingChanges } from "@/hooks/useRankingChanges";
+import { ActivityFeed } from "@/components/gamification/ActivityFeed";
 
 export function LeaderboardLive() {
   const { data: events, isLoading } = useQuery({
@@ -19,13 +19,11 @@ export function LeaderboardLive() {
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
       const { data, error } = await supabase
         .from("gamification_events")
         .select("*, profiles!inner(id, name, avatar_url)")
         .gte("created_at", thirtyDaysAgo.toISOString())
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       return data;
     },
@@ -33,56 +31,53 @@ export function LeaderboardLive() {
 
   const leaderboard = events
     ? Object.entries(
-      events.reduce((acc: any, event: any) => {
-        const userId = event.profiles.id;
-        if (!acc[userId]) {
-          acc[userId] = {
+        events.reduce((acc: any, event: any) => {
+          const userId = event.profiles.id;
+          if (!acc[userId]) {
+            acc[userId] = {
+              userId,
+              userName: event.profiles.name,
+              avatar: event.profiles.avatar_url,
+              events: [],
+            };
+          }
+          acc[userId].events.push(event);
+          return acc;
+        }, {})
+      )
+        .map(([userId, data]: [string, any]) => {
+          const stats = calculateUserStats(data.events);
+          const badges = calculateBadges(stats);
+          return {
             userId,
-            userName: event.profiles.name,
-            avatar: event.profiles.avatar_url,
-            events: [],
+            userName: data.userName,
+            avatar: data.avatar,
+            stats,
+            badges,
+            totalPoints: stats.totalPoints,
           };
-        }
-        acc[userId].events.push(event);
-        return acc;
-      }, {})
-    )
-      .map(([userId, data]: [string, any]) => {
-        const stats = calculateUserStats(data.events);
-        const badges = calculateBadges(stats);
-        return {
-          userId,
-          userName: data.userName,
-          avatar: data.avatar,
-          stats,
-          badges,
-          totalPoints: stats.totalPoints,
-        };
-      })
-      .sort((a, b) => b.totalPoints - a.totalPoints)
-      .slice(0, 20)
+        })
+        .sort((a, b) => b.totalPoints - a.totalPoints)
+        .slice(0, 20)
     : [];
 
   const rankingChanges = useRankingChanges(leaderboard);
+  const getChangeForUser = (userId: string) =>
+    rankingChanges.find((c) => c.userId === userId);
 
-  const getChangeForUser = (userId: string) => {
-    return rankingChanges.find(change => change.userId === userId);
-  };
-
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-xl" />
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-32 w-full rounded-2xl" />
         ))}
       </div>
     );
@@ -90,110 +85,151 @@ export function LeaderboardLive() {
 
   if (leaderboard.length === 0) {
     return (
-      <div className="rounded-xl bg-card border border-border p-12">
-        <div className="text-center space-y-3">
-          <Trophy className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h3 className="text-lg font-semibold text-foreground">Nenhum dado disponível</h3>
-          <p className="text-sm text-muted-foreground">
-            O ranking será atualizado conforme as vendas acontecerem
-          </p>
-        </div>
+      <div className="rounded-2xl bg-card border border-border p-16 text-center">
+        <Trophy className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+        <h3 className="text-2xl font-semibold text-foreground">Nenhum dado disponível</h3>
+        <p className="text-lg text-muted-foreground mt-2">
+          O ranking será atualizado conforme as vendas acontecerem
+        </p>
       </div>
     );
   }
 
   const topThree = leaderboard.slice(0, 3);
-  const restOfLeaderboard = leaderboard.slice(3);
+  const restOfLeaderboard = leaderboard.slice(3, 10);
 
   // Podium order: 2nd, 1st, 3rd
-  const podiumOrder = topThree.length >= 3
-    ? [topThree[1], topThree[0], topThree[2]]
-    : topThree;
-  const podiumRanks = topThree.length >= 3 ? [2, 1, 3] : topThree.map((_, i) => i + 1);
+  const podiumOrder =
+    topThree.length >= 3
+      ? [topThree[1], topThree[0], topThree[2]]
+      : topThree;
+  const podiumRanks =
+    topThree.length >= 3 ? [2, 1, 3] : topThree.map((_, i) => i + 1);
+
+  const podiumHeights: Record<number, string> = {
+    1: "h-28 lg:h-36",
+    2: "h-20 lg:h-24",
+    3: "h-14 lg:h-18",
+  };
+
+  const podiumColors: Record<number, string> = {
+    1: "bg-primary/20 border-primary/40",
+    2: "bg-muted/60 border-muted-foreground/20",
+    3: "bg-muted/40 border-muted-foreground/15",
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Podium */}
-      <div className="grid grid-cols-3 gap-4 items-end">
+    <div className="flex flex-col h-full gap-6">
+      {/* ── PODIUM ── */}
+      <div className="flex items-end justify-center gap-4 lg:gap-8 pt-4">
         {podiumOrder.map((user, i) => {
           const rank = podiumRanks[i];
-          const isFirst = rank === 1;
+          const isWinner = rank === 1;
           const change = getChangeForUser(user.userId);
+
+          const avatarSize = isWinner
+            ? "h-24 w-24 lg:h-32 lg:w-32"
+            : "h-16 w-16 lg:h-24 lg:w-24";
 
           return (
             <motion.div
               key={user.userId}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, type: "spring", duration: 0.5 }}
+              transition={{ delay: i * 0.15, type: "spring", stiffness: 120 }}
               className="flex flex-col items-center"
+              style={{ width: isWinner ? "280px" : "220px" }}
             >
-              <div
-                className={`relative w-full rounded-xl border border-border bg-card p-5 text-center transition-shadow hover:shadow-md ${
-                  isFirst ? "pb-7" : "pb-5"
-                }`}
-                style={isFirst ? {
-                  borderColor: 'hsl(var(--accent))',
-                  boxShadow: '0 0 24px -6px hsl(var(--accent) / 0.25)',
-                } : {}}
-              >
-                {/* Rank change indicator */}
+              {/* User card */}
+              <div className="relative flex flex-col items-center text-center mb-0">
+                {/* Rank change */}
                 {change && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      change.direction === 'up'
-                        ? 'bg-success/15 text-success'
-                        : 'bg-destructive/15 text-destructive'
+                    className={`absolute -top-2 -right-2 flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full z-10 ${
+                      change.direction === "up"
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-destructive/20 text-destructive"
                     }`}
                   >
-                    {change.direction === 'up' ? <ArrowUp className="h-2.5 w-2.5" /> : <ArrowDown className="h-2.5 w-2.5" />}
+                    {change.direction === "up" ? (
+                      <ArrowUp className="h-3 w-3" />
+                    ) : (
+                      <ArrowDown className="h-3 w-3" />
+                    )}
                     {Math.abs(change.newPosition - change.oldPosition)}
                   </motion.div>
                 )}
 
                 {/* Medal */}
-                <div className={`${isFirst ? "text-4xl mb-2" : "text-2xl mb-1"}`}>
+                <span className={`${isWinner ? "text-5xl" : "text-3xl"} mb-2`}>
                   {getMedalEmoji(rank)}
-                </div>
+                </span>
 
                 {/* Avatar */}
-                <Avatar className={`${isFirst ? "h-20 w-20" : "h-14 w-14"} mx-auto border-2 border-border`}>
-                  <AvatarImage src={user.avatar} alt={user.userName} />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-sm font-semibold">
-                    {getInitials(user.userName)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className={`relative ${isWinner ? "mb-3" : "mb-2"}`}>
+                  <Avatar
+                    className={`${avatarSize} border-4 ${
+                      isWinner
+                        ? "border-primary shadow-[0_0_30px_-5px_hsl(var(--primary)/0.5)]"
+                        : "border-border"
+                    }`}
+                  >
+                    <AvatarImage src={user.avatar} alt={user.userName} />
+                    <AvatarFallback className="bg-muted text-muted-foreground text-xl font-bold">
+                      {getInitials(user.userName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isWinner && (
+                    <motion.div
+                      animate={{ scale: [1, 1.15, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute inset-0 rounded-full border-2 border-primary/30"
+                    />
+                  )}
+                </div>
 
                 {/* Name */}
-                <h3 className={`${isFirst ? "text-base" : "text-sm"} font-semibold text-foreground mt-2.5 truncate`}>
+                <h3
+                  className={`${
+                    isWinner ? "text-2xl lg:text-3xl" : "text-xl lg:text-2xl"
+                  } font-bold text-foreground truncate max-w-full`}
+                >
                   {user.userName}
                 </h3>
 
                 {/* Points */}
-                <p className={`${isFirst ? "text-2xl" : "text-xl"} font-bold text-accent mt-1`}>
+                <p
+                  className={`${
+                    isWinner ? "text-4xl lg:text-5xl" : "text-3xl lg:text-4xl"
+                  } font-extrabold text-primary mt-1`}
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
                   {formatPoints(user.totalPoints)}
                 </p>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">pontos</span>
+                <span className="text-sm text-muted-foreground uppercase tracking-widest">
+                  pontos
+                </span>
 
-                {/* Quick stats */}
-                <div className="flex items-center justify-center gap-3 mt-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Trophy className="h-3 w-3 text-accent" />
-                    {user.stats.salesClosed}
+                {/* Stats */}
+                <div className="flex items-center justify-center gap-4 mt-2 text-base text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-foreground">{user.stats.salesClosed}</span>
+                    vendas
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Target className="h-3 w-3 text-primary" />
-                    {user.stats.conversionRate}%
+                  <span className="flex items-center gap-1.5">
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-foreground">{user.stats.conversionRate}%</span>
                   </span>
                 </div>
 
                 {/* Badges */}
                 {user.badges.length > 0 && (
-                  <div className="flex gap-1 justify-center mt-2">
-                    {user.badges.slice(0, 3).map((badge) => (
-                      <span key={badge.id} className="text-lg" title={badge.name}>
+                  <div className="flex gap-1.5 justify-center mt-2">
+                    {user.badges.slice(0, 4).map((badge) => (
+                      <span key={badge.id} className="text-xl" title={badge.name}>
                         {badge.icon}
                       </span>
                     ))}
@@ -201,19 +237,23 @@ export function LeaderboardLive() {
                 )}
               </div>
 
-              {/* Podium bar */}
+              {/* Podium block */}
               <div
-                className={`w-full rounded-b-lg ${isFirst ? "h-6 bg-accent/20" : rank === 2 ? "h-4 bg-muted" : "h-3 bg-muted"}`}
-                style={{ marginTop: '-4px' }}
-              />
+                className={`w-full ${podiumHeights[rank]} ${podiumColors[rank]} rounded-t-xl border-t border-x mt-2 flex items-center justify-center`}
+              >
+                <span className="text-3xl font-black text-muted-foreground/40">
+                  {rank}º
+                </span>
+              </div>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Rest of leaderboard */}
-      {restOfLeaderboard.length > 0 && (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {/* ── BOTTOM: Ranks 4-10 + Activity Feed ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
+        {/* Ranks 4-10 */}
+        <div className="lg:col-span-3 rounded-2xl border border-border bg-card overflow-hidden">
           <AnimatePresence mode="popLayout">
             {restOfLeaderboard.map((user, index) => {
               const change = getChangeForUser(user.userId);
@@ -227,58 +267,68 @@ export function LeaderboardLive() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ type: "spring", duration: 0.4 }}
-                  className={`flex items-center gap-4 px-5 py-3.5 ${
+                  className={`flex items-center gap-4 lg:gap-5 px-5 lg:px-6 py-4 ${
                     index > 0 ? "border-t border-border" : ""
                   } hover:bg-muted/30 transition-colors`}
                 >
                   {/* Position */}
-                  <div className="w-8 text-center">
-                    <span className="text-sm font-bold text-muted-foreground">{position}</span>
-                  </div>
+                  <span
+                    className="text-xl lg:text-2xl font-bold text-muted-foreground w-10 text-center"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {position}
+                  </span>
 
-                  {/* Change indicator */}
-                  <div className="w-5 flex justify-center">
+                  {/* Change */}
+                  <div className="w-6 flex justify-center">
                     {change ? (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className={change.direction === 'up' ? 'text-success' : 'text-destructive'}
+                        className={
+                          change.direction === "up"
+                            ? "text-green-400"
+                            : "text-destructive"
+                        }
                       >
-                        {change.direction === 'up' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                        {change.direction === "up" ? (
+                          <ArrowUp className="h-4 w-4" />
+                        ) : (
+                          <ArrowDown className="h-4 w-4" />
+                        )}
                       </motion.div>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </div>
 
                   {/* Avatar */}
-                  <Avatar className="h-10 w-10 border border-border">
+                  <Avatar className="h-12 w-12 lg:h-14 lg:w-14 border-2 border-border">
                     <AvatarImage src={user.avatar} alt={user.userName} />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
+                    <AvatarFallback className="bg-muted text-muted-foreground text-sm font-bold">
                       {getInitials(user.userName)}
                     </AvatarFallback>
                   </Avatar>
 
                   {/* Name & stats */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-foreground truncate">{user.userName}</h4>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Trophy className="h-3 w-3" /> {user.stats.salesClosed}
+                    <h4 className="text-lg lg:text-xl font-bold text-foreground truncate">
+                      {user.userName}
+                    </h4>
+                    <div className="flex items-center gap-4 mt-0.5">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Trophy className="h-3.5 w-3.5" /> {user.stats.salesClosed} vendas
                       </span>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" /> {user.stats.proposalsSent}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Target className="h-3 w-3" /> {user.stats.conversionRate}%
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Target className="h-3.5 w-3.5" /> {user.stats.conversionRate}%
                       </span>
                     </div>
                   </div>
 
                   {/* Badges */}
-                  <div className="flex gap-0.5">
+                  <div className="flex gap-1">
                     {user.badges.slice(0, 2).map((badge) => (
-                      <span key={badge.id} className="text-base" title={badge.name}>
+                      <span key={badge.id} className="text-lg" title={badge.name}>
                         {badge.icon}
                       </span>
                     ))}
@@ -286,17 +336,36 @@ export function LeaderboardLive() {
 
                   {/* Points */}
                   <div className="text-right">
-                    <span className="text-lg font-bold text-accent">
+                    <span
+                      className="text-2xl lg:text-3xl font-extrabold text-primary"
+                      style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
                       {formatPoints(user.totalPoints)}
                     </span>
-                    <p className="text-[10px] text-muted-foreground">pts</p>
+                    <p className="text-xs text-muted-foreground">pts</p>
                   </div>
                 </motion.div>
               );
             })}
+            {restOfLeaderboard.length === 0 && (
+              <div className="px-6 py-8 text-center text-muted-foreground text-lg">
+                Sem mais participantes no ranking
+              </div>
+            )}
           </AnimatePresence>
         </div>
-      )}
+
+        {/* Activity Feed */}
+        <div className="lg:col-span-2">
+          <div className="rounded-2xl border border-border bg-card p-4 lg:p-5 h-full">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="h-5 w-5 text-primary" />
+              <h3 className="text-xl font-bold text-foreground">Feed ao Vivo</h3>
+            </div>
+            <ActivityFeed />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
