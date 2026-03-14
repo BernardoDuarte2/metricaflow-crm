@@ -207,13 +207,27 @@ const Dashboard = () => {
   const processedSourceData = useMemo(() => {
     if (!sourceData) return [];
 
-    return sourceData.map((item: any) => ({
-      name: item.name || item.source || 'Desconhecido',
-      leads: item.total || item.count || 0,
-      converted: item.converted || 0,
-      conversionRate: item.conversionRate || 0
-    }));
-  }, [sourceData]);
+    const colorsMap: Record<string, string> = {};
+    (dashboardData?.sourcesList || []).forEach((s: any) => {
+      colorsMap[s.name] = s.color;
+    });
+
+    const fallbackColors = [
+      'hsl(215, 70%, 55%)', 'hsl(142, 70%, 45%)', 'hsl(38, 90%, 50%)',
+      'hsl(255, 60%, 60%)', 'hsl(195, 80%, 50%)', 'hsl(340, 70%, 55%)',
+    ];
+
+    return sourceData.map((item: any, i: number) => {
+      const name = item.name || item.source || 'Desconhecido';
+      return {
+        name,
+        leads: item.total || item.count || 0,
+        converted: item.converted || 0,
+        conversionRate: item.conversionRate || 0,
+        color: colorsMap[name] || fallbackColors[i % fallbackColors.length],
+      };
+    });
+  }, [sourceData, dashboardData?.sourcesList]);
 
   // Processar dados de perda
   const processedLossData = useMemo(() => {

@@ -5,18 +5,13 @@ interface SourceData {
   leads: number;
   converted: number;
   conversionRate: number;
+  color?: string;
 }
 
 interface SourceConversionChartProps {
   data: SourceData[];
   title?: string;
 }
-
-const getBarColor = (rate: number) => {
-  if (rate >= 20) return "hsl(142, 70%, 45%)";
-  if (rate >= 10) return "hsl(25, 100%, 50%)";
-  return "hsl(38, 90%, 50%)";
-};
 
 const getBadgeStyle = (rate: number) => {
   if (rate >= 20) return "bg-green-500/15 text-green-400 border-green-500/20";
@@ -53,12 +48,19 @@ export const SourceConversionChart = ({
           const barWidth = (item.leads / maxLeads) * 100;
           const convertedWidth = item.leads > 0 ? (item.converted / item.leads) * 100 : 0;
           const rate = item.leads > 0 ? ((item.converted / item.leads) * 100) : 0;
+          const sourceColor = item.color || "hsl(215, 70%, 55%)";
 
           return (
             <div key={item.name} className="group">
               {/* Label row */}
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-medium text-foreground">{item.name}</span>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: sourceColor }}
+                  />
+                  <span className="text-xs font-medium text-foreground">{item.name}</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-muted-foreground tabular-nums">
                     {item.converted}/{item.leads}
@@ -73,17 +75,17 @@ export const SourceConversionChart = ({
 
               {/* Bar track */}
               <div className="relative h-3 rounded-full bg-muted/50 overflow-hidden">
-                {/* Total leads bar (background) */}
+                {/* Total leads bar (background) - uses source color at low opacity */}
                 <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-muted-foreground/10 transition-all duration-500"
-                  style={{ width: `${barWidth}%` }}
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                  style={{ width: `${barWidth}%`, backgroundColor: sourceColor, opacity: 0.15 }}
                 />
-                {/* Converted bar (foreground) */}
+                {/* Converted bar (foreground) - uses source color */}
                 <div
                   className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 group-hover:brightness-110"
                   style={{
                     width: `${(convertedWidth / 100) * barWidth}%`,
-                    backgroundColor: getBarColor(rate),
+                    backgroundColor: sourceColor,
                   }}
                 />
               </div>
@@ -95,11 +97,11 @@ export const SourceConversionChart = ({
       {/* Footer legend */}
       <div className="px-5 py-3 border-t border-border flex items-center justify-center gap-6">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-1.5 rounded-full bg-muted-foreground/10" />
+          <div className="w-3 h-1.5 rounded-full bg-muted-foreground/15" />
           <span className="text-[10px] text-muted-foreground">Total Leads</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-1.5 rounded-full bg-green-500" />
+          <div className="w-3 h-1.5 rounded-full bg-primary" />
           <span className="text-[10px] text-muted-foreground">Convertidos</span>
         </div>
       </div>
