@@ -467,6 +467,38 @@ Deno.serve(async (req) => {
       return { month, totalLeads: totalMonthLeads, closedLeads, conversionRate: convRate };
     }).filter(m => m.totalLeads > 0 || m.closedLeads > 0);
 
+    // Monthly leads by source for evolution chart
+    const sourceByMonthAgg: Record<string, Record<string, number>> = {};
+    const allSources = new Set<string>();
+    monthlyLeadsData.forEach((lead: any) => {
+      const monthIndex = new Date(lead.created_at).getMonth();
+      const monthName = monthNames[monthIndex];
+      const source = lead.source || 'Não informado';
+      allSources.add(source);
+      if (!sourceByMonthAgg[monthName]) sourceByMonthAgg[monthName] = {};
+      sourceByMonthAgg[monthName][source] = (sourceByMonthAgg[monthName][source] || 0) + 1;
+    });
+
+    const sourceColors = [
+      'hsl(215, 70%, 55%)', 'hsl(142, 70%, 45%)', 'hsl(38, 90%, 50%)',
+      'hsl(255, 60%, 60%)', 'hsl(195, 80%, 50%)', 'hsl(340, 70%, 55%)',
+      'hsl(170, 70%, 45%)', 'hsl(25, 85%, 55%)',
+    ];
+    const sourcesList = Array.from(allSources).map((name, i) => ({
+      name,
+      color: sourceColors[i % sourceColors.length],
+    }));
+
+    const monthlyLeadsBySource = monthNames
+      .filter(month => sourceByMonthAgg[month])
+      .map(month => {
+        const row: Record<string, any> = { month };
+        allSources.forEach(source => {
+          row[source] = sourceByMonthAgg[month]?.[source] || 0;
+        });
+        return row;
+      });
+
     // Process monthly revenue by seller
     // First try lead_values, fallback to estimated_value from leads
     const monthlyRevenueData = monthlyRevenueBySellerResult.data || [];
