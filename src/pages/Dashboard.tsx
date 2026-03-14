@@ -44,6 +44,7 @@ import {
   GoalHeroCard,
   UnifiedFunnel,
   MoneyLeakAlerts,
+  SourceEvolutionChart,
 } from "@/components/dashboard/cockpit";
 
 // Lazy load de componentes pesados
