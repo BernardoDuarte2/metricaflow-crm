@@ -44,6 +44,7 @@ import {
   GoalHeroCard,
   UnifiedFunnel,
   MoneyLeakAlerts,
+  SourceEvolutionChart,
 } from "@/components/dashboard/cockpit";
 
 // Lazy load de componentes pesados
@@ -579,13 +580,20 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* 8. CHARTS - Source Conversion */}
+          {/* 8. CHARTS - Source Conversion + Source Evolution */}
           {processedSourceData.length > 0 && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <SourceConversionChart
                 data={processedSourceData}
                 title="Conversão por Fonte"
               />
+              {dashboardData?.monthlyLeadsBySource?.length > 0 && dashboardData?.sourcesList?.length > 0 && (
+                <SourceEvolutionChart
+                  data={dashboardData.monthlyLeadsBySource}
+                  sources={dashboardData.sourcesList}
+                  title="Evolução Mensal por Fonte"
+                />
+              )}
             </div>
           )}
 
