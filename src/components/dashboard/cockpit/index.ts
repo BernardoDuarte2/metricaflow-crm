@@ -11,6 +11,7 @@ export { TeamProgressPanel } from './TeamProgressPanel';
 export { TrendChart } from './TrendChart';
 export { LossWaterfallChart } from './LossWaterfallChart';
 export { SourceConversionChart } from './SourceConversionChart';
+export { SourceEvolutionChart } from './SourceEvolutionChart';
 export { GoalGauge } from './GoalGauge';
 export { QuickStats } from './QuickStats';
 export { TeamGoalProgressCard } from './TeamGoalProgressCard';

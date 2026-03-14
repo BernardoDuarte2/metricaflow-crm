@@ -608,6 +608,8 @@ Deno.serve(async (req) => {
       monthlyLeadsConversion,
       monthlyRevenueBySellerData,
       sellers,
+      monthlyLeadsBySource,
+      sourcesList,
     };
 
     console.log('Dashboard stats fetched successfully:', {
