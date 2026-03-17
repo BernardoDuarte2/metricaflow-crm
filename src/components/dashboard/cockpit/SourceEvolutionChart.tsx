@@ -1,8 +1,8 @@
 import { TrendingUp } from "lucide-react";
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -92,15 +92,7 @@ export const SourceEvolutionChart = ({
       {/* Chart */}
       <div className="px-4 py-2 h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <defs>
-              {sources.map((source) => (
-                <linearGradient key={source.name} id={`gradient-${source.name.replace(/\s/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={source.color} stopOpacity={0.25} />
-                  <stop offset="100%" stopColor={source.color} stopOpacity={0.02} />
-                </linearGradient>
-              ))}
-            </defs>
+          <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
@@ -120,20 +112,17 @@ export const SourceEvolutionChart = ({
               width={30}
               allowDecimals={false}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
             {sources.map((source) => (
-              <Area
+              <Bar
                 key={source.name}
-                type="monotone"
                 dataKey={source.name}
-                stroke={source.color}
-                strokeWidth={2.5}
-                fill={`url(#gradient-${source.name.replace(/\s/g, '-')})`}
-                dot={{ fill: source.color, strokeWidth: 2, stroke: "hsl(var(--card))", r: 4 }}
-                activeDot={{ r: 6, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                fill={source.color}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={32}
               />
             ))}
-          </AreaChart>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
