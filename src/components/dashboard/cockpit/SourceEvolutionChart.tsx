@@ -1,11 +1,9 @@
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
 } from "recharts";
 
@@ -20,36 +18,26 @@ interface SourceEvolutionChartProps {
   title?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const MiniTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
-
-  const total = payload.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
-
   return (
-    <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[180px]">
-      <p className="text-xs font-semibold text-foreground mb-2 border-b border-border pb-1.5">{label}</p>
-      <div className="space-y-1.5">
-        {payload
-          .sort((a: any, b: any) => b.value - a.value)
-          .map((entry: any) => (
-            <div key={entry.dataKey} className="flex items-center justify-between gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="w-3 h-3 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-muted-foreground font-medium">{entry.dataKey}</span>
-              </div>
-              <span className="font-semibold text-foreground tabular-nums">{entry.value}</span>
-            </div>
-          ))}
-      </div>
-      <div className="mt-2 pt-1.5 border-t border-border flex items-center justify-between text-xs">
-        <span className="text-muted-foreground font-medium">Total</span>
-        <span className="font-bold text-foreground tabular-nums">{total}</span>
-      </div>
+    <div className="bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-xs">
+      <span className="text-muted-foreground">{label}: </span>
+      <span className="font-semibold text-foreground tabular-nums">{payload[0]?.value ?? 0}</span>
     </div>
   );
+};
+
+const getTrend = (values: number[]) => {
+  if (values.length < 2) return { direction: "stable" as const, pct: 0 };
+  const last = values[values.length - 1];
+  const prev = values[values.length - 2];
+  if (prev === 0 && last === 0) return { direction: "stable" as const, pct: 0 };
+  if (prev === 0) return { direction: "up" as const, pct: 100 };
+  const pct = Math.round(((last - prev) / prev) * 100);
+  if (pct > 0) return { direction: "up" as const, pct };
+  if (pct < 0) return { direction: "down" as const, pct: Math.abs(pct) };
+  return { direction: "stable" as const, pct: 0 };
 };
 
 export const SourceEvolutionChart = ({
@@ -57,6 +45,20 @@ export const SourceEvolutionChart = ({
   sources,
   title = "Evolução Mensal por Fonte",
 }: SourceEvolutionChartProps) => {
+  // Build per-source data
+  const sourceRows = sources.map((source) => {
+    const values = data.map((d) => (d[source.name] as number) || 0);
+    const total = values.reduce((s, v) => s + v, 0);
+    const trend = getTrend(values);
+    const chartData = data.map((d) => ({
+      month: d.month,
+      value: (d[source.name] as number) || 0,
+    }));
+    return { ...source, values, total, trend, chartData };
+  });
+
+  const maxTotal = Math.max(...sourceRows.map((s) => s.total), 1);
+
   return (
     <div className="rounded-xl bg-card border border-border overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
@@ -76,54 +78,84 @@ export const SourceEvolutionChart = ({
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="px-5 pt-4 pb-1 flex flex-wrap gap-x-4 gap-y-1.5">
-        {sources.map((source) => (
-          <div key={source.name} className="flex items-center gap-1.5">
-            <div
-              className="w-3 h-3 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: source.color }}
-            />
-            <span className="text-[11px] font-medium text-muted-foreground">{source.name}</span>
-          </div>
-        ))}
+      {/* Source rows */}
+      <div className="px-5 py-4 space-y-4">
+        {sourceRows.map((source) => {
+          const TrendIcon =
+            source.trend.direction === "up"
+              ? TrendingUp
+              : source.trend.direction === "down"
+              ? TrendingDown
+              : Minus;
+          const trendColor =
+            source.trend.direction === "up"
+              ? "text-green-500"
+              : source.trend.direction === "down"
+              ? "text-red-400"
+              : "text-muted-foreground";
+
+          return (
+            <div key={source.name} className="group">
+              {/* Label row */}
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: source.color }}
+                  />
+                  <span className="text-xs font-medium text-foreground">
+                    {source.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {source.total} leads
+                  </span>
+                  <div className={`flex items-center gap-0.5 ${trendColor}`}>
+                    <TrendIcon className="h-3 w-3" />
+                    <span className="text-[10px] font-semibold tabular-nums">
+                      {source.trend.pct}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mini bar chart per source */}
+              <div className="h-[36px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={source.chartData}
+                    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                  >
+                    <XAxis dataKey="month" hide />
+                    <Tooltip
+                      content={<MiniTooltip />}
+                      cursor={{ fill: "hsl(var(--muted) / 0.2)" }}
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill={source.color}
+                      radius={[2, 2, 0, 0]}
+                      maxBarSize={20}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Chart */}
-      <div className="px-4 py-2 h-[260px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="hsl(var(--border))"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="month"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              dy={8}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              width={30}
-              allowDecimals={false}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
-            {sources.map((source) => (
-              <Bar
-                key={source.name}
-                dataKey={source.name}
-                fill={source.color}
-                radius={[4, 4, 0, 0]}
-                maxBarSize={32}
-              />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Footer with months */}
+      <div className="px-5 py-2.5 border-t border-border flex items-center justify-between">
+        {data.map((d) => (
+          <span
+            key={d.month}
+            className="text-[9px] text-muted-foreground tabular-nums"
+          >
+            {d.month}
+          </span>
+        ))}
       </div>
     </div>
   );
