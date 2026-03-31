@@ -577,7 +577,7 @@ const Dashboard = () => {
 
           {/* 7. TEAM PERFORMANCE + REVENUE SIDE BY SIDE */}
           {isManager && (teamRankingData.length > 0 || dashboardData?.monthlyRevenueBySellerData?.length > 0) && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
               {teamRankingData.length > 0 && (
                 <SalesRepDetailedPanel
                   data={teamRankingData}
