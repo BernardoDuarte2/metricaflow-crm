@@ -148,7 +148,7 @@ export function RevenueBySellerChart({
   const maxTotal = aggregatedData[0]?.total || 0;
 
   return (
-    <div className="rounded-xl bg-card border border-border overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow flex flex-col">
+    <div className="rounded-xl bg-card border border-border overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow flex flex-col max-h-[480px]">
       <div className="px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-md bg-primary/10">
